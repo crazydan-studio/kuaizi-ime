@@ -1,0 +1,218 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-width: 100%;
+  min-height: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  color: rgb(236, 236, 236);
+  background-color: #030712;
+}
+
+.title {
+  font-size: 3em;
+  font-weight: bold;
+  text-align: center;
+  padding-top: 10px;
+}
+
+.body {
+  display: flex;
+  justify-content: center;
+}
+
+.data {
+  padding: 2em;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 2em;
+}
+
+.data [name="pinyin"] {
+  width: 40em;
+  height: 20em;
+}
+
+.data [name="duration"] {
+  width: 5em;
+}
+
+.data .result {
+  overflow-y: auto;
+  width: 100%;
+  font-size: 1.5em;
+  font-weight: bold;
+  height: 18em;
+}
+
+.data .result .item {
+  cursor: pointer;
+  padding: 0 .5em;
+}
+
+.data .result .item:hover {
+  background-color: #ccc;
+}
+
+.demo {
+  margin: 2em;
+  margin-top: 5em;
+  position: relative;
+}
+
+.keyboard {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  width: 560px;
+  display: flex;
+  flex-wrap: wrap;
+  padding-bottom: 20px;
+}
+
+.key {
+  margin: 0 5px;
+  height: 96px;
+}
+
+.hex {
+  overflow: hidden;
+  display: block;
+  width: 100px;
+  height: 116px;
+  transform: rotate(-60deg) skewY(30deg);
+}
+
+.hex-inner {
+  display: block;
+  width: 100px;
+  height: 116px;
+  text-align: center;
+  transform: skewY(-30deg) rotate(60deg);
+}
+
+.hex-inner .char {
+  font-size: 2em;
+  line-height: 2em;
+}
+
+.key .hex-inner {
+  background-color: rgb(57, 57, 57);
+}
+
+.key.disabled .hex-inner {
+  background-color: rgb(57, 57, 57);
+}
+
+.key.highlight .hex-inner {
+  opacity: .4;
+}
+
+.key.hidden .hex-inner {
+  opacity: 0 !important;
+}
+
+.pinyin-stroke-layer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.pinyin-stroke-layer .text {
+  position: absolute;
+  top: -1.5em;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  font-size: 4em;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  color: rgb(136, 6, 134);
+  opacity: .6;
+}
+
+.hidden:not(.key) {
+  display: none !important;
+}
+
+.key[name="删除"] .hex-inner {
+  background-color: rgb(153, 27, 27);
+}
+
+.key[name="空格"] .hex-inner,
+.key[name="<&lt;o&gt;>"] .hex-inner {
+  color: rgb(57, 57, 57);
+  background-color: rgb(236, 236, 236);
+}
+
+.key[name="换行"] .hex-inner {
+  background-color: rgb(2, 170, 245);
+}
+
+.key[name="数字"] .hex-inner,
+.key[name="标点"] .hex-inner {}
+
+.key[name="ü"] .hex-inner,
+.key[name="i"] .hex-inner,
+.key[name="a"] .hex-inner,
+.key[name="e"] .hex-inner,
+.key[name="o"] .hex-inner,
+.key[name="u"] .hex-inner {
+  background-color: rgb(157, 23, 77);
+}
+
+.key[name="j"] .hex-inner,
+.key[name="q"] .hex-inner,
+.key[name="x"] .hex-inner {
+  background-color: rgb(91, 33, 182);
+}
+
+.key[name="c"] .hex-inner,
+.key[name="s"] .hex-inner,
+.key[name="z"] .hex-inner {
+  background-color: rgb(21, 94, 117);
+}
+
+.key[name="l"] .hex-inner,
+.key[name="n"] .hex-inner {
+  background-color: rgb(154, 52, 18);
+}
+
+.key[name="h"] .hex-inner,
+.key[name="g"] .hex-inner,
+.key[name="w"] .hex-inner,
+.key[name="k"] .hex-inner {
+  background-color: rgb(134, 25, 143);
+}
+
+.key[name="r"] .hex-inner,
+.key[name="b"] .hex-inner,
+.key[name="p"] .hex-inner,
+.key[name="m"] .hex-inner,
+.key[name="f"] .hex-inner,
+.key[name="d"] .hex-inner,
+.key[name="t"] .hex-inner,
+.key[name="y"] .hex-inner {
+  background-color: rgb(55, 48, 163);
+}
+
+.key[name="："] .hex-inner,
+.key[name="！"] .hex-inner,
+.key[name="？"] .hex-inner,
+.key[name="、"] .hex-inner,
+.key[name="，"] .hex-inner,
+.key[name="。"] .hex-inner {
+  background-color: rgb(2, 170, 245);
+}
