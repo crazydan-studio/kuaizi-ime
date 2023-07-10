@@ -17,7 +17,11 @@ npx http-server
 
 > 代码为 [tree.js](./tree.js)。
 
+![](../assets/img/pinyin-char-tree.png)
+
 再访问地址 http://127.0.0.1:8080/simulate.html
 以查看规划的按键布局是否符合要求。
 
 > 代码为 [simulate.js](./simulate.js)。
+
+![](../assets/img/pinyin-key-layout.png)
