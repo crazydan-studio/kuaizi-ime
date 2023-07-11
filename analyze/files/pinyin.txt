@@ -39,7 +39,6 @@ chi
 chong
 chou
 chu
-chua
 chuai
 chuan
 chuang
@@ -80,7 +79,6 @@ duo
 e
 ei
 en
-eng
 er
 fa
 fan
@@ -88,7 +86,6 @@ fang
 fei
 fen
 feng
-fiao
 fo
 fou
 fu
@@ -120,7 +117,6 @@ he
 hei
 hen
 heng
-hm
 hng
 hong
 hou
@@ -172,7 +168,6 @@ lang
 lao
 le
 lei
-len
 leng
 li
 lia
@@ -224,7 +219,6 @@ nen
 neng
 ng
 ni
-nia
 nian
 niang
 niao
@@ -236,7 +230,6 @@ nong
 nou
 nu
 nuan
-nun
 nuo
 nü
 nüe
@@ -273,6 +266,7 @@ qu
 quan
 que
 qun
+r
 ran
 rang
 rao
@@ -283,7 +277,6 @@ ri
 rong
 rou
 ru
-rua
 ruan
 rui
 run
@@ -329,7 +322,6 @@ tan
 tang
 tao
 te
-tei
 teng
 ti
 tian
@@ -396,7 +388,6 @@ zhan
 zhang
 zhao
 zhe
-zhei
 zhen
 zheng
 zhi
