@@ -185,12 +185,12 @@ body {
   background-color: rgb(21, 94, 117);
 }
 
+.key[name="h"] .hex-inner,
 .key[name="l"] .hex-inner,
 .key[name="n"] .hex-inner {
   background-color: rgb(154, 52, 18);
 }
 
-.key[name="h"] .hex-inner,
 .key[name="g"] .hex-inner,
 .key[name="w"] .hex-inner,
 .key[name="k"] .hex-inner {

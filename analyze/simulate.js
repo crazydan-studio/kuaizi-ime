@@ -15,9 +15,9 @@ const hexSpacing = 5;
 const hexOuterWidth = hexWidth + 2 * hexSpacing;
 const keyMapping = {
   18: '？',
-  20: 'h',
+  19: 'l',
   21: 'g',
-  19: 'x',
+  20: 'x',
   22: 'c',
   23: '空格',
   11: 'j',
@@ -33,7 +33,7 @@ const keyMapping = {
   5: 'o',
   6: 'u',
   27: 'n',
-  28: 'l',
+  28: 'h',
   29: '<&lt;o&gt;>',
   30: 'w',
   31: 'k',
