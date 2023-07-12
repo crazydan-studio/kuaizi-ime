@@ -185,6 +185,7 @@ body {
   background-color: rgb(21, 94, 117);
 }
 
+.key[name="r"] .hex-inner,
 .key[name="h"] .hex-inner,
 .key[name="l"] .hex-inner,
 .key[name="n"] .hex-inner {
@@ -197,7 +198,6 @@ body {
   background-color: rgb(134, 25, 143);
 }
 
-.key[name="r"] .hex-inner,
 .key[name="b"] .hex-inner,
 .key[name="p"] .hex-inner,
 .key[name="m"] .hex-inner,
