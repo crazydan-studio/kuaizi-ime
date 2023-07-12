@@ -14,10 +14,10 @@ const hexWidth = 100;
 const hexSpacing = 5;
 const hexOuterWidth = hexWidth + 2 * hexSpacing;
 const keyMapping = {
-  10: '？',
-  19: 'h',
-  20: 'g',
-  21: 'x',
+  18: '？',
+  20: 'h',
+  21: 'g',
+  19: 'x',
   22: 'c',
   23: '空格',
   11: 'j',
@@ -45,7 +45,7 @@ const keyMapping = {
   40: '英文',
   1: '：',
   9: '！',
-  18: 'ü',
+  10: 'ü',
   26: '、',
   35: '，',
   44: '。',
