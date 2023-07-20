@@ -79,6 +79,7 @@ duo
 e
 ei
 en
+eng
 er
 fa
 fan
@@ -86,7 +87,6 @@ fang
 fei
 fen
 feng
-fo
 fou
 fu
 ga
@@ -117,7 +117,6 @@ he
 hei
 hen
 heng
-hng
 hong
 hou
 hu
@@ -230,6 +229,7 @@ nong
 nou
 nu
 nuan
+nun
 nuo
 nü
 nüe
@@ -277,6 +277,7 @@ ri
 rong
 rou
 ru
+rua
 ruan
 rui
 run
@@ -295,7 +296,6 @@ shan
 shang
 shao
 she
-shei
 shen
 sheng
 shi
