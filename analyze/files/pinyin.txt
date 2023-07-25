@@ -13,6 +13,7 @@ ben
 beng
 bi
 bian
+biang
 biao
 bie
 bin
@@ -39,6 +40,7 @@ chi
 chong
 chou
 chu
+chua
 chuai
 chuan
 chuang
@@ -87,6 +89,7 @@ fang
 fei
 fen
 feng
+fo
 fou
 fu
 ga
@@ -296,6 +299,7 @@ shan
 shang
 shao
 she
+shei
 shen
 sheng
 shi
@@ -322,6 +326,7 @@ tan
 tang
 tao
 te
+tei
 teng
 ti
 tian
@@ -388,6 +393,7 @@ zhan
 zhang
 zhao
 zhe
+zhei
 zhen
 zheng
 zhi
