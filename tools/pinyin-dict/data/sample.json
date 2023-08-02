@@ -1,0 +1,860 @@
+[
+  {
+    "value": "㑵",
+    "unicode": "U+3475",
+    "src_url": "https://www.zdic.net/hans/㑵",
+    "glyph_svg_url": "https://img.zdic.net/kai/cn/3475.svg",
+    "glyph_gif_url": "",
+    "glyph_struct": "左右结构",
+    "glyph_font_exists": true,
+    "pinyins": [
+      {
+        "value": "hàn",
+        "audio_url": "https://img.zdic.net/audio/zd/py/hàn.mp3"
+      },
+      { "value": "jí", "audio_url": "https://img.zdic.net/audio/zd/py/jí.mp3" },
+      {
+        "value": "jié",
+        "audio_url": "https://img.zdic.net/audio/zd/py/jié.mp3"
+      },
+      {
+        "value": "zhǎ",
+        "audio_url": "https://img.zdic.net/audio/zd/py/zhǎ.mp3"
+      },
+      { "value": "zí", "audio_url": "https://img.zdic.net/audio/zd/py/zí.mp3" }
+    ],
+    "zhuyins": [
+      {
+        "value": "ㄏㄢˋ",
+        "audio_url": "https://img.zdic.net/audio/zd/zy/ㄏㄢˋ.mp3"
+      },
+      {
+        "value": "ㄐㄧˊ",
+        "audio_url": "https://img.zdic.net/audio/zd/zy/ㄐㄧˊ.mp3"
+      },
+      {
+        "value": "ㄐㄧㄝˊ",
+        "audio_url": "https://img.zdic.net/audio/zd/zy/ㄐㄧㄝˊ.mp3"
+      },
+      {
+        "value": "ㄓㄚˇ",
+        "audio_url": "https://img.zdic.net/audio/zd/zy/ㄓㄚˇ.mp3"
+      },
+      {
+        "value": "ㄗˊ",
+        "audio_url": "https://img.zdic.net/audio/zd/zy/ㄗˊ.mp3"
+      }
+    ],
+    "radical": "亻",
+    "stroke_order": "324134131134",
+    "total_stroke_count": 12,
+    "radical_stroke_count": 2,
+    "traditional": false,
+    "simple_words": [],
+    "variant_words": ["嫉"],
+    "traditional_words": [],
+    "wubi_codes": ["wutd"],
+    "cangjie_codes": ["okok"],
+    "zhengma_codes": ["ntma"],
+    "sijiao_codes": ["20284"],
+    "phrases": []
+  },
+  {
+    "value": "𥁞",
+    "unicode": "U+2505E",
+    "src_url": "https://www.zdic.net/hans/𥁞",
+    "glyph_svg_url": "https://img.zdic.net/kai/cn/2505E.svg",
+    "glyph_gif_url": "",
+    "glyph_struct": "上下结构",
+    "glyph_font_exists": false,
+    "pinyins": [],
+    "zhuyins": [],
+    "radical": "皿",
+    "stroke_order": "51112125221",
+    "total_stroke_count": 11,
+    "radical_stroke_count": 5,
+    "traditional": false,
+    "simple_words": [],
+    "variant_words": ["盡"],
+    "traditional_words": [],
+    "wubi_codes": ["vflf"],
+    "cangjie_codes": ["lgbt"],
+    "zhengma_codes": ["xblk"],
+    "sijiao_codes": [],
+    "phrases": []
+  },
+  {
+    "value": "尽",
+    "unicode": "U+5C3D",
+    "src_url": "https://www.zdic.net/hans/尽",
+    "glyph_svg_url": "https://img.zdic.net/kai/cn/5C3D.svg",
+    "glyph_gif_url": "https://img.zdic.net/kai/jbh/5C3D.gif",
+    "glyph_struct": "上下结构",
+    "glyph_font_exists": true,
+    "pinyins": [
+      {
+        "value": "jìn",
+        "audio_url": "https://img.zdic.net/audio/zd/py/jìn.mp3"
+      },
+      {
+        "value": "jǐn",
+        "audio_url": "https://img.zdic.net/audio/zd/py/jǐn.mp3"
+      }
+    ],
+    "zhuyins": [
+      {
+        "value": "ㄐㄧㄣˋ",
+        "audio_url": "https://img.zdic.net/audio/zd/zy/ㄐㄧㄣˋ.mp3"
+      },
+      {
+        "value": "ㄐㄧㄣˇ",
+        "audio_url": "https://img.zdic.net/audio/zd/zy/ㄐㄧㄣˇ.mp3"
+      }
+    ],
+    "radical": "尸",
+    "stroke_order": "513444",
+    "total_stroke_count": 6,
+    "radical_stroke_count": 3,
+    "traditional": false,
+    "simple_words": [],
+    "variant_words": ["儘", "盡", "侭"],
+    "traditional_words": ["盡"],
+    "wubi_codes": ["nyuu"],
+    "cangjie_codes": ["soy"],
+    "zhengma_codes": ["xmst"],
+    "sijiao_codes": ["77303"],
+    "phrases": [
+      {
+        "value": ["尽", "管"],
+        "src_url": "https://www.zdic.net/hans/尽管",
+        "pinyins": [{ "value": ["jǐn", "guǎn"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˇ", "ㄍㄨㄢˇ"] }]
+      },
+      {
+        "value": ["尽", "可", "能"],
+        "src_url": "https://www.zdic.net/hans/尽可能",
+        "pinyins": [{ "value": ["jìn", "kě", "néng"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˋ", "ㄎㄜˇ", "ㄣㄥˊ"] }]
+      },
+      {
+        "value": ["尽", "快"],
+        "src_url": "https://www.zdic.net/hans/尽快",
+        "pinyins": [{ "value": ["jǐn", "kuài"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˇ", "ㄎㄨㄞˋ"] }]
+      },
+      {
+        "value": ["尽", "量"],
+        "src_url": "https://www.zdic.net/hans/尽量",
+        "pinyins": [{ "value": ["jǐn", "liàng"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˇ", "ㄌㄧㄤˋ"] }]
+      },
+      {
+        "value": ["尽", "先"],
+        "src_url": "https://www.zdic.net/hans/尽先",
+        "pinyins": [{ "value": ["jǐn", "xiān"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˇ", "ㄒㄧㄢ"] }]
+      },
+      {
+        "value": ["尽", "自"],
+        "src_url": "https://www.zdic.net/hans/尽自",
+        "pinyins": [{ "value": ["jǐn", "zì"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˇ", "ㄗˋ"] }]
+      },
+      {
+        "value": ["尽", "瘁"],
+        "src_url": "https://www.zdic.net/hans/尽瘁",
+        "pinyins": [{ "value": ["jìn", "cuì"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˋ", "ㄘㄨㄟˋ"] }]
+      },
+      {
+        "value": ["尽", "欢"],
+        "src_url": "https://www.zdic.net/hans/尽欢",
+        "pinyins": [{ "value": ["jìn", "huān"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˋ", "ㄏㄨㄢ"] }]
+      },
+      {
+        "value": ["尽", "节"],
+        "src_url": "https://www.zdic.net/hans/尽节",
+        "pinyins": [{ "value": ["jìn", "jié"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˋ", "ㄐㄧㄝ", "ˊ"] }]
+      },
+      {
+        "value": ["尽", "力"],
+        "src_url": "https://www.zdic.net/hans/尽力",
+        "pinyins": [{ "value": ["jìn", "lì"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˋ", "ㄌㄧˋ"] }]
+      },
+      {
+        "value": ["尽", "力", "而", "为"],
+        "src_url": "https://www.zdic.net/hans/尽力而为",
+        "pinyins": [{ "value": ["jìn", "lì", "ér", "wéi"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˋ", "ㄌㄧˋ", "ㄦˊ", "ㄨㄟˊ"] }]
+      },
+      {
+        "value": ["尽", "量"],
+        "src_url": "https://www.zdic.net/hans/尽量",
+        "pinyins": [{ "value": ["jǐn", "liàng"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˇ", "ㄌㄧㄤˋ"] }]
+      },
+      {
+        "value": ["尽", "其", "所", "能"],
+        "src_url": "https://www.zdic.net/hans/尽其所能",
+        "pinyins": [{ "value": ["jìn", "qí", "suǒ", "néng"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˋ", "ㄑㄧˊ", "ㄙㄨㄛˇ", "ㄣㄥˊ"] }]
+      },
+      {
+        "value": ["尽", "情"],
+        "src_url": "https://www.zdic.net/hans/尽情",
+        "pinyins": [{ "value": ["jìn", "qíng"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˋ", "ㄑㄧㄥˊ"] }]
+      },
+      {
+        "value": ["尽", "全", "力"],
+        "src_url": "https://www.zdic.net/hans/尽全力",
+        "pinyins": [{ "value": ["jìn", "quán", "lì"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˋ", "ㄑㄨㄢˊ", "ㄌㄧˋ"] }]
+      },
+      {
+        "value": ["尽", "然"],
+        "src_url": "https://www.zdic.net/hans/尽然",
+        "pinyins": [{ "value": ["jìn", "rán"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˋ", "ㄖㄢˊ"] }]
+      },
+      {
+        "value": ["尽", "人", "皆", "知"],
+        "src_url": "https://www.zdic.net/hans/尽人皆知",
+        "pinyins": [{ "value": ["jìn", "rén", "jiē", "zhī"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˋ", "ㄖㄣˊ", "ㄐㄧㄝ", "ㄓ"] }]
+      },
+      {
+        "value": ["尽", "如", "人", "意"],
+        "src_url": "https://www.zdic.net/hans/尽如人意",
+        "pinyins": [{ "value": ["jìn", "rú", "rén", "yì"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˋ", "ㄖㄨˊ", "ㄖㄣˊ", "ㄧˋ"] }]
+      },
+      {
+        "value": ["尽", "善", "尽", "美"],
+        "src_url": "https://www.zdic.net/hans/尽善尽美",
+        "pinyins": [{ "value": ["jìn", "shàn", "jìn", "měi"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˋ", "ㄕㄢˋ", "ㄐㄧㄣˋ", "ㄇㄟˇ"] }]
+      },
+      {
+        "value": ["尽", "是"],
+        "src_url": "https://www.zdic.net/hans/尽是",
+        "pinyins": [{ "value": ["jìn", "shì"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˋ", "ㄕˋ"] }]
+      },
+      {
+        "value": ["尽", "收", "眼", "底"],
+        "src_url": "https://www.zdic.net/hans/尽收眼底",
+        "pinyins": [{ "value": ["jìn", "shōu", "yǎn", "dǐ"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˋ", "ㄕㄡ", "ㄧㄢˇ", "ㄉㄧˇ"] }]
+      },
+      {
+        "value": ["尽", "数"],
+        "src_url": "https://www.zdic.net/hans/尽数",
+        "pinyins": [{ "value": ["jìn", "shù"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˋ", "ㄕㄨˋ"] }]
+      },
+      {
+        "value": ["尽", "态", "极", "妍"],
+        "src_url": "https://www.zdic.net/hans/尽态极妍",
+        "pinyins": [{ "value": ["jìn", "tài", "jí", "yán"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˋ", "ㄊㄞˋ", "ㄐㄧˊ", "ㄧㄢˊ"] }]
+      },
+      {
+        "value": ["尽", "头"],
+        "src_url": "https://www.zdic.net/hans/尽头",
+        "pinyins": [{ "value": ["jìn", "tóu"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˋ", "ㄊㄡˊ"] }]
+      },
+      {
+        "value": ["尽", "夕"],
+        "src_url": "https://www.zdic.net/hans/尽夕",
+        "pinyins": [{ "value": ["jìn", "xī"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˋ", "ㄒㄧ"] }]
+      },
+      {
+        "value": ["尽", "孝"],
+        "src_url": "https://www.zdic.net/hans/尽孝",
+        "pinyins": [{ "value": ["jìn", "xiào"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˋ", "ㄒㄧㄠˋ"] }]
+      },
+      {
+        "value": ["尽", "心"],
+        "src_url": "https://www.zdic.net/hans/尽心",
+        "pinyins": [{ "value": ["jìn", "xīn"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˋ", "ㄒㄧㄣ"] }]
+      },
+      {
+        "value": ["尽", "兴"],
+        "src_url": "https://www.zdic.net/hans/尽兴",
+        "pinyins": [{ "value": ["jìn", "xìng"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˋ", "ㄒㄧㄥˋ"] }]
+      },
+      {
+        "value": ["尽", "性"],
+        "src_url": "https://www.zdic.net/hans/尽性",
+        "pinyins": [{ "value": ["jìn", "xìng"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˋ", "ㄒㄧㄥˋ"] }]
+      },
+      {
+        "value": ["尽", "言"],
+        "src_url": "https://www.zdic.net/hans/尽言",
+        "pinyins": [{ "value": ["jìn", "yán"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˋ", "ㄧㄢˊ"] }]
+      },
+      {
+        "value": ["尽", "意"],
+        "src_url": "https://www.zdic.net/hans/尽意",
+        "pinyins": [{ "value": ["jìn", "yì"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˋ", "ㄧˋ"] }]
+      },
+      {
+        "value": ["尽", "责"],
+        "src_url": "https://www.zdic.net/hans/尽责",
+        "pinyins": [{ "value": ["jìn", "zé"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˋ", "ㄗㄜˊ"] }]
+      },
+      {
+        "value": ["尽", "职"],
+        "src_url": "https://www.zdic.net/hans/尽职",
+        "pinyins": [{ "value": ["jìn", "zhí"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˋ", "ㄓˊ"] }]
+      },
+      {
+        "value": ["尽", "致"],
+        "src_url": "https://www.zdic.net/hans/尽致",
+        "pinyins": [{ "value": ["jìn", "zhì"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˋ", "ㄓˋ"] }]
+      },
+      {
+        "value": ["尽", "忠"],
+        "src_url": "https://www.zdic.net/hans/尽忠",
+        "pinyins": [{ "value": ["jìn", "zhōng"] }],
+        "zhuyins": [{ "value": ["ㄐㄧㄣˋ", "ㄓㄨㄥ"] }]
+      }
+    ]
+  },
+  {
+    "value": "国",
+    "unicode": "U+56FD",
+    "src_url": "https://www.zdic.net/hans/国",
+    "glyph_svg_url": "https://img.zdic.net/kai/cn/56FD.svg",
+    "glyph_gif_url": "https://img.zdic.net/kai/jbh/56FD.gif",
+    "glyph_struct": "全包围结构",
+    "glyph_font_exists": true,
+    "pinyins": [
+      {
+        "value": "guó",
+        "audio_url": "https://img.zdic.net/audio/zd/py/guó.mp3"
+      }
+    ],
+    "zhuyins": [
+      {
+        "value": "ㄍㄨㄛˊ",
+        "audio_url": "https://img.zdic.net/audio/zd/zy/ㄍㄨㄛˊ.mp3"
+      }
+    ],
+    "radical": "囗",
+    "stroke_order": "25112141",
+    "total_stroke_count": 8,
+    "radical_stroke_count": 3,
+    "traditional": false,
+    "simple_words": [],
+    "variant_words": ["國", "囯", "囶", "囻", "圀", "㕵", "䆐"],
+    "traditional_words": ["國"],
+    "wubi_codes": ["lgyi"],
+    "cangjie_codes": ["wmgi"],
+    "zhengma_codes": ["jdcs"],
+    "sijiao_codes": ["60103"],
+    "phrases": [
+      {
+        "value": ["国", "宝"],
+        "src_url": "https://www.zdic.net/hans/国宝",
+        "pinyins": [{ "value": ["guó", "bǎo"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄅㄠˇ"] }]
+      },
+      {
+        "value": ["国", "宾"],
+        "src_url": "https://www.zdic.net/hans/国宾",
+        "pinyins": [{ "value": ["guó", "bīn"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄅㄧㄣ"] }]
+      },
+      {
+        "value": ["国", "柄"],
+        "src_url": "https://www.zdic.net/hans/国柄",
+        "pinyins": [{ "value": ["guó", "bǐng"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄅㄧㄥˇ"] }]
+      },
+      {
+        "value": ["国", "步"],
+        "src_url": "https://www.zdic.net/hans/国步",
+        "pinyins": [{ "value": ["guó", "bù"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄅㄨˋ"] }]
+      },
+      {
+        "value": ["国", "步", "艰", "难"],
+        "src_url": "https://www.zdic.net/hans/国步艰难",
+        "pinyins": [{ "value": ["guó", "bù", "jiān", "nán"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄅㄨˋ", "ㄐㄧㄢ", "ㄋㄢˊ"] }]
+      },
+      {
+        "value": ["国", "策"],
+        "src_url": "https://www.zdic.net/hans/国策",
+        "pinyins": [{ "value": ["guó", "cè"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄘㄜˋ"] }]
+      },
+      {
+        "value": ["国", "产"],
+        "src_url": "https://www.zdic.net/hans/国产",
+        "pinyins": [{ "value": ["guó", "chǎn"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄔㄢˇ"] }]
+      },
+      {
+        "value": ["国", "耻"],
+        "src_url": "https://www.zdic.net/hans/国耻",
+        "pinyins": [{ "value": ["guó", "chǐ"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄔˇ"] }]
+      },
+      {
+        "value": ["国", "粹"],
+        "src_url": "https://www.zdic.net/hans/国粹",
+        "pinyins": [{ "value": ["guó", "cuì"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄘㄨㄟˋ"] }]
+      },
+      {
+        "value": ["国", "典"],
+        "src_url": "https://www.zdic.net/hans/国典",
+        "pinyins": [{ "value": ["guó", "diǎn"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄉㄧㄢˇ"] }]
+      },
+      {
+        "value": ["国", "都"],
+        "src_url": "https://www.zdic.net/hans/国都",
+        "pinyins": [{ "value": ["guó", "dū"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄉㄨ"] }]
+      },
+      {
+        "value": ["国", "度"],
+        "src_url": "https://www.zdic.net/hans/国度",
+        "pinyins": [{ "value": ["guó", "dù"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄉㄨˋ"] }]
+      },
+      {
+        "value": ["国", "法"],
+        "src_url": "https://www.zdic.net/hans/国法",
+        "pinyins": [{ "value": ["guó", "fǎ"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄈㄚˇ"] }]
+      },
+      {
+        "value": ["国", "防"],
+        "src_url": "https://www.zdic.net/hans/国防",
+        "pinyins": [{ "value": ["guó", "fáng"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄈㄤˊ"] }]
+      },
+      {
+        "value": ["国", "歌"],
+        "src_url": "https://www.zdic.net/hans/国歌",
+        "pinyins": [{ "value": ["guó", "gē"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄍㄜ"] }]
+      },
+      {
+        "value": ["国", "格"],
+        "src_url": "https://www.zdic.net/hans/国格",
+        "pinyins": [{ "value": ["guó", "gé"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄍㄜˊ"] }]
+      },
+      {
+        "value": ["国", "故"],
+        "src_url": "https://www.zdic.net/hans/国故",
+        "pinyins": [{ "value": ["guó", "gù"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄍㄨˋ"] }]
+      },
+      {
+        "value": ["国", "号"],
+        "src_url": "https://www.zdic.net/hans/国号",
+        "pinyins": [{ "value": ["guó", "hào"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄏㄠˋ"] }]
+      },
+      {
+        "value": ["国", "花"],
+        "src_url": "https://www.zdic.net/hans/国花",
+        "pinyins": [{ "value": ["guó", "huā"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄏㄨㄚ"] }]
+      },
+      {
+        "value": ["国", "画"],
+        "src_url": "https://www.zdic.net/hans/国画",
+        "pinyins": [{ "value": ["guó", "huà"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄏㄨㄚˋ"] }]
+      },
+      {
+        "value": ["国", "徽"],
+        "src_url": "https://www.zdic.net/hans/国徽",
+        "pinyins": [{ "value": ["guó", "huī"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄏㄨㄟ"] }]
+      },
+      {
+        "value": ["国", "会"],
+        "src_url": "https://www.zdic.net/hans/国会",
+        "pinyins": [{ "value": ["guó", "huì"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄏㄨㄟˋ"] }]
+      },
+      {
+        "value": ["国", "魂"],
+        "src_url": "https://www.zdic.net/hans/国魂",
+        "pinyins": [{ "value": ["guó", "hún"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄏㄨㄣˊ"] }]
+      },
+      {
+        "value": ["国", "货"],
+        "src_url": "https://www.zdic.net/hans/国货",
+        "pinyins": [{ "value": ["guó", "huò"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄏㄨㄛˋ"] }]
+      },
+      {
+        "value": ["国", "籍"],
+        "src_url": "https://www.zdic.net/hans/国籍",
+        "pinyins": [{ "value": ["guó", "jí"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄐㄧˊ"] }]
+      },
+      {
+        "value": ["国", "技"],
+        "src_url": "https://www.zdic.net/hans/国技",
+        "pinyins": [{ "value": ["guó", "jì"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄐㄧˋ"] }]
+      },
+      {
+        "value": ["国", "际"],
+        "src_url": "https://www.zdic.net/hans/国际",
+        "pinyins": [{ "value": ["guó", "jì"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄐㄧˋ"] }]
+      },
+      {
+        "value": ["国", "际", "歌"],
+        "src_url": "https://www.zdic.net/hans/国际歌",
+        "pinyins": [{ "value": ["guó", "jì", "gē"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄐㄧˋ", "ㄍㄜ"] }]
+      },
+      {
+        "value": ["国", "计", "民", "生"],
+        "src_url": "https://www.zdic.net/hans/国计民生",
+        "pinyins": [{ "value": ["guó", "jì", "mín", "shēng"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄐㄧˋ", "ㄇㄧㄣˊ", "ㄕㄥ"] }]
+      },
+      {
+        "value": ["国", "家"],
+        "src_url": "https://www.zdic.net/hans/国家",
+        "pinyins": [{ "value": ["guó", "jiā"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄐㄧㄚ"] }]
+      },
+      {
+        "value": ["国", "交"],
+        "src_url": "https://www.zdic.net/hans/国交",
+        "pinyins": [{ "value": ["guó", "jiāo"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄐㄧㄠ"] }]
+      },
+      {
+        "value": ["国", "脚"],
+        "src_url": "https://www.zdic.net/hans/国脚",
+        "pinyins": [{ "value": ["guó", "jiǎo"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄐㄧㄠˇ"] }]
+      },
+      {
+        "value": ["国", "界"],
+        "src_url": "https://www.zdic.net/hans/国界",
+        "pinyins": [{ "value": ["guó", "jiè"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄐㄧㄝ", "ˋ"] }]
+      },
+      {
+        "value": ["国", "境"],
+        "src_url": "https://www.zdic.net/hans/国境",
+        "pinyins": [{ "value": ["guó", "jìng"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄐㄧㄥˋ"] }]
+      },
+      {
+        "value": ["国", "舅"],
+        "src_url": "https://www.zdic.net/hans/国舅",
+        "pinyins": [{ "value": ["guó", "jiù"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄐㄧㄡˋ"] }]
+      },
+      {
+        "value": ["国", "君"],
+        "src_url": "https://www.zdic.net/hans/国君",
+        "pinyins": [{ "value": ["guó", "jūn"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄐㄩㄣ"] }]
+      },
+      {
+        "value": ["国", "库"],
+        "src_url": "https://www.zdic.net/hans/国库",
+        "pinyins": [{ "value": ["guó", "kù"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄎㄨˋ"] }]
+      },
+      {
+        "value": ["国", "力"],
+        "src_url": "https://www.zdic.net/hans/国力",
+        "pinyins": [{ "value": ["guó", "lì"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄌㄧˋ"] }]
+      },
+      {
+        "value": ["国", "立"],
+        "src_url": "https://www.zdic.net/hans/国立",
+        "pinyins": [{ "value": ["guó", "lì"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄌㄧˋ"] }]
+      },
+      {
+        "value": ["国", "门"],
+        "src_url": "https://www.zdic.net/hans/国门",
+        "pinyins": [{ "value": ["guó", "mén"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄇㄣˊ"] }]
+      },
+      {
+        "value": ["国", "民"],
+        "src_url": "https://www.zdic.net/hans/国民",
+        "pinyins": [{ "value": ["guó", "mín"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄇㄧㄣˊ"] }]
+      },
+      {
+        "value": ["国", "民", "经", "济"],
+        "src_url": "https://www.zdic.net/hans/国民经济",
+        "pinyins": [{ "value": ["guó", "mín", "jīng", "jì"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄇㄧㄣˊ", "ㄐㄧㄥ", "ㄐㄧˋ"] }]
+      },
+      {
+        "value": ["国", "民", "收", "入"],
+        "src_url": "https://www.zdic.net/hans/国民收入",
+        "pinyins": [{ "value": ["guó", "mín", "shōu", "rù"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄇㄧㄣˊ", "ㄕㄡ", "ㄖㄨˋ"] }]
+      },
+      {
+        "value": ["国", "民", "政", "府"],
+        "src_url": "https://www.zdic.net/hans/国民政府",
+        "pinyins": [{ "value": ["guó", "mín", "zhèng", "fǔ"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄇㄧㄣˊ", "ㄓㄥˋ", "ㄈㄨˇ"] }]
+      },
+      {
+        "value": ["国", "难"],
+        "src_url": "https://www.zdic.net/hans/国难",
+        "pinyins": [{ "value": ["guó", "nàn"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄋㄢˋ"] }]
+      },
+      {
+        "value": ["国", "内"],
+        "src_url": "https://www.zdic.net/hans/国内",
+        "pinyins": [{ "value": ["guó", "nèi"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄣㄟˋ"] }]
+      },
+      {
+        "value": ["国", "戚"],
+        "src_url": "https://www.zdic.net/hans/国戚",
+        "pinyins": [{ "value": ["guó", "qī"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄑㄧ"] }]
+      },
+      {
+        "value": ["国", "旗"],
+        "src_url": "https://www.zdic.net/hans/国旗",
+        "pinyins": [{ "value": ["guó", "qí"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄑㄧˊ"] }]
+      },
+      {
+        "value": ["国", "情"],
+        "src_url": "https://www.zdic.net/hans/国情",
+        "pinyins": [{ "value": ["guó", "qíng"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄑㄧㄥˊ"] }]
+      },
+      {
+        "value": ["国", "庆"],
+        "src_url": "https://www.zdic.net/hans/国庆",
+        "pinyins": [{ "value": ["guó", "qìng"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄑㄧㄥˋ"] }]
+      },
+      {
+        "value": ["国", "丧"],
+        "src_url": "https://www.zdic.net/hans/国丧",
+        "pinyins": [{ "value": ["guó", "sāng"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄙㄤ"] }]
+      },
+      {
+        "value": ["国", "色"],
+        "src_url": "https://www.zdic.net/hans/国色",
+        "pinyins": [{ "value": ["guó", "sè"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄙㄜˋ"] }]
+      },
+      {
+        "value": ["国", "色", "天", "香"],
+        "src_url": "https://www.zdic.net/hans/国色天香",
+        "pinyins": [{ "value": ["guó", "sè", "tiān", "xiāng"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄙㄜˋ", "ㄊㄧㄢ", "ㄒㄧㄤ"] }]
+      },
+      {
+        "value": ["国", "殇"],
+        "src_url": "https://www.zdic.net/hans/国殇",
+        "pinyins": [{ "value": ["guó", "shāng"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄕㄤ"] }]
+      },
+      {
+        "value": ["国", "士", "无", "双"],
+        "src_url": "https://www.zdic.net/hans/国士无双",
+        "pinyins": [{ "value": ["guó", "shì", "wú", "shuāng"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄕˋ", "ㄨˊ", "ㄕㄨㄤ"] }]
+      },
+      {
+        "value": ["国", "势"],
+        "src_url": "https://www.zdic.net/hans/国势",
+        "pinyins": [{ "value": ["guó", "shì"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄕˋ"] }]
+      },
+      {
+        "value": ["国", "事"],
+        "src_url": "https://www.zdic.net/hans/国事",
+        "pinyins": [{ "value": ["guó", "shì"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄕˋ"] }]
+      },
+      {
+        "value": ["国", "是"],
+        "src_url": "https://www.zdic.net/hans/国是",
+        "pinyins": [{ "value": ["guó", "shì"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄕˋ"] }]
+      },
+      {
+        "value": ["国", "手"],
+        "src_url": "https://www.zdic.net/hans/国手",
+        "pinyins": [{ "value": ["guó", "shǒu"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄕㄡˇ"] }]
+      },
+      {
+        "value": ["国", "泰", "民", "安"],
+        "src_url": "https://www.zdic.net/hans/国泰民安",
+        "pinyins": [{ "value": ["guó", "tài", "mín", "ān"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄊㄞˋ", "ㄇㄧㄣˊ", "ㄢ"] }]
+      },
+      {
+        "value": ["国", "体"],
+        "src_url": "https://www.zdic.net/hans/国体",
+        "pinyins": [{ "value": ["guó", "tǐ"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄊㄧˇ"] }]
+      },
+      {
+        "value": ["国", "土"],
+        "src_url": "https://www.zdic.net/hans/国土",
+        "pinyins": [{ "value": ["guó", "tǔ"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄊㄨˇ"] }]
+      },
+      {
+        "value": ["国", "王"],
+        "src_url": "https://www.zdic.net/hans/国王",
+        "pinyins": [{ "value": ["guó", "wáng"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄨㄤˊ"] }]
+      },
+      {
+        "value": ["国", "威"],
+        "src_url": "https://www.zdic.net/hans/国威",
+        "pinyins": [{ "value": ["guó", "wēi"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄨㄟ"] }]
+      },
+      {
+        "value": ["国", "文"],
+        "src_url": "https://www.zdic.net/hans/国文",
+        "pinyins": [{ "value": ["guó", "wén"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄨㄣˊ"] }]
+      },
+      {
+        "value": ["国", "务"],
+        "src_url": "https://www.zdic.net/hans/国务",
+        "pinyins": [{ "value": ["guó", "wù"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄨˋ"] }]
+      },
+      {
+        "value": ["国", "务", "卿"],
+        "src_url": "https://www.zdic.net/hans/国务卿",
+        "pinyins": [{ "value": ["guó", "wù", "qīng"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄨˋ", "ㄑㄧㄥ"] }]
+      },
+      {
+        "value": ["国", "务", "院"],
+        "src_url": "https://www.zdic.net/hans/国务院",
+        "pinyins": [{ "value": ["guó", "wù", "yuàn"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄨˋ", "ㄩㄢˋ"] }]
+      },
+      {
+        "value": ["国", "宴"],
+        "src_url": "https://www.zdic.net/hans/国宴",
+        "pinyins": [{ "value": ["guó", "yàn"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄧㄢˋ"] }]
+      },
+      {
+        "value": ["国", "音"],
+        "src_url": "https://www.zdic.net/hans/国音",
+        "pinyins": [{ "value": ["guó", "yīn"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄧㄣ"] }]
+      },
+      {
+        "value": ["国", "营"],
+        "src_url": "https://www.zdic.net/hans/国营",
+        "pinyins": [{ "value": ["guó", "yíng"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄧㄥˊ"] }]
+      },
+      {
+        "value": ["国", "有"],
+        "src_url": "https://www.zdic.net/hans/国有",
+        "pinyins": [{ "value": ["guó", "yǒu"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄧㄡˇ"] }]
+      },
+      {
+        "value": ["国", "语"],
+        "src_url": "https://www.zdic.net/hans/国语",
+        "pinyins": [{ "value": ["guó", "yǔ"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄩˇ"] }]
+      },
+      {
+        "value": ["国", "运"],
+        "src_url": "https://www.zdic.net/hans/国运",
+        "pinyins": [{ "value": ["guó", "yùn"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄩㄣˋ"] }]
+      },
+      {
+        "value": ["国", "贼"],
+        "src_url": "https://www.zdic.net/hans/国贼",
+        "pinyins": [{ "value": ["guó", "zéi"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄗㄟˊ"] }]
+      },
+      {
+        "value": ["国", "债"],
+        "src_url": "https://www.zdic.net/hans/国债",
+        "pinyins": [{ "value": ["guó", "zhài"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄓㄞˋ"] }]
+      },
+      {
+        "value": ["国", "子", "监"],
+        "src_url": "https://www.zdic.net/hans/国子监",
+        "pinyins": [{ "value": ["guó", "zǐ", "jiàn"] }],
+        "zhuyins": [{ "value": ["ㄍㄨㄛˊ", "ㄗˇ", "ㄐㄧㄢˋ"] }]
+      }
+    ]
+  },
+  {
+    "value": "𣴘",
+    "unicode": "U+23D18",
+    "src_url": "https://www.zdic.net/hans/𣴘",
+    "glyph_svg_url": "https://img.zdic.net/kai/cn/23D18.svg",
+    "glyph_gif_url": "",
+    "glyph_struct": "左右结构",
+    "glyph_font_exists": false,
+    "pinyins": [],
+    "zhuyins": [],
+    "radical": "氵",
+    "stroke_order": "441441134",
+    "total_stroke_count": 9,
+    "radical_stroke_count": 3,
+    "traditional": false,
+    "simple_words": [],
+    "variant_words": [],
+    "traditional_words": [],
+    "wubi_codes": ["iidy"],
+    "cangjie_codes": [],
+    "zhengma_codes": ["vvgd"],
+    "sijiao_codes": [],
+    "phrases": []
+  }
+]

@@ -1,0 +1,24 @@
+{
+  "name": "pinyin-dict",
+  "version": "0.1.0",
+  "description": "Pinyin dictionary maker",
+  "scripts": {
+    "web": "node src/web.mjs",
+    "generate:test": "node src/generate/test.mjs",
+    "generate:raw": "node src/generate/raw/index.mjs",
+    "generate:raw:debug": "node --inspect-brk src/generate/raw/index.mjs",
+    "generate:sqlite": "node src/generate/sqlite/all/index.mjs",
+    "generate:sqlite:debug": "node --inspect-brk src/generate/sqlite/all/index.mjs"
+  },
+  "author": "flytreeleft@crazydan.org",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "fontkit": "^2.0.2",
+    "get-system-fonts": "^2.0.2",
+    "got": "^13.0.0",
+    "grapheme-splitter": "^1.0.4",
+    "jsdom": "^22.1.0",
+    "sqlite": "^5.0.1",
+    "sqlite3": "^5.1.6"
+  }
+}
