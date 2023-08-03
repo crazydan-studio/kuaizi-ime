@@ -1,3 +1,4 @@
+import { splitChars } from '../../../utils/utils.mjs';
 import {
   saveToDB,
   removeFromDB,
@@ -926,6 +927,184 @@ ORDER BY
 
 /** 保存表情符号 */
 export async function saveEmotions(db, emotionMetas) {
-  // TODO 对其关键字采取按字匹配策略，
+  // 对表情关键字采取按字（非拼音）匹配策略，
   // 仅关键字与查询字相同时才视为匹配上，可做单字或多字匹配
+  await execSQL(
+    db,
+    `
+CREATE TABLE
+    IF NOT EXISTS meta_emotion (
+        id_ INTEGER NOT NULL PRIMARY KEY,
+        -- 表情符号
+        value_ TEXT NOT NULL,
+        UNIQUE (value_)
+    );
+
+CREATE TABLE
+    IF NOT EXISTS link_emotion_with_keyword (
+        id_ INTEGER NOT NULL PRIMARY KEY,
+        -- 表情 id
+        source_id_ INTEGER NOT NULL,
+        -- 排序后的表情关键字序号
+        target_index_ INTEGER NOT NULL,
+        -- 表情关键字中的字 id
+        target_word_id_ INTEGER NOT NULL,
+        -- 字在表情关键字中的序号
+        target_word_index_ INTEGER NOT NULL,
+        UNIQUE (
+            source_id_,
+            target_index_,
+            target_word_id_,
+            target_word_index_
+        ),
+        FOREIGN KEY (source_id_) REFERENCES meta_emotion (id_),
+        FOREIGN KEY (target_word_id_) REFERENCES meta_word (id_)
+    );
+
+-- 表情及其关键字
+CREATE VIEW
+    IF NOT EXISTS emotion (
+        id_,
+        value_,
+        keyword_index_,
+        keyword_word_,
+        keyword_word_index_
+    ) AS
+SELECT
+    emo_.id_,
+    emo_.value_,
+    lnk_.target_index_,
+    word_.value_,
+    lnk_.target_word_index_
+FROM
+    meta_emotion emo_
+    --
+    LEFT JOIN link_emotion_with_keyword lnk_ on lnk_.source_id_ = emo_.id_
+    LEFT JOIN meta_word word_ on word_.id_ = lnk_.target_word_id_
+ORDER BY
+    emo_.id_ asc,
+    lnk_.target_index_ asc,
+    lnk_.target_word_index_ asc;
+    `
+  );
+
+  const emotionMetaMap = emotionMetas.reduce((map, meta) => {
+    meta.keywords = meta.keywords.sort();
+
+    const code = meta.value;
+    map[code] = {
+      __meta__: meta,
+      value_: meta.value
+    };
+
+    return map;
+  }, {});
+
+  // 保存表情信息
+  const missingPhrases = [];
+  (await db.all('SELECT * FROM meta_emotion')).forEach((row) => {
+    const code = row.value_;
+    const id = row.id_;
+
+    if (emotionMetaMap[code]) {
+      emotionMetaMap[code].id_ = id;
+      emotionMetaMap[code].__exist__ = row;
+    } else {
+      missingPhrases.push(id);
+    }
+  });
+  await saveToDB(db, 'meta_emotion', emotionMetaMap);
+  await removeFromDB(db, 'meta_emotion', missingPhrases);
+
+  // 获取新增表情 id
+  (await db.all('SELECT id_, value_ FROM meta_emotion')).forEach((row) => {
+    const code = row.value_;
+    emotionMetaMap[code].id_ = row.id_;
+  });
+
+  // 绑定关键字关联
+  await asyncForEach(
+    [
+      {
+        table: 'link_emotion_with_keyword',
+        target_word_table: 'meta_word'
+      }
+    ],
+    async ({ table, target_word_table }) => {
+      const targetWordData = {};
+      (await db.all(`SELECT id_, value_ FROM ${target_word_table}`)).forEach(
+        (row) => {
+          const code = row.value_;
+
+          targetWordData[code] = {
+            id_: row.id_,
+            value_: row.value_
+          };
+        }
+      );
+
+      const linkData = {};
+      (await db.all(`SELECT * FROM ${table}`)).forEach((row) => {
+        const code = `${row.source_id_}:${row.target_index_}:${row.target_word_id_}:${row.target_word_index_}`;
+
+        linkData[code] = {
+          __exist__: row,
+          id_: row.id_,
+          source_id_: row.source_id_,
+          target_index_: row.target_index_,
+          target_word_id_: row.target_word_id_,
+          target_word_index_: row.target_word_index_
+        };
+      });
+
+      Object.values(emotionMetaMap).forEach((source) => {
+        const source_value = source.value_;
+        const target_values = source.__meta__.keywords;
+
+        target_values.forEach((target_value, target_index_) => {
+          const target_words = splitChars(target_value);
+
+          target_words.forEach((target_word, target_word_index_) => {
+            const target_word_id_ = (targetWordData[target_word] || {}).id_;
+
+            if (!target_word_id_) {
+              console.log(
+                `表情 '${source_value}' 的关键字 '${target_word}' 不存在字 '${target_word}'`
+              );
+              return;
+            }
+
+            const source_id_ = source.id_;
+            const link_code = `${source_id_}:${target_index_}:${target_word_id_}:${target_word_index_}`;
+            if (!linkData[link_code]) {
+              // 新增关联
+              linkData[link_code] = {
+                source_id_: source_id_,
+                target_index_: target_index_,
+                target_word_id_: target_word_id_,
+                target_word_index_: target_word_index_
+              };
+            } else {
+              // 关联无需更新
+              delete linkData[link_code];
+            }
+          });
+        });
+      });
+
+      const missingLinks = [];
+      Object.keys(linkData).forEach((code) => {
+        const id = linkData[code].id_;
+        if (id) {
+          // 关联在库中已存在，但未变更
+          missingLinks.push(id);
+
+          delete linkData[code];
+        }
+      });
+
+      await saveToDB(db, table, linkData);
+      await removeFromDB(db, table, missingLinks);
+    }
+  );
 }

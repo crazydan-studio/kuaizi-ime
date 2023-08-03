@@ -77,6 +77,20 @@ group by
   glyph_struct_;
 ```
 
+### 查询各类字体结构包含的字数
+
+```sql
+select
+  glyph_struct_,
+  count(distinct value_) as amount
+from
+  meta_word
+group by
+  glyph_struct_
+order by
+  amount desc;
+```
+
 ### 查询某字（拼音）完整信息
 
 > 若要查询注音字，则将表 `pinyin_word` 更改为 `zhuyin_word` 即可。
@@ -118,6 +132,21 @@ from
   pinyin_phrase
 group by
   id_;
+```
+
+### 查询表情及其关键字信息
+
+```sql
+select
+  id_,
+  value_,
+  keyword_index_,
+  group_concat (keyword_word_, '')
+from
+  emotion
+group by
+  id_,
+  keyword_index_;
 ```
 
 ## License
