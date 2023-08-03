@@ -261,7 +261,10 @@ async function fetchPhraseMeta(phrase) {
       naiveInnerText($e)
         .split(/[，,；]/g)
         .forEach((val) => {
-          const splits = val.replaceAll(/\s+([ˊˇˋˉ])/g, '$1').split(/\s+/g);
+          const splits = val
+            .replaceAll(/[·]/g, '')
+            .replaceAll(/\s+([ˊˇˋˉ])/g, '$1')
+            .split(/\s+/g);
 
           if (text === '拼音') {
             pinyinsArray.push({ value: splits });

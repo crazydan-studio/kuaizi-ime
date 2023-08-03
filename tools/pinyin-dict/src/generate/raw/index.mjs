@@ -3,7 +3,8 @@ import {
   readZDicWordsFromPinyinData,
   readTraditionalWordsFromOpenCC,
   patchAndSaveZDicWordsToFile,
-  saveWordMetasToFile
+  saveWordMetasToFile,
+  calculateWordWeightByGlyph
 } from './raw.mjs';
 
 // 采用 汉典网(http://zdic.net/) 的数据
@@ -142,7 +143,8 @@ console.log();
 
 console.log();
 console.log('保存有字形的字数据 ...');
-// TODO 计算字形权重
-await saveWordMetasToFile(dictDataValidFile, wordMetasWithGlyph);
+calculateWordWeightByGlyph(wordMetasWithGlyph);
+
+saveWordMetasToFile(dictDataValidFile, wordMetasWithGlyph);
 console.log('有字形的字数据已保存至：' + dictDataValidFile);
 console.log();

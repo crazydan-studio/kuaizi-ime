@@ -3,6 +3,7 @@ import { fromRootPath, readLineFromFile } from '../../../utils/utils.mjs';
 import * as sqlite from './sqlite.mjs';
 
 const dictDataValidFile = fromRootPath('data', 'pinyin-dict.valid.txt');
+const emotionDataFile = fromRootPath('data', 'emotions.json');
 // 包含完整拼音和字信息的 SQLite 数据库
 const dictDataSQLiteFile = fromRootPath('data', 'pinyin-dict.all.sqlite');
 
@@ -42,3 +43,6 @@ try {
 }
 
 console.log();
+
+// TODO 保存表情字符，并对其关键字采取按字匹配策略，
+// 仅关键字与查询字相同时才视为匹配上，可做单字或多字匹配

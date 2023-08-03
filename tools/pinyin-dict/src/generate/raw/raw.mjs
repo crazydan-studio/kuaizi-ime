@@ -147,7 +147,7 @@ export async function patchAndSaveZDicWordsToFile(file, zdicWords) {
 }
 
 /** 保存字信息到指定文件 */
-export async function saveWordMetasToFile(file, wordMetas) {
+export function saveWordMetasToFile(file, wordMetas) {
   const batchSize = 50;
 
   for (let i = 0; i < wordMetas.length; i += batchSize) {
@@ -158,10 +158,18 @@ export async function saveWordMetasToFile(file, wordMetas) {
   }
 }
 
+/** 根据字形计算字的权重 */
+export function calculateWordWeightByGlyph(wordMetas) {
+  // TODO 先按结构分类，再在结构内根据笔画顺序和相似性排序，最后结构权重加上字序权重即为字的权重
+}
+
 /** 纠正字信息 */
 function correctWordMeta(wordMeta) {
   if (!wordMeta.traditional) {
     wordMeta.traditional = wordMeta.simple_words.length > 0;
+  }
+  if (wordMeta.radical === '难检') {
+    wordMeta.radical = '';
   }
 
   const glyph_struct = wordMeta.glyph_struct;
@@ -193,6 +201,12 @@ function correctWordMeta(wordMeta) {
   }
 
   switch (wordMeta.value) {
+    case '贋':
+      wordMeta.glyph_struct = '左上包围结构';
+      break;
+    case '〇':
+      wordMeta.glyph_struct = '独体结构';
+      break;
     case '㣫': // ㄓㄨㄥˇㄉㄨㄥˋ
       wordMeta.zhuyins = [
         {
@@ -204,6 +218,7 @@ function correctWordMeta(wordMeta) {
           audio_url: 'https://img.zdic.net/audio/zd/zy/ㄉㄨㄥˋ.mp3'
         }
       ];
+      break;
     case '頁': // ㄧㄝˋ，ㄒ〡ㄝˊ
       wordMeta.zhuyins = [
         {
@@ -225,6 +240,8 @@ function correctWordMeta(wordMeta) {
       // https://www.zdic.net/hans/%E4%BB%92
       data.value !== 'eo'
   );
+  addMissingPinyin(wordMeta);
+
   wordMeta.pinyins.forEach((data) => {
     switch (data.value) {
       case 'yòu ㄧ':
@@ -256,6 +273,8 @@ function correctWordMeta(wordMeta) {
     phrase.pinyins.forEach((data) => {
       data.value = data.value.map(correctPinyin);
     });
+
+    correctPhrasePinyin(phrase);
   });
 }
 
@@ -307,4 +326,167 @@ function shouldBeExcluded(wordMeta) {
       return true;
   }
   return false;
+}
+
+function addMissingPinyin(wordMeta) {
+  const missing = {
+    伯: 'bo',
+    作: 'zuō',
+    轉: 'zhuàn',
+    子: 'zi',
+    儿: 'er',
+    们: 'men',
+    娃: 'wa',
+    奶: 'nai',
+    哥: 'ge',
+    妈: 'ma',
+    妹: 'mei',
+    姐: 'jie',
+    姥: 'lao',
+    弟: 'di',
+    爷: 'ye',
+    丧: 'sang',
+    罗: 'luo',
+    嗦: 'suo',
+    虎: 'hu',
+    担: 'dan',
+    色: 'shǎi',
+    掇: 'duo',
+    量: 'liang',
+    声: 'sheng',
+    叨: 'dao',
+    吵: 'chao',
+    嗦: 'suo',
+    伙: 'huo',
+    壳: 'ke',
+    父: 'fu',
+    和: 'huo',
+    落: 'luo',
+    星: 'xing',
+    友: 'you',
+    服: 'fu',
+    糊: 'hu',
+    息: 'xi',
+    係: 'xi',
+    思: 'si',
+    兒: 'er',
+    荷: 'hè',
+    巴: 'ba',
+    候: 'hou',
+    猬: 'wei',
+    叉: 'chà',
+    弹: 'tan',
+    彈: 'tan',
+    拉: 'lǎ',
+    乎: 'hu',
+    承: 'cheng',
+    彩: 'cai',
+    踏: 'tā',
+    骑: 'jì',
+    轳: 'lu',
+    靡: 'mǐ',
+    處: 'chù',
+    呃: 'e',
+    嗯: 'ng',
+    虎: 'hū',
+    馬: 'ma',
+    璃: 'li',
+    隆: 'lōng',
+    頭: 'tou',
+    矩: 'ju',
+    荷: 'he',
+    興: 'xìng',
+    與: 'yù',
+    狸: 'li',
+    聲: 'sheng',
+    结: 'jie',
+    傅: 'fu',
+    羅: 'luo',
+    磨: 'mo',
+    睛: 'jing',
+    衩: 'chǎ',
+    识: 'shi',
+    宜: 'yi',
+    荷: 'hè',
+    迷: 'mi',
+    督: 'du',
+    鑽: 'zuàn',
+    饨: 'tun',
+    綠: 'lù',
+    頻: 'pín',
+    衝: 'chòng',
+    膊: 'bo'
+  };
+
+  const pinyin = missing[wordMeta.value];
+  if (pinyin) {
+    wordMeta.pinyins = wordMeta.pinyins.filter((data) => data.value !== pinyin);
+    wordMeta.pinyins.push({
+      value: pinyin
+    });
+  }
+}
+
+function correctPhrasePinyin(phrase) {
+  const replacements = {
+    '不:bu': 'bù',
+    '不:bū': 'bù',
+    '不:bǔ': 'bù',
+    '不:bú': 'bù',
+    '作:zuó': 'zuò',
+    '帆:fán': 'fān',
+    '一:yí': 'yī',
+    '一:yì': 'yī',
+    '溜:liú': 'liù',
+    '归:huī': 'guī',
+    '观:guāng': 'guān',
+    '民:rén': 'mín',
+    '偏:piāng': 'piān',
+    '內:nà': 'nèi',
+    '外:wai': 'wài',
+    '訌:hóng': 'hòng',
+    '長:zhàng': 'cháng',
+    '教:jiàn': 'jiào',
+    '寻:xín': 'xún',
+    '将:qiāng': 'jiāng',
+    '寸:cù': 'cùn',
+    '傅:fū': 'fu',
+    '练:zh': 'liàn',
+    '穴:xuè': 'xué',
+    '野:yiě': 'yě',
+    '子:zī': 'zi',
+    '家:ji': 'jiā',
+    '手:shǒ': 'shǒu',
+    '瘩:dā': 'da',
+    '度:duò': 'duó',
+    '进:lián': 'jìn',
+    '扬:yán': 'yáng',
+    '期:qí': 'qī',
+    '骨:gú': 'gǔ',
+    '实:shi': 'shí',
+    '衣:yì': 'yī',
+    '縱:zōng': 'zòng',
+    '魄:tuò': 'pò',
+    '首:shǒ': 'shǒu',
+    '三:sā': 'sān',
+    '個:ge': 'gè',
+    '业:yiè': 'yè',
+    '行:héng': 'háng',
+    '歸:huī': 'guī'
+  };
+
+  phrase.pinyins.forEach((pinyin) => {
+    if (phrase.value.length !== pinyin.value.length) {
+      return;
+    }
+
+    for (let i = 0; i < phrase.value.length; i++) {
+      const code = `${phrase.value[i]}:${pinyin.value[i]}`;
+      const replacement = replacements[code];
+
+      if (replacement) {
+        pinyin.value.splice(i, 1, replacement);
+      }
+    }
+  });
 }

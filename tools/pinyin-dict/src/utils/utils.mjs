@@ -116,7 +116,8 @@ export function correctPinyin(str) {
     .replaceAll('ĭ', 'ǐ')
     .replaceAll('ŭ', 'ǔ')
     .replaceAll('ɡ', 'g')
-    .replaceAll('ē', 'ē');
+    .replaceAll('ē', 'ē')
+    .replaceAll(/[·]/g, '');
 }
 
 /** 修正注音 */

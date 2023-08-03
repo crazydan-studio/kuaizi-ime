@@ -39,7 +39,19 @@ select
   glyph_struct_,
   value_
 from
-  word_meta
+  meta_word
+group by
+  glyph_struct_;
+```
+
+### 查询各类字体结构的字
+
+```sql
+select
+  glyph_struct_,
+  substr(group_concat(distinct value_), 0, 99)
+from
+  meta_word
 group by
   glyph_struct_;
 ```
@@ -49,9 +61,10 @@ group by
 ```sql
 select
   glyph_struct_,
-  group_concat (distinct radical_)
+  value_,
+  group_concat(distinct radical_)
 from
-  word_meta
+  meta_word
 group by
   glyph_struct_;
 ```
@@ -92,7 +105,7 @@ group by
 select
   id_,
   value_,
-  group_concat (word_ || '(' || word_spell_ || ')', '')
+  group_concat(word_ || '(' || word_spell_ || ')', '')
 from
   pinyin_phrase
 group by
