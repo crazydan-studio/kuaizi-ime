@@ -923,3 +923,9 @@ ORDER BY
     }
   );
 }
+
+/** 保存表情符号 */
+export async function saveEmotions(db, emotionMetas) {
+  // TODO 对其关键字采取按字匹配策略，
+  // 仅关键字与查询字相同时才视为匹配上，可做单字或多字匹配
+}

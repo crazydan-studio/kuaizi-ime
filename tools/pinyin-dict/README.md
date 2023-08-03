@@ -14,8 +14,16 @@ npm run generate:raw
 >   仅当该文件不存在时，才重新从汉典网抓取全量字信息，
 >   否则，仅更新 `data/pinyin-dict.valid.txt` 的数据；
 
-- 根据 `data/pinyin-dict.valid.txt` 将字、词和拼音数据写入
-  SQLite 数据库 `data/pinyin-dict.all.sqlite`：
+- 从 [EmojiXD](https://emojixd.com/) 抓取表情符号，
+  并将 json 数据存放在 `data/emotions.json` 中：
+
+```bash
+npm run generate:emotion
+```
+
+- 根据 `data/pinyin-dict.valid.txt` 和 `data/emotions.json`
+  将字、词拼音、表情符号等数据写入 SQLite 数据库
+  `data/pinyin-dict.all.sqlite`：
 
 ```bash
 npm run generate:sqlite
