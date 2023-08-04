@@ -5,7 +5,8 @@ import {
   extracePinyinChars,
   extraceZhuyinChars,
   correctPinyin,
-  correctZhuyin
+  correctZhuyin,
+  calculateStrokeSimilarity
 } from '../../utils/utils.mjs';
 import { fetchWordMetas } from '../../utils/zdic.mjs';
 
@@ -160,7 +161,106 @@ export function saveWordMetasToFile(file, wordMetas) {
 
 /** 根据字形计算字的权重 */
 export function calculateWordWeightByGlyph(wordMetas) {
-  // TODO 先按结构分类，再在结构内根据笔画顺序和相似性排序，最后结构权重加上字序权重即为字的权重
+  // 按部首分组再按相似性排序
+  const radicalGroups = wordMetas.reduce((map, meta) => {
+    (map[meta.radical] ||= []).push(meta);
+
+    return map;
+  }, {});
+
+  Object.keys(radicalGroups)
+    .sort((r1, r2) => {
+      const r1_count = radicalGroups[r1][0].radical_stroke_count;
+      const r2_count = radicalGroups[r2][0].radical_stroke_count;
+
+      return r1_count - r2_count;
+    })
+    // 越复杂的部首，其权重越低
+    .reverse()
+    .forEach((radical, radicalIndex) => {
+      let metas = radicalGroups[radical];
+
+      metas = sortWordMetasBySimilarity(metas);
+      console.log(
+        `- 部首 ${radical} 按相似性排序结果：` +
+          metas.map((meta) => meta.value).join(',')
+      );
+
+      // Note: 按部首统计的字数最大为 1000+，故权重基数 x2500
+      const baseWeight = (radicalIndex + 1) * 2500;
+      for (let i = 0; i < metas.length; i++) {
+        const meta = metas[i];
+
+        meta.weight = baseWeight - i;
+      }
+    });
+}
+
+function sortWordMetasBySimilarity(wordMetas) {
+  const total = wordMetas.length;
+  if (total <= 1) {
+    return wordMetas;
+  }
+
+  // 按笔画数由低到高排序
+  wordMetas.sort((a, b) => a.total_stroke_count - b.total_stroke_count);
+  console.log('- 按笔画数排序结果：' + wordMetas.map((m) => m.value).join(','));
+
+  const similarities = {};
+  const getSimilarity = (w1, w2) => {
+    let similarity = similarities[`${w1.value}:${w2.value}`];
+    if (typeof similarity === 'undefined') {
+      similarity = similarities[`${w2.value}:${w1.value}`];
+    }
+
+    if (typeof similarity === 'undefined') {
+      similarity = calculateStrokeSimilarity(w1.stroke_order, w2.stroke_order);
+      similarities[`${w1.value}:${w2.value}`] = similarity;
+    }
+
+    return similarity;
+  };
+
+  // 按相似性排序
+  // console.log('- 按字间相似度排序 ...');
+  const results = wordMetas;
+  for (let i = 0; i < total; i++) {
+    const source_i = results[i];
+
+    // console.log(`  - 排序第 ${i + 1} 个字 ...`);
+    for (let j = i + 1; j < total; j++) {
+      let target_j = results[j];
+      // TODO 最后一个需要再排序？？
+      let similarity_j = getSimilarity(source_i, target_j);
+
+      for (let k = j + 1; k < total; k++) {
+        const target_k = results[k];
+        const similarity_k = getSimilarity(source_i, target_k);
+
+        // 高相似度的往前靠
+        if (similarity_j < similarity_k) {
+          results[j] = target_k;
+          results[k] = target_j;
+
+          target_j = target_k;
+          similarity_j = similarity_k;
+        }
+        // 相似度一致的放在一起
+        else if (similarity_j === similarity_k && j + 1 < total) {
+          j += 1;
+
+          target_j = results[j];
+          results[j] = target_k;
+          results[k] = target_j;
+
+          target_j = target_k;
+          similarity_j = similarity_k;
+        }
+      }
+    }
+  }
+
+  return results;
 }
 
 /** 纠正字信息 */
@@ -202,10 +302,133 @@ function correctWordMeta(wordMeta) {
 
   switch (wordMeta.value) {
     case '贋':
+    case '尨':
+    case '戍':
+    case '成':
+    case '龙':
+    case '戌':
+    case '烕':
+    case '辰':
       wordMeta.glyph_struct = '左上包围结构';
       break;
+    case '匚':
+    case '匸':
+    case '巨':
+    case '臣':
+      wordMeta.glyph_struct = '左包围结构';
+      break;
+    case '用':
+    case '甩':
+    case '冂':
+    case '円':
+    case '几':
+    case '凡':
+      wordMeta.glyph_struct = '上包围结构';
+      break;
+    case '龵':
+      wordMeta.stroke_order = '3113';
+      break;
+    case '龷':
+      wordMeta.stroke_order = '1221';
+      break;
+    case '龹':
+      wordMeta.stroke_order = '431134';
+      break;
+    case '龻':
+      wordMeta.stroke_order = '4111251554444554444';
+      break;
+    case '﨩':
+      wordMeta.stroke_order = '523251115252';
+      break;
+    case '卝':
+      wordMeta.radical = '卝';
+      wordMeta.radical_stroke_count = 4;
+      break;
+    case '彛':
+    case '彞':
+      wordMeta.radical = '廾';
+      wordMeta.radical_stroke_count = 3;
+      break;
+    case '瑴':
+      wordMeta.radical = '殳';
+      wordMeta.radical_stroke_count = 4;
+      break;
+    case '羋':
+      wordMeta.radical = '干';
+      wordMeta.radical_stroke_count = 3;
+      break;
+    case '羐':
+      wordMeta.radical = '艹';
+      wordMeta.radical_stroke_count = 3;
+      break;
+    case '龜':
+    case '龞':
+      wordMeta.radical = '龟';
+      wordMeta.radical_stroke_count = 21;
+      break;
     case '〇':
+      // 取 囗 的笔顺
+      wordMeta.stroke_order = '251';
+      wordMeta.total_stroke_count = 3;
+      wordMeta.radical_stroke_count = 3;
+    case '囗':
+    case '曰':
+    case '田':
+      wordMeta.glyph_struct = '全包围结构';
+      break;
+    case '弐':
+    case '彧':
+    case '丸':
+    case '为':
+    case '习':
+    case '刁':
+    case '刀':
+    case '刃':
+    case '刄':
+    case '勹':
+    case '勺':
+    case '匁':
+    case '匆':
+      wordMeta.glyph_struct = '右上包围结构';
+      break;
+    case '彐':
+      wordMeta.glyph_struct = '右包围结构';
+      break;
+    case '圡':
+    case '玊':
       wordMeta.glyph_struct = '独体结构';
+      break;
+    case '娈':
+    case '蒧':
+    case '斎':
+    case '齋':
+    case '齌':
+    case '齎':
+    case '齏':
+    case '䂖':
+    case '羗':
+    case '矛':
+    case '耉':
+    case '穴':
+    case '欠':
+    case '业':
+    case '亟':
+    case '止':
+    case '畢':
+    case '革':
+    case '韭':
+      wordMeta.glyph_struct = '上下结构';
+      break;
+    case '䙪':
+    case '豆':
+    case '亚':
+    case '亘':
+      wordMeta.glyph_struct = '上中下结构';
+    case '承':
+      wordMeta.glyph_struct = '左中右结构';
+      break;
+    case '竹':
+      wordMeta.glyph_struct = '左右结构';
       break;
     case '㣫': // ㄓㄨㄥˇㄉㄨㄥˋ
       wordMeta.zhuyins = [
@@ -231,6 +454,10 @@ function correctWordMeta(wordMeta) {
         }
       ];
       break;
+  }
+
+  if (wordMeta.stroke_order) {
+    wordMeta.total_stroke_count = wordMeta.stroke_order.length;
   }
 
   wordMeta.pinyins = wordMeta.pinyins.filter(

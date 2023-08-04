@@ -91,6 +91,20 @@ order by
   amount desc;
 ```
 
+### 查询各个部首包含的字数
+
+```sql
+select
+  radical_,
+  count(distinct value_) as amount
+from
+  meta_word
+group by
+  radical_
+order by
+  amount desc;
+```
+
 ### 查询某字（拼音）完整信息
 
 > 若要查询注音字，则将表 `pinyin_word` 更改为 `zhuyin_word` 即可。

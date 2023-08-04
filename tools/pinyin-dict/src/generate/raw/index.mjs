@@ -110,31 +110,31 @@ console.log(
       .map((meta) => meta.value)
       .join(', ')
 );
-console.log(
-  '- 有字形字列表：' + wordMetasWithGlyph.map((meta) => meta.value).join(', ')
-);
+// console.log(
+//   '- 有字形字列表：' + wordMetasWithGlyph.map((meta) => meta.value).join(', ')
+// );
 
-console.log(
-  '- 无字形有拼音字列表：' +
-    wordMetasWithoutGlyph
-      .filter((w) => w.pinyins.length !== 0)
-      .map((meta) => `${meta.value}(${meta.unicode})`)
-      .join(', ')
-);
-console.log(
-  '- 无字形有笔顺字列表：' +
-    wordMetasWithoutGlyph
-      .filter((w) => w.stroke_order)
-      .map((meta) => `${meta.value}(${meta.unicode})`)
-      .join(', ')
-);
-console.log(
-  '- 无字形有拼音有笔顺字列表：' +
-    wordMetasWithoutGlyph
-      .filter((w) => w.pinyins.length !== 0 && w.stroke_order)
-      .map((meta) => `${meta.value}(${meta.unicode})`)
-      .join(', ')
-);
+// console.log(
+//   '- 无字形有拼音字列表：' +
+//     wordMetasWithoutGlyph
+//       .filter((w) => w.pinyins.length !== 0)
+//       .map((meta) => `${meta.value}(${meta.unicode})`)
+//       .join(', ')
+// );
+// console.log(
+//   '- 无字形有笔顺字列表：' +
+//     wordMetasWithoutGlyph
+//       .filter((w) => w.stroke_order)
+//       .map((meta) => `${meta.value}(${meta.unicode})`)
+//       .join(', ')
+// );
+// console.log(
+//   '- 无字形有拼音有笔顺字列表：' +
+//     wordMetasWithoutGlyph
+//       .filter((w) => w.pinyins.length !== 0 && w.stroke_order)
+//       .map((meta) => `${meta.value}(${meta.unicode})`)
+//       .join(', ')
+// );
 // console.log(
 //   '- 无字形字列表：' +
 //     wordMetasWithoutGlyph.map((meta) => meta.value).join(', ')
@@ -142,9 +142,12 @@ console.log(
 console.log();
 
 console.log();
-console.log('保存有字形的字数据 ...');
+console.log('按字形计算字的权重 ...');
 calculateWordWeightByGlyph(wordMetasWithGlyph);
+console.log();
 
+console.log();
+console.log('保存有字形的字数据 ...');
 saveWordMetasToFile(dictDataValidFile, wordMetasWithGlyph);
 console.log('有字形的字数据已保存至：' + dictDataValidFile);
 console.log();
