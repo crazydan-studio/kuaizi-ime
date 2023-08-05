@@ -4,7 +4,11 @@ import {
   readTraditionalWordsFromOpenCC,
   patchAndSaveZDicWordsToFile,
   saveWordMetasToFile,
-  calculateWordWeightByGlyph
+  calculateWordWeightByGlyph,
+  plusWordUsageWeight,
+  plusPhraseUsageWeight,
+  readWordUsage,
+  readPhraseUsage
 } from './raw.mjs';
 
 // 采用 汉典网(http://zdic.net/) 的数据
@@ -16,6 +20,9 @@ const tradToSimpleDataFile = fromRootPath(
   '../..',
   'data/OpenCC/data/dictionary/TSCharacters.txt'
 );
+// 字/词的使用权重
+const wordUsageDataFile = fromRootPath('../..', 'data/hanzi-weight.txt');
+const phraseUsageDataFile = fromRootPath('../..', 'data/hanzi-weight.ciyu.txt');
 
 // 包含完整拼音和字信息的文本文件
 const dictDataRawFile = fromRootPath('data', 'pinyin-dict.raw.txt');
@@ -144,6 +151,14 @@ console.log();
 console.log();
 console.log('按字形计算字的权重 ...');
 calculateWordWeightByGlyph(wordMetasWithGlyph);
+console.log();
+
+console.log();
+console.log('为字/词增加使用权重 ...');
+const wordUsages = await readWordUsage(wordUsageDataFile);
+const phraseUsages = await readPhraseUsage(phraseUsageDataFile);
+plusWordUsageWeight(wordMetasWithGlyph, wordUsages);
+plusPhraseUsageWeight(wordMetasWithGlyph, phraseUsages);
 console.log();
 
 console.log();

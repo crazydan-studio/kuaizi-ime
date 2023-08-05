@@ -6,7 +6,8 @@ import {
   extraceZhuyinChars,
   correctPinyin,
   correctZhuyin,
-  calculateStrokeSimilarity
+  calculateStrokeSimilarity,
+  splitChars
 } from '../../utils/utils.mjs';
 import { fetchWordMetas } from '../../utils/zdic.mjs';
 
@@ -45,6 +46,53 @@ export async function readTraditionalWordsFromOpenCC(file) {
 
     const word = line.replaceAll(/^([^\s]+).+/g, '$1');
     data[word] = true;
+  });
+
+  return data;
+}
+
+/** 读取字的使用信息 */
+export async function readWordUsage(file) {
+  const data = {};
+
+  await readLineFromFile(file, (line) => {
+    line = line.trim();
+    if (line.startsWith('#')) {
+      return;
+    }
+
+    const splits = line.split(/\s*,\s*/g);
+    const value = splits[0];
+
+    let weight = Math.round(parseFloat(splits[1]) * 10000);
+    weight = weight < 1 ? 1 : weight > 40000 ? weight - 30000 : weight;
+
+    data[value] = (data[value] || 0) + weight;
+  });
+
+  return data;
+}
+
+/** 读取词的使用信息 */
+export async function readPhraseUsage(file) {
+  const data = {};
+
+  await readLineFromFile(file, (line) => {
+    line = line.trim();
+    if (line.startsWith('#')) {
+      return;
+    }
+
+    const splits = line.split(/\s*,\s*/g);
+    const value = splits[0];
+    if (splitChars(value).length < 2) {
+      return;
+    }
+
+    let weight = Math.round(parseFloat(splits[1]) * 10000);
+    weight = weight < 1 ? 1 : weight;
+
+    data[value] = (data[value] || 0) + weight;
   });
 
   return data;
@@ -159,9 +207,40 @@ export function saveWordMetasToFile(file, wordMetas) {
   }
 }
 
+/** 增加字使用权重 */
+export function plusWordUsageWeight(wordMetas, usages) {
+  wordMetas.forEach((meta) => {
+    let weight = usages[meta.value] || 0;
+    if (weight <= 0) {
+      return;
+    }
+
+    // 以拼音内最大字数为基数，在使用权重上加上该基数，
+    // 以确保处于最后位置的常用字能够靠前排列
+    weight += 1000;
+    meta.pinyins.forEach((pinyin) => {
+      pinyin.weight = (pinyin.weight || 0) + weight;
+    });
+  });
+}
+
+/** 增加词使用权重 */
+export function plusPhraseUsageWeight(wordMetas, usages) {
+  wordMetas.forEach((meta) => {
+    meta.phrases.forEach((phrase) => {
+      let weight = usages[phrase.value.join('')] || 0;
+      if (weight <= 0) {
+        return;
+      }
+
+      phrase.weight = (phrase.weight || 0) + weight + 1000;
+    });
+  });
+}
+
 /** 根据字形计算字的权重 */
 export function calculateWordWeightByGlyph(wordMetas) {
-  // 按部首分组再按相似性排序
+  // 按部首分组再按相似性计算字形权重
   const radicalGroups = wordMetas.reduce((map, meta) => {
     (map[meta.radical] ||= []).push(meta);
 
@@ -178,6 +257,10 @@ export function calculateWordWeightByGlyph(wordMetas) {
     // 越复杂的部首，其权重越低
     .reverse()
     .forEach((radical, radicalIndex) => {
+      // if (radical !== '门') {
+      //   return;
+      // }
+
       let metas = radicalGroups[radical];
 
       metas = sortWordMetasBySimilarity(metas);
@@ -194,6 +277,43 @@ export function calculateWordWeightByGlyph(wordMetas) {
         meta.weight = baseWeight - i;
       }
     });
+
+  // 按拼音分组再按相似性计算拼音权重
+  const pinyinCharsGroups = wordMetas.reduce((map, meta) => {
+    meta.pinyins.forEach((pinyin) => {
+      (map[pinyin.chars] ||= []).push(meta);
+    });
+
+    return map;
+  }, {});
+
+  Object.keys(pinyinCharsGroups).forEach((chars) => {
+    // if (chars !== 'yi') {
+    //   return;
+    // }
+
+    let metas = pinyinCharsGroups[chars];
+
+    metas = sortWordMetasBySimilarity(metas);
+    console.log(
+      `- 拼音 ${chars} 按相似性排序结果：` +
+        metas.map((meta) => meta.value).join(',')
+    );
+
+    // Note: 按拼音统计的字数最大为 500+，故权重基数设置为 1000
+    // 不存在在拼音之间纵向比较的情况，无需拉开拼音间的权重距离
+    const baseWeight = 1000;
+    for (let i = 0; i < metas.length; i++) {
+      const meta = metas[i];
+      const weight = baseWeight - i;
+
+      meta.pinyins.forEach((pinyin) => {
+        if (pinyin.chars === chars) {
+          pinyin.weight = weight;
+        }
+      });
+    }
+  });
 }
 
 function sortWordMetasBySimilarity(wordMetas) {
@@ -230,26 +350,14 @@ function sortWordMetasBySimilarity(wordMetas) {
     // console.log(`  - 排序第 ${i + 1} 个字 ...`);
     for (let j = i + 1; j < total; j++) {
       let target_j = results[j];
-      // TODO 最后一个需要再排序？？
       let similarity_j = getSimilarity(source_i, target_j);
 
       for (let k = j + 1; k < total; k++) {
         const target_k = results[k];
         const similarity_k = getSimilarity(source_i, target_k);
 
-        // 高相似度的往前靠
-        if (similarity_j < similarity_k) {
-          results[j] = target_k;
-          results[k] = target_j;
-
-          target_j = target_k;
-          similarity_j = similarity_k;
-        }
-        // 相似度一致的放在一起
-        else if (similarity_j === similarity_k && j + 1 < total) {
-          j += 1;
-
-          target_j = results[j];
+        // 相似度高的往前靠
+        if (similarity_k > 0.45 && similarity_k - similarity_j > 0.15) {
           results[j] = target_k;
           results[k] = target_j;
 
@@ -343,6 +451,14 @@ function correctWordMeta(wordMeta) {
     case '卝':
       wordMeta.radical = '卝';
       wordMeta.radical_stroke_count = 4;
+      break;
+    case '㴝':
+      wordMeta.radical = '水';
+      wordMeta.radical_stroke_count = 4;
+      break;
+    case '凱':
+      wordMeta.radical = '几';
+      wordMeta.radical_stroke_count = 2;
       break;
     case '彛':
     case '彞':
@@ -459,6 +575,10 @@ function correctWordMeta(wordMeta) {
   if (wordMeta.stroke_order) {
     wordMeta.total_stroke_count = wordMeta.stroke_order.length;
   }
+
+  // 去除重复读音
+  wordMeta.pinyins = removeDuplicateSpell(wordMeta.pinyins);
+  wordMeta.zhuyins = removeDuplicateSpell(wordMeta.zhuyins);
 
   wordMeta.pinyins = wordMeta.pinyins.filter(
     (data) =>
@@ -716,4 +836,15 @@ function correctPhrasePinyin(phrase) {
       }
     }
   });
+}
+
+function removeDuplicateSpell(spells) {
+  const map = spells.reduce((map, spell) => {
+    if (!map[spell.value]) {
+      map[spell.value] = spell;
+    }
+    return map;
+  }, {});
+
+  return Object.values(map);
 }

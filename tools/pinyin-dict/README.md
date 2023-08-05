@@ -40,7 +40,9 @@ npm run generate:sqlite
 sqlite3 data/pinyin-dict.all.sqlite
 ```
 
-### 查询各类字体结构的代表字
+### 按字查询
+
+- 各类字体结构的代表字
 
 ```sql
 select
@@ -52,11 +54,12 @@ group by
   glyph_struct_;
 ```
 
-### 查询各类字体结构的字
+- 各类字体结构的前 50 个字
 
 ```sql
 select
   glyph_struct_,
+  -- substr 的截断长度需包含分隔符
   substr(group_concat(distinct value_), 0, 99)
 from
   meta_word
@@ -64,7 +67,7 @@ group by
   glyph_struct_;
 ```
 
-### 查询各类字体结构的部首分布
+- 各类字体结构的部首分布
 
 ```sql
 select
@@ -77,7 +80,7 @@ group by
   glyph_struct_;
 ```
 
-### 查询各类字体结构包含的字数
+- 各类字体结构包含的字数
 
 ```sql
 select
@@ -91,7 +94,7 @@ order by
   amount desc;
 ```
 
-### 查询各个部首包含的字数
+- 各部首包含的字数
 
 ```sql
 select
@@ -105,7 +108,61 @@ order by
   amount desc;
 ```
 
-### 查询某字（拼音）完整信息
+- 根据字形权重排序
+
+```sql
+select
+  radical_,
+  group_concat(distinct value_)
+from
+  meta_word
+group by
+  radical_
+order by
+  radical_stroke_count_ asc,
+  weight_ desc;
+```
+
+### 按拼音查询
+
+- 各拼音包含的字数
+
+> 若要查询注音字，则将表 `pinyin_word` 更改为 `zhuyin_word` 即可。
+
+```sql
+select
+  spell_chars_,
+  count(distinct value_) as amount
+from
+  pinyin_word
+group by
+  spell_chars_
+order by
+  amount desc;
+```
+
+- 根据拼音权重排序
+
+```sql
+select
+  spell_chars_,
+  group_concat(distinct value_)
+from
+  (
+    select
+      *
+    from
+      pinyin_word
+    order by
+      spell_weight_ desc
+  )
+group by
+  spell_chars_
+order by
+  spell_chars_ asc;
+```
+
+- 某字（拼音）完整信息
 
 > 若要查询注音字，则将表 `pinyin_word` 更改为 `zhuyin_word` 即可。
 
@@ -133,7 +190,9 @@ group by
   id_;
 ```
 
-### 查询词组（拼音）组成信息
+### 按词组查询
+
+- 词组（拼音）组成信息
 
 > 若要查询注音词组，则将表 `pinyin_phrase` 更改为 `zhuyin_phrase` 即可。
 
@@ -141,21 +200,44 @@ group by
 select
   id_,
   value_,
+  weight_,
+  index_,
   group_concat(word_ || '(' || word_spell_ || ')', '')
 from
   pinyin_phrase
 group by
-  id_;
+  id_,
+  index_;
 ```
 
-### 查询表情及其关键字信息
+- 按权重排序词组
+
+```sql
+select
+  id_,
+  value_,
+  weight_,
+  index_,
+  group_concat(word_ || '(' || word_spell_ || ')', '')
+from
+  pinyin_phrase
+group by
+  id_,
+  index_
+order by
+  weight_ asc;
+```
+
+### 按表情查询
+
+- 表情及其关键字信息
 
 ```sql
 select
   id_,
   value_,
   keyword_index_,
-  group_concat (keyword_word_, '')
+  group_concat(keyword_word_, '')
 from
   emotion
 group by

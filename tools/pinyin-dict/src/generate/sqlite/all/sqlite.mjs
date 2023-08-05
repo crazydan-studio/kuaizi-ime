@@ -241,7 +241,9 @@ CREATE VIEW
         id_,
         value_,
         unicode_,
+        weight_,
         spell_,
+        spell_weight_,
         spell_chars_,
         glyph_struct_,
         radical_,
@@ -257,7 +259,9 @@ SELECT
     word_.id_,
     word_.value_,
     word_.unicode_,
+    word_.weight_,
     spell_.value_,
+    lnk_.weight_,
     spell_ch_.value_,
     word_.glyph_struct_,
     word_.radical_,
@@ -280,9 +284,7 @@ FROM
     LEFT JOIN link_word_with_traditional_word tw_lnk_ on tw_lnk_.source_id_ = word_.id_
     LEFT JOIN meta_word tw_ on tw_.id_ = tw_lnk_.target_id_
     LEFT JOIN link_word_with_variant_word vw_lnk_ on vw_lnk_.source_id_ = word_.id_
-    LEFT JOIN meta_word vw_ on vw_.id_ = vw_lnk_.target_id_
-ORDER BY
-    word_.id_ asc;
+    LEFT JOIN meta_word vw_ on vw_.id_ = vw_lnk_.target_id_;
 
 -- 字及其注音
 CREATE VIEW
@@ -290,7 +292,9 @@ CREATE VIEW
         id_,
         value_,
         unicode_,
+        weight_,
         spell_,
+        spell_weight_,
         spell_chars_,
         glyph_struct_,
         radical_,
@@ -306,7 +310,9 @@ SELECT
     word_.id_,
     word_.value_,
     word_.unicode_,
+    word_.weight_,
     spell_.value_,
+    lnk_.weight_,
     spell_ch_.value_,
     word_.glyph_struct_,
     word_.radical_,
@@ -329,9 +335,7 @@ FROM
     LEFT JOIN link_word_with_traditional_word tw_lnk_ on tw_lnk_.source_id_ = word_.id_
     LEFT JOIN meta_word tw_ on tw_.id_ = tw_lnk_.target_id_
     LEFT JOIN link_word_with_variant_word vw_lnk_ on vw_lnk_.source_id_ = word_.id_
-    LEFT JOIN meta_word vw_ on vw_.id_ = vw_lnk_.target_id_
-ORDER BY
-    word_.id_ asc;
+    LEFT JOIN meta_word vw_ on vw_.id_ = vw_lnk_.target_id_;
     `
   );
 
@@ -403,7 +407,8 @@ ORDER BY
           id_: row.id_,
           source_id_: row.source_id_,
           target_id_: row.target_id_,
-          target_chars_id_: row.target_chars_id_
+          target_chars_id_: row.target_chars_id_,
+          weight_: row.weight_
         };
       });
 
@@ -425,6 +430,7 @@ ORDER BY
           const source_id_ = source.id_;
           const target_id_ = targetMetaMap[target.value];
           const target_chars_id_ = targetCharsMap[target.chars];
+          const weight_ = target.weight || 0;
 
           if (!target_chars_id_) {
             console.log('拼音的字母组合不存在：', source.value_, target);
@@ -436,7 +442,8 @@ ORDER BY
             linkData[code] = {
               source_id_,
               target_id_,
-              target_chars_id_
+              target_chars_id_,
+              weight_
             };
           } else {
             // 关联无需更新
@@ -671,6 +678,7 @@ CREATE VIEW
         id_,
         value_,
         index_,
+        weight_,
         word_,
         word_index_,
         word_spell_,
@@ -680,6 +688,7 @@ SELECT
     phrase_.id_,
     phrase_.value_,
     phrase_.index_,
+    phrase_.weight_,
     word_.value_,
     lnk_.target_index_,
     spell_.value_,
@@ -691,8 +700,10 @@ FROM
     LEFT JOIN meta_word word_ on word_.id_ = lnk_.target_id_
     LEFT JOIN meta_pinyin spell_ on spell_.id_ = lnk_.target_spell_id_
     LEFT JOIN meta_pinyin_chars spell_ch_ on spell_ch_.id_ = lnk_.target_spell_chars_id_
+-- Note: group by 不能对组内元素排序，故，只能在视图内先排序
 ORDER BY
-    phrase_.id_ asc, lnk_.target_index_ asc;
+    phrase_.index_ asc,
+    lnk_.target_index_ asc;
 
 -- 词及其注音
 CREATE VIEW
@@ -700,6 +711,7 @@ CREATE VIEW
         id_,
         value_,
         index_,
+        weight_,
         word_,
         word_index_,
         word_spell_,
@@ -709,6 +721,7 @@ SELECT
     phrase_.id_,
     phrase_.value_,
     phrase_.index_,
+    phrase_.weight_,
     word_.value_,
     lnk_.target_index_,
     spell_.value_,
@@ -720,14 +733,17 @@ FROM
     LEFT JOIN meta_word word_ on word_.id_ = lnk_.target_id_
     LEFT JOIN meta_zhuyin spell_ on spell_.id_ = lnk_.target_spell_id_
     LEFT JOIN meta_zhuyin_chars spell_ch_ on spell_ch_.id_ = lnk_.target_spell_chars_id_
+-- Note: group by 不能对组内元素排序，故，只能在视图内先排序
 ORDER BY
-    phrase_.id_ asc, lnk_.target_index_ asc;
+    phrase_.index_ asc,
+    lnk_.target_index_ asc;
     `
   );
 
   const phraseMetaMap = wordMetas.reduce((map, meta) => {
     meta.phrases.forEach((phrase) => {
       const value = phrase.value.join('');
+      const weight = phrase.weight || 0;
 
       phrase.pinyins.forEach((pinyin, index) => {
         if (phrase.value.length !== pinyin.value.length) {
@@ -744,7 +760,8 @@ ORDER BY
               zhuyin.value.length !== phrase.value.length ? [] : zhuyin.value
           },
           value_: value,
-          index_: index
+          index_: index,
+          weight_: weight
         };
       });
     });
@@ -981,8 +998,8 @@ FROM
     --
     LEFT JOIN link_emotion_with_keyword lnk_ on lnk_.source_id_ = emo_.id_
     LEFT JOIN meta_word word_ on word_.id_ = lnk_.target_word_id_
+-- Note: group by 不能对组内元素排序，故，只能在视图内先排序
 ORDER BY
-    emo_.id_ asc,
     lnk_.target_index_ asc,
     lnk_.target_word_index_ asc;
     `
