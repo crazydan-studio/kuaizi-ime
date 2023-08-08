@@ -190,6 +190,27 @@ group by
   id_;
 ```
 
+- 拼音的字母组成
+
+```sql
+select
+  substr (value_, 1, 1) as start_,
+  group_concat (distinct value_)
+from
+  (
+    select
+      *
+    from
+      meta_pinyin_chars
+    order by
+      value_ asc
+  )
+group by
+  start_
+order by
+  start_ asc;
+```
+
 ### 按词组查询
 
 - 词组（拼音）组成信息
