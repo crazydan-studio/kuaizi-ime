@@ -13,7 +13,6 @@ ben
 beng
 bi
 bian
-biang
 biao
 bie
 bin
@@ -89,6 +88,7 @@ fang
 fei
 fen
 feng
+fiao
 fo
 fou
 fu
@@ -120,6 +120,7 @@ he
 hei
 hen
 heng
+hng
 hong
 hou
 hu
@@ -269,7 +270,6 @@ qu
 quan
 que
 qun
-r
 ran
 rang
 rao
@@ -326,7 +326,6 @@ tan
 tang
 tao
 te
-tei
 teng
 ti
 tian

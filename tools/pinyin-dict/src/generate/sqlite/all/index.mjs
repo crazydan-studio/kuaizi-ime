@@ -6,6 +6,12 @@ const dictDataValidFile = fromRootPath('data', 'pinyin-dict.valid.txt');
 const emotionDataFile = fromRootPath('data', 'emotions.json');
 // 包含完整拼音和字信息的 SQLite 数据库
 const dictDataSQLiteFile = fromRootPath('data', 'pinyin-dict.all.sqlite');
+// 分析数据
+const pinyinCharsFile = fromRootPath('../..', 'analyze/files/pinyin.txt');
+const pinyinCharLinksFile = fromRootPath(
+  '../..',
+  'analyze/files/char-links.json'
+);
 
 console.log();
 console.log('读取已收集的有效字信息 ...');
@@ -68,6 +74,22 @@ db = await sqlite.open(dictDataSQLiteFile);
 try {
   await sqlite.saveEmotions(db, emotionMetas);
   console.log('- 已保存表情符号数据');
+} catch (e) {
+  console.error(e);
+} finally {
+  await sqlite.close(db);
+}
+console.log();
+
+console.log();
+console.log('通过 SQLite 生成分析数据 ...');
+db = await sqlite.open(dictDataSQLiteFile);
+try {
+  await sqlite.generatePinyinChars(db, pinyinCharsFile);
+  console.log('- 已保存拼音字母组合数据');
+
+  await sqlite.generatePinyinCharLinks(db, pinyinCharLinksFile);
+  console.log('- 已保存拼音字母关联数据');
 } catch (e) {
   console.error(e);
 } finally {

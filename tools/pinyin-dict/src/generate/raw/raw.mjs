@@ -585,7 +585,9 @@ function correctWordMeta(wordMeta) {
       // https://www.zdic.net/hans/%E5%9A%B8
       data.value !== 'dím' &&
       // https://www.zdic.net/hans/%E4%BB%92
-      data.value !== 'eo'
+      data.value !== 'eo' &&
+      // https://www.zdic.net/hans/%E7%BD%96
+      data.value !== 'ra'
   );
   addMissingPinyin(wordMeta);
 
@@ -645,6 +647,8 @@ function shouldBeExcluded(wordMeta) {
     case '𧟰': // fiào
     // 外文汉字
     case '怾': // gi
+    case '兺': // būn
+    case '乲': // cal
     case '乥': // hol
     case '厼': // keum
     case '哛': // ppun

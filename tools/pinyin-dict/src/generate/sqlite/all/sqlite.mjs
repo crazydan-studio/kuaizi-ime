@@ -1,4 +1,4 @@
-import { splitChars } from '../../../utils/utils.mjs';
+import { splitChars, appendLineToFile } from '../../../utils/utils.mjs';
 import {
   saveToDB,
   removeFromDB,
@@ -1124,4 +1124,46 @@ ORDER BY
       await removeFromDB(db, table, missingLinks);
     }
   );
+}
+
+/** 生成拼音字母组合数据 */
+export async function generatePinyinChars(db, file) {
+  const values = [];
+  (
+    await db.all('SELECT value_ FROM meta_pinyin_chars ORDER BY value_')
+  ).forEach((row) => {
+    const value = row.value_;
+    values.push(value);
+  });
+
+  appendLineToFile(file, values.join('\n'), true);
+}
+
+/** 生成拼音字母关联数据 */
+export async function generatePinyinCharLinks(db, file) {
+  const links = {};
+  (
+    await db.all('SELECT value_ FROM meta_pinyin_chars ORDER BY value_')
+  ).forEach((row) => {
+    const value = row.value_;
+    const chars = splitChars(value);
+
+    if (chars.length > 1) {
+      for (let i = 1; i < chars.length; i++) {
+        const source = chars[i - 1];
+        const target = chars[i];
+
+        (links[source] ||= {})[target] = true;
+      }
+    }
+  });
+
+  const results = [];
+  Object.keys(links).forEach((source) => {
+    Object.keys(links[source]).forEach((target) => {
+      results.push({ source, target });
+    });
+  });
+
+  appendLineToFile(file, JSON.stringify(results), true);
 }
