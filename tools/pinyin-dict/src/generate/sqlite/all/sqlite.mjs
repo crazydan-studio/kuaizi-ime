@@ -1206,7 +1206,7 @@ export async function generatePinyinNextCharLinks(db, file) {
       return { name: top, pinyin: true, level };
     }
 
-    if (level > 1) {
+    if (level > 1 || (level === 1 && !parent.__is_pinyin__)) {
       const result = subs
         .reduce((r, sub) => {
           const child = traverse(parent, sub, level + 1);
