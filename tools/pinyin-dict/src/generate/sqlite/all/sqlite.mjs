@@ -1167,3 +1167,94 @@ export async function generatePinyinCharLinks(db, file) {
 
   appendLineToFile(file, JSON.stringify(results), true);
 }
+
+/** 生成拼音字母后继关联数据 */
+export async function generatePinyinNextCharLinks(db, file) {
+  const links = {};
+  (
+    await db.all('SELECT value_ FROM meta_pinyin_chars ORDER BY value_')
+  ).forEach((row) => {
+    const value = row.value_;
+    const chars = splitChars(value);
+
+    if (chars.length > 1) {
+      let parent = links;
+      let child;
+
+      for (let i = 1; i < chars.length; i++) {
+        const source = chars[i - 1];
+        const target = chars[i];
+
+        parent = parent[source] ||= {};
+        child = parent[target] ||= {};
+      }
+
+      child.__is_pinyin__ = true;
+    } else {
+      const source = chars[0];
+      links[source] = { __is_pinyin__: true };
+    }
+  });
+
+  const getKeys = (obj) =>
+    Object.keys(obj).filter((k) => !k.startsWith('__') && !k.endsWith('__'));
+  const traverse = (links, top, level) => {
+    const parent = links[top];
+
+    const subs = getKeys(parent).sort();
+    if (subs.length === 0) {
+      return { name: top, pinyin: true, level };
+    }
+
+    if (level > 1) {
+      const result = subs
+        .reduce((r, sub) => {
+          const child = traverse(parent, sub, level + 1);
+          if (Array.isArray(child)) {
+            r.push(...child.map((c) => top + c.name));
+          } else if (typeof child === 'string') {
+            r.push(top + child);
+          } else {
+            r.push(top + child.name);
+          }
+
+          return r;
+        }, [])
+        .concat(parent.__is_pinyin__ ? [top] : [])
+        .sort()
+        .map((sub) => ({ name: sub, pinyin: true, level }));
+
+      return result;
+    }
+
+    const children = [];
+    subs.forEach((sub) => {
+      let child;
+
+      if (['c', 's', 'z'].includes(top) && sub === 'h') {
+        child = traverse(parent, sub, 0);
+      } else {
+        child = traverse(parent, sub, level + 1);
+      }
+
+      if (Array.isArray(child)) {
+        children.push(...child);
+      } else {
+        children.push(child);
+      }
+    });
+
+    if (parent.__is_pinyin__) {
+      return { name: top, pinyin: true, level, children };
+    }
+    return { name: top, level, children };
+  };
+
+  const results = [];
+  getKeys(links).forEach((source) => {
+    const child = traverse(links, source, 0);
+    results.push(child);
+  });
+
+  appendLineToFile(file, JSON.stringify({ name: '', children: results }), true);
+}

@@ -1,7 +1,7 @@
 // https://observablehq.com/@d3/force-directed-tree@183
 function _1(md) {
   return md`
-## 汉语拼音字母组合树（后继图）
+## 汉语拼音字母组合树
 
 - 韵母字母（6 个）: a i e u ü o
 - 声母字母（20 个）: n g; z c s h; r x y w; b p m f d t l k j q

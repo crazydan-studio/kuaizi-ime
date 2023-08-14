@@ -12,6 +12,10 @@ const pinyinCharLinksFile = fromRootPath(
   '../..',
   'analyze/files/char-links.json'
 );
+const pinyinNextCharLinksFile = fromRootPath(
+  '../..',
+  'analyze/files/next-char-links.json'
+);
 
 console.log();
 console.log('读取已收集的有效字信息 ...');
@@ -31,21 +35,21 @@ console.log();
 
 console.log();
 console.log('写入字信息到 SQLite ...');
-let db = await sqlite.open(dictDataSQLiteFile);
+let db1 = await sqlite.open(dictDataSQLiteFile);
 
 try {
-  await sqlite.saveSpells(db, wordMetas);
+  await sqlite.saveSpells(db1, wordMetas);
   console.log('- 已保存字读音信息');
 
-  await sqlite.saveWords(db, wordMetas);
+  await sqlite.saveWords(db1, wordMetas);
   console.log('- 已保存字信息');
 
-  await sqlite.savePhrases(db, wordMetas);
+  await sqlite.savePhrases(db1, wordMetas);
   console.log('- 已保存词组信息');
 } catch (e) {
   console.error(e);
 } finally {
-  await sqlite.close(db);
+  await sqlite.close(db1);
 }
 
 console.log();
@@ -70,29 +74,32 @@ console.log();
 
 console.log();
 console.log('写入表情符号到 SQLite ...');
-db = await sqlite.open(dictDataSQLiteFile);
+let db2 = await sqlite.open(dictDataSQLiteFile);
 try {
-  await sqlite.saveEmotions(db, emotionMetas);
+  await sqlite.saveEmotions(db2, emotionMetas);
   console.log('- 已保存表情符号数据');
 } catch (e) {
   console.error(e);
 } finally {
-  await sqlite.close(db);
+  await sqlite.close(db2);
 }
 console.log();
 
 console.log();
 console.log('通过 SQLite 生成分析数据 ...');
-db = await sqlite.open(dictDataSQLiteFile);
+let db3 = await sqlite.open(dictDataSQLiteFile);
 try {
-  await sqlite.generatePinyinChars(db, pinyinCharsFile);
+  await sqlite.generatePinyinChars(db3, pinyinCharsFile);
   console.log('- 已保存拼音字母组合数据');
 
-  await sqlite.generatePinyinCharLinks(db, pinyinCharLinksFile);
+  await sqlite.generatePinyinCharLinks(db3, pinyinCharLinksFile);
   console.log('- 已保存拼音字母关联数据');
+
+  await sqlite.generatePinyinNextCharLinks(db3, pinyinNextCharLinksFile);
+  console.log('- 已保存拼音字母后继数据');
 } catch (e) {
   console.error(e);
 } finally {
-  await sqlite.close(db);
+  await sqlite.close(db3);
 }
 console.log();
