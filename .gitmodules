@@ -1,0 +1,3 @@
+[submodule "android"]
+	path = android
+	url = git@github.com:crazydan-studio/kuaizi-ime-android.git
