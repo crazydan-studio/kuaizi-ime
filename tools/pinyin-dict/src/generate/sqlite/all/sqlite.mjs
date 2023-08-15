@@ -1198,15 +1198,17 @@ export async function generatePinyinNextCharLinks(db, file) {
 
   const getKeys = (obj) =>
     Object.keys(obj).filter((k) => !k.startsWith('__') && !k.endsWith('__'));
-  const traverse = (links, top, level) => {
+  const traverse = (links, top, level, prefix) => {
     const parent = links[top];
+
+    prefix ||= '';
 
     const subs = getKeys(parent).sort();
     if (subs.length === 0) {
-      return { name: top, pinyin: true, level };
+      return { name: prefix + top, pinyin: true, level };
     }
 
-    if (level > 1 || (level === 1 && !parent.__is_pinyin__)) {
+    if (level > 1) {
       const result = subs
         .reduce((r, sub) => {
           const child = traverse(parent, sub, level + 1);
@@ -1222,7 +1224,7 @@ export async function generatePinyinNextCharLinks(db, file) {
         }, [])
         .concat(parent.__is_pinyin__ ? [top] : [])
         .sort()
-        .map((sub) => ({ name: sub, pinyin: true, level }));
+        .map((sub) => ({ name: prefix + sub, pinyin: true, level }));
 
       return result;
     }
@@ -1234,7 +1236,7 @@ export async function generatePinyinNextCharLinks(db, file) {
       if (['c', 's', 'z'].includes(top) && sub === 'h') {
         child = traverse(parent, sub, 0);
       } else {
-        child = traverse(parent, sub, level + 1);
+        child = traverse(parent, sub, level + 1, level > 0 ? top : '');
       }
 
       if (Array.isArray(child)) {

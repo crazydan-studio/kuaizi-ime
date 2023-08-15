@@ -164,46 +164,46 @@ body {
 .key[name="数字"] .hex-inner,
 .key[name="标点"] .hex-inner {}
 
-.key[name="ü"] .hex-inner,
-.key[name="i"] .hex-inner,
 .key[name="a"] .hex-inner,
 .key[name="e"] .hex-inner,
-.key[name="o"] .hex-inner,
-.key[name="u"] .hex-inner {
+.key[name="o"] .hex-inner {
   background-color: rgb(157, 23, 77);
 }
 
+.key[name="j"] .hex-inner,
+.key[name="f"] .hex-inner,
 .key[name="l"] .hex-inner,
 .key[name="m"] .hex-inner,
 .key[name="n"] .hex-inner {
   background-color: rgb(91, 33, 182);
 }
 
-.key[name="w"] .hex-inner {
-  background-color: rgb(21, 94, 117);
-}
-
-.key[name="h"] .hex-inner,
-.key[name="q"] .hex-inner,
-.key[name="p"] .hex-inner,
-.key[name="g"] .hex-inner,
 .key[name="c"] .hex-inner,
 .key[name="b"] .hex-inner,
 .key[name="d"] .hex-inner {
+  background-color: rgb(21, 94, 117);
+}
+
+.key[name="zh/ü"] .hex-inner,
+.key[name="ch/i"] .hex-inner,
+.key[name="sh/u"] .hex-inner {
   background-color: rgb(154, 52, 18);
 }
 
-.key[name="y"] .hex-inner,
-.key[name="z"] .hex-inner,
-.key[name="x"] .hex-inner,
+.key[name="p"] .hex-inner,
+.key[name="q"] .hex-inner,
 .key[name="r"] .hex-inner,
 .key[name="s"] .hex-inner,
-.key[name="t"] .hex-inner {
+.key[name="t"] .hex-inner,
+.key[name="w"] .hex-inner,
+.key[name="x"] .hex-inner,
+.key[name="y"] .hex-inner,
+.key[name="z"] .hex-inner {
   background-color: rgb(134, 25, 143);
 }
 
-.key[name="j"] .hex-inner,
-.key[name="f"] .hex-inner,
+.key[name="h"] .hex-inner,
+.key[name="g"] .hex-inner,
 .key[name="k"] .hex-inner {
   background-color: rgb(55, 48, 163);
 }
