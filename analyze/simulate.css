@@ -174,9 +174,9 @@ body {
 }
 
 .key[name="f"] .hex-inner,
-.key[name="w"] .hex-inner,
-.key[name="l"] .hex-inner,
 .key[name="m"] .hex-inner,
+.key[name="l"] .hex-inner,
+.key[name="g"] .hex-inner,
 .key[name="n"] .hex-inner {
   background-color: rgb(91, 33, 182);
 }
@@ -198,7 +198,7 @@ body {
 .key[name="r"] .hex-inner,
 .key[name="s"] .hex-inner,
 .key[name="t"] .hex-inner,
-.key[name="k"] .hex-inner,
+.key[name="w"] .hex-inner,
 .key[name="x"] .hex-inner,
 .key[name="y"] .hex-inner,
 .key[name="z"] .hex-inner {
@@ -207,7 +207,7 @@ body {
 
 .key[name="h"] .hex-inner,
 .key[name="j"] .hex-inner,
-.key[name="g"] .hex-inner {
+.key[name="k"] .hex-inner {
   background-color: rgb(55, 48, 163);
 }
 
