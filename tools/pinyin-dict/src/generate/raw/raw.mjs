@@ -2,8 +2,8 @@ import {
   sleep,
   readLineFromFile,
   appendLineToFile,
-  extracePinyinChars,
-  extraceZhuyinChars,
+  extractPinyinChars,
+  extractZhuyinChars,
   correctPinyin,
   correctZhuyin,
   calculateStrokeSimilarity,
@@ -600,11 +600,11 @@ function correctWordMeta(wordMeta) {
 
     data.value = correctPinyin(data.value);
     data.audio_url && (data.audio_url = correctPinyin(data.audio_url));
-    data.chars = extracePinyinChars(data.value);
+    data.chars = extractPinyinChars(data.value);
   });
   wordMeta.zhuyins.forEach((data) => {
     data.value = correctZhuyin(data.value);
-    data.chars = extraceZhuyinChars(data.value);
+    data.chars = extractZhuyinChars(data.value);
 
     if (data.chars === 'ㄏπ') {
       console.log(wordMeta.value, data);

@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import * as crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import * as events from 'events';
 import * as readline from 'readline';
@@ -21,6 +22,15 @@ export function fromRootPath(...paths) {
 
 export function sleep(ms) {
   return new Promise((resolve) => setTimeout(() => resolve(), ms));
+}
+
+export function fileSHA256(filepath) {
+  // https://gist.github.com/GuillermoPena/9233069#gistcomment-3149231-permalink
+  const file = fs.readFileSync(filepath);
+  const hash = crypto.createHash('sha256');
+  hash.update(file);
+
+  return hash.digest('hex');
 }
 
 export async function readLineFromFile(filepath, consumer) {
@@ -122,11 +132,11 @@ export function correctPinyin(str) {
 
 /** 修正注音 */
 export function correctZhuyin(str) {
-  return str.replaceAll('π', 'ㄫ');
+  return str.replaceAll('π', 'ㄫ').replaceAll('˙', '');
 }
 
 /** 拼音去掉声调后的字母组合 */
-export function extracePinyinChars(pinyin) {
+export function extractPinyinChars(pinyin) {
   if ('m̀' === pinyin || 'ḿ' === pinyin || 'm̄' === pinyin) {
     return 'm';
   } else if (
@@ -139,8 +149,10 @@ export function extracePinyinChars(pinyin) {
   }
 
   const chars = [];
-  for (let i = 0; i < pinyin.length; i++) {
-    const ch = pinyin.charAt(i);
+
+  const splits = splitChars(pinyin);
+  for (let i = 0; i < splits.length; i++) {
+    const ch = splits[i];
     switch (ch) {
       case 'ā':
       case 'á':
@@ -193,7 +205,7 @@ export function extracePinyinChars(pinyin) {
 }
 
 /** 注音去掉声调后的字符组合 */
-export function extraceZhuyinChars(zhuyin) {
+export function extractZhuyinChars(zhuyin) {
   return zhuyin.replaceAll(/[ˊˇˋˉ˙]/g, '');
 }
 

@@ -19,7 +19,7 @@ CREATE TABLE
         value_ TEXT NOT NULL,
         UNIQUE (value_)
     );
--- 含声调的拼音
+-- 含声调的拼音：可根据 id_ 大小排序
 CREATE TABLE
     IF NOT EXISTS meta_pinyin (
         id_ INTEGER NOT NULL PRIMARY KEY,

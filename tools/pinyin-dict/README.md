@@ -19,6 +19,7 @@ npm run generate:raw
 > - 完整的字数据放在 `data/pinyin-dict.raw.txt` 中，
 >   仅当该文件不存在时，才重新从汉典网抓取全量字信息，
 >   否则，仅更新 `data/pinyin-dict.valid.txt` 的数据；
+> - 涉及按字形排序等的权重计算，故而生成时间会比较长；
 
 - 从 [EmojiXD](https://emojixd.com/) 抓取表情符号，
   并将 json 数据存放在 `data/emotions.json` 中：

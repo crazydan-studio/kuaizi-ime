@@ -4,6 +4,8 @@ import sqlite3 from 'sqlite3';
 // https://www.npmjs.com/package/sqlite
 import * as sqlite from 'sqlite';
 
+import { splitChars, extractPinyinChars } from './utils.mjs';
+
 export async function openDB(file, readonly) {
   const db = await sqlite.open({
     filename: file,
@@ -28,8 +30,8 @@ PRAGMA temp_store = MEMORY;
   return db;
 }
 
-export async function closeDB(db) {
-  if (db.config.mode != sqlite3.OPEN_READONLY) {
+export async function closeDB(db, skipClean) {
+  if (db.config.mode != sqlite3.OPEN_READONLY && !skipClean) {
     // 数据库无用空间回收
     await execSQL(db, 'VACUUM');
   }
@@ -118,5 +120,61 @@ export async function asyncForEach(array, cb) {
 }
 
 function mapToArray(obj) {
-  return Object.keys(obj).map((k) => obj[k]);
+  const charSpecials = {
+    a: ['ā', 'á', 'ǎ', 'à'],
+    o: ['ō', 'ó', 'ǒ', 'ò'],
+    e: ['ē', 'é', 'ě', 'è', 'ê', 'ê̄', 'ế', 'ê̌', 'ề'],
+    i: ['ī', 'í', 'ǐ', 'ì'],
+    u: ['ū', 'ú', 'ǔ', 'ù'],
+    ü: ['ǖ', 'ǘ', 'ǚ', 'ǜ'],
+    n: ['ń', 'ň', 'ǹ'],
+    m: ['m̄', 'ḿ', 'm̀']
+  };
+  const charWeights = { ˉ: 10001, ˊ: 10002, ˇ: 10003, ˋ: 10004 };
+  for (let i = 97, j = 1; i <= 122; i++, j++) {
+    const ch = String.fromCharCode(i);
+    const weight = j * 15;
+    charWeights[ch] = weight;
+
+    const specials = charSpecials[ch];
+    if (specials) {
+      for (let k = 0; k < specials.length; k++) {
+        const special = specials[k];
+
+        charWeights[special] = weight + (k + 1);
+      }
+    }
+  }
+  const getCharCode = (ch) => {
+    let sum = 0;
+    for (let i = 0; i < ch.length; i++) {
+      sum += ch.charCodeAt(i);
+    }
+    return sum;
+  };
+
+  // Note: 主要排序带音调的拼音（注音规则暂时不清楚，故不处理），其余的按字符顺序排序
+  const keys = Object.keys(obj).sort((a, b) => {
+    const a_without_special = extractPinyinChars(a).replaceAll(/[ˊˇˋˉ]$/g, '');
+    const b_without_special = extractPinyinChars(b).replaceAll(/[ˊˇˋˉ]$/g, '');
+
+    if (a_without_special === b_without_special) {
+      const a_weight = splitChars(a)
+        .map((ch) => charWeights[ch] || getCharCode(ch))
+        .reduce((acc, w) => acc + w, 0);
+      const b_weight = splitChars(b)
+        .map((ch) => charWeights[ch] || getCharCode(ch))
+        .reduce((acc, w) => acc + w, 0);
+
+      return a_weight - b_weight;
+    }
+
+    return a_without_special > b_without_special
+      ? 1
+      : a_without_special < b_without_special
+      ? -1
+      : 0;
+  });
+
+  return keys.map((k) => obj[k]);
 }
