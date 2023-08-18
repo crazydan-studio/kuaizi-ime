@@ -4,10 +4,12 @@ import sqlite3 from 'sqlite3';
 // https://www.npmjs.com/package/sqlite
 import * as sqlite from 'sqlite';
 
-export async function openDB(file) {
+export async function openDB(file, readonly) {
   const db = await sqlite.open({
     filename: file,
-    mode: sqlite3.OPEN_CREATE | sqlite3.OPEN_READWRITE,
+    mode: readonly
+      ? sqlite3.OPEN_READONLY
+      : sqlite3.OPEN_CREATE | sqlite3.OPEN_READWRITE,
     driver: sqlite3.Database
   });
 
@@ -27,8 +29,10 @@ PRAGMA temp_store = MEMORY;
 }
 
 export async function closeDB(db) {
-  // 数据库无用空间回收
-  await execSQL(db, 'VACUUM');
+  if (db.config.mode != sqlite3.OPEN_READONLY) {
+    // 数据库无用空间回收
+    await execSQL(db, 'VACUUM');
+  }
 
   await db.close();
 }
@@ -40,11 +44,18 @@ export async function saveToDB(db, table, dataMap) {
     return;
   }
 
-  const columns = Object.keys(dataArray[0]).filter(
-    (k) => k != 'id_' && !k.startsWith('__')
+  const columnsWithId = Object.keys(dataArray[0]).filter(
+    (k) => !k.startsWith('__')
   );
+  const columns = columnsWithId.filter((k) => k != 'id_');
+
   const insertStatement = await db.prepare(
     `insert into ${table} (${columns.join(', ')}) values (${columns
+      .map(() => '?')
+      .join(', ')})`
+  );
+  const insertWithIdStatement = await db.prepare(
+    `insert into ${table} (${columnsWithId.join(', ')}) values (${columnsWithId
       .map(() => '?')
       .join(', ')})`
   );
@@ -56,13 +67,16 @@ export async function saveToDB(db, table, dataMap) {
 
   await asyncForEach(dataArray, async (data) => {
     if (data.id_) {
-      const needToUpdate = columns.reduce(
-        (r, c) => r || data[c] != data.__exist__[c],
-        false
-      );
+      const needToUpdate =
+        data.__exist__ &&
+        columns.reduce((r, c) => r || data[c] != data.__exist__[c], false);
 
       if (needToUpdate) {
         await updateStatement.run(...columns.concat('id_').map((c) => data[c]));
+      }
+      // 新增包含 id 的数据
+      else if (!data.__exist__) {
+        await insertWithIdStatement.run(...columnsWithId.map((c) => data[c]));
       }
     } else {
       await insertStatement.run(...columns.map((c) => data[c]));
@@ -70,6 +84,7 @@ export async function saveToDB(db, table, dataMap) {
   });
 
   await insertStatement.finalize();
+  await insertWithIdStatement.finalize();
   await updateStatement.finalize();
 }
 

@@ -124,11 +124,17 @@ CREATE TABLE
         id_ INTEGER NOT NULL PRIMARY KEY,
         value_ TEXT NOT NULL,
         unicode_ TEXT NOT NULL,
+        -- 字形结构
         glyph_struct_ TEXT DEFAULT '',
+        -- 部首
         radical_ TEXT DEFAULT '',
+        -- 笔画顺序：1 - 横，2 - 竖，3 - 撇，4 - 捺，5 - 折
         stroke_order_ TEXT DEFAULT '',
+        -- 总笔画数
         total_stroke_count_ INTEGER DEFAULT 0,
+        -- 部首笔画数
         radical_stroke_count_ INTEGER DEFAULT 0,
+        -- 是否为繁体字
         traditional_ INTEGER DEFAULT 0,
         -- 按字形排序的权重
         weight_ INTEGER DEFAULT 0,
@@ -167,6 +173,8 @@ CREATE TABLE
         FOREIGN KEY (target_id_) REFERENCES meta_zhuyin (id_),
         FOREIGN KEY (target_chars_id_) REFERENCES meta_zhuyin_chars (id_)
     );
+CREATE INDEX IF NOT EXISTS idx_lnk_wrd_py_chars ON link_word_with_pinyin (target_chars_id_);
+CREATE INDEX IF NOT EXISTS idx_lnk_wrd_zy_chars ON link_word_with_zhuyin (target_chars_id_);
 
 CREATE TABLE
     IF NOT EXISTS link_word_with_simple_word (
@@ -245,6 +253,7 @@ CREATE VIEW
         spell_,
         spell_weight_,
         spell_chars_,
+        spell_chars_id_,
         glyph_struct_,
         radical_,
         stroke_order_,
@@ -263,6 +272,7 @@ SELECT
     spell_.value_,
     lnk_.weight_,
     spell_ch_.value_,
+    spell_ch_.id_,
     word_.glyph_struct_,
     word_.radical_,
     word_.stroke_order_,
@@ -296,6 +306,7 @@ CREATE VIEW
         spell_,
         spell_weight_,
         spell_chars_,
+        spell_chars_id_,
         glyph_struct_,
         radical_,
         stroke_order_,
@@ -314,6 +325,7 @@ SELECT
     spell_.value_,
     lnk_.weight_,
     spell_ch_.value_,
+    spell_ch_.id_,
     word_.glyph_struct_,
     word_.radical_,
     word_.stroke_order_,
@@ -336,6 +348,56 @@ FROM
     LEFT JOIN meta_word tw_ on tw_.id_ = tw_lnk_.target_id_
     LEFT JOIN link_word_with_variant_word vw_lnk_ on vw_lnk_.source_id_ = word_.id_
     LEFT JOIN meta_word vw_ on vw_.id_ = vw_lnk_.target_id_;
+
+-- 繁体 -> 简体
+CREATE VIEW
+    IF NOT EXISTS simple_word (
+        -- 繁体字 id
+        id_,
+        -- 繁体字
+        value_,
+        -- 简体字 id
+        target_id_,
+        -- 简体字
+        target_value_
+    ) AS
+SELECT
+    word_.id_,
+    word_.value_,
+    sw_.id_,
+    sw_.value_
+FROM
+    meta_word word_
+    --
+    LEFT JOIN link_word_with_simple_word sw_lnk_ on sw_lnk_.source_id_ = word_.id_
+    LEFT JOIN meta_word sw_ on sw_.id_ = sw_lnk_.target_id_
+WHERE
+    sw_.id_ IS NOT NULL;
+
+-- 简体 -> 繁体
+CREATE VIEW
+    IF NOT EXISTS traditional_word (
+        -- 简体字 id
+        id_,
+        -- 简体字
+        value_,
+        -- 繁体字 id
+        target_id_,
+        -- 繁体字
+        target_value_
+    ) AS
+SELECT
+    word_.id_,
+    word_.value_,
+    tw_.id_,
+    tw_.value_
+FROM
+    meta_word word_
+    --
+    LEFT JOIN link_word_with_traditional_word tw_lnk_ on tw_lnk_.source_id_ = word_.id_
+    LEFT JOIN meta_word tw_ on tw_.id_ = tw_lnk_.target_id_
+WHERE
+    tw_.id_ IS NOT NULL;
     `
   );
 
@@ -671,6 +733,8 @@ CREATE TABLE
             target_spell_chars_id_
         ) REFERENCES link_word_with_zhuyin (source_id_, target_id_, target_chars_id_)
     );
+CREATE INDEX IF NOT EXISTS idx_lnk_phrs_pywd_chars ON link_phrase_with_pinyin_word (target_spell_chars_id_);
+CREATE INDEX IF NOT EXISTS idx_lnk_phrs_zywd_chars ON link_phrase_with_zhuyin_word (target_spell_chars_id_);
 
 -- 词及其拼音
 CREATE VIEW
@@ -682,7 +746,8 @@ CREATE VIEW
         word_,
         word_index_,
         word_spell_,
-        word_spell_chars_
+        word_spell_chars_,
+        word_spell_chars_id_
     ) AS
 SELECT
     phrase_.id_,
@@ -692,7 +757,8 @@ SELECT
     word_.value_,
     lnk_.target_index_,
     spell_.value_,
-    spell_ch_.value_
+    spell_ch_.value_,
+    spell_ch_.id_
 FROM
     meta_phrase phrase_
     --
@@ -715,7 +781,8 @@ CREATE VIEW
         word_,
         word_index_,
         word_spell_,
-        word_spell_chars_
+        word_spell_chars_,
+        word_spell_chars_id_
     ) AS
 SELECT
     phrase_.id_,
@@ -725,7 +792,8 @@ SELECT
     word_.value_,
     lnk_.target_index_,
     spell_.value_,
-    spell_ch_.value_
+    spell_ch_.value_,
+    spell_ch_.id_
 FROM
     meta_phrase phrase_
     --
@@ -977,6 +1045,7 @@ CREATE TABLE
         FOREIGN KEY (source_id_) REFERENCES meta_emotion (id_),
         FOREIGN KEY (target_word_id_) REFERENCES meta_word (id_)
     );
+CREATE INDEX IF NOT EXISTS idx_lnk_emo_kwd_wrd ON link_emotion_with_keyword (target_word_id_);
 
 -- 表情及其关键字
 CREATE VIEW
@@ -985,6 +1054,7 @@ CREATE VIEW
         value_,
         keyword_index_,
         keyword_word_,
+        keyword_word_id_,
         keyword_word_index_
     ) AS
 SELECT
@@ -992,6 +1062,7 @@ SELECT
     emo_.value_,
     lnk_.target_index_,
     word_.value_,
+    word_.id_,
     lnk_.target_word_index_
 FROM
     meta_emotion emo_

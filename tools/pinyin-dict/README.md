@@ -35,7 +35,15 @@ npm run generate:emotion
 npm run generate:sqlite
 ```
 
-> - 以上命令自动对多余数据做删除，对新增数据做插入，对有变化的数据做更新；
+- 根据 `data/pinyin-dict.all.sqlite`
+  生成`筷字输入法`专用的 SQLite 数据库：
+
+```bash
+npm run generate:sqlite:ime
+```
+
+> - 以上 SQLite 数据库生成命令将自动对多余数据做删除，对新增数据做插入，
+>   对有变化的数据做更新；
 > - 若需要全新建库，则先删除 SQLite 数据库文件，再执行上述命令即可；
 
 ## 数据分析
@@ -128,6 +136,39 @@ order by
   radical_stroke_count_ asc,
   weight_ desc;
 ```
+
+- 统计所有字包含的笔画
+
+```sql
+with recursive
+  split_stroke (stroke, pos, stroke_name) as (
+    select distinct
+      stroke_order_,
+      1,
+      ''
+    from
+      meta_word
+    union all
+    select
+      stroke,
+      pos + 1,
+      substr (stroke, pos, 1)
+    from
+      split_stroke
+    where
+      length (stroke) >= pos
+  )
+select distinct
+  stroke_name
+from
+  split_stroke
+where
+  stroke_name != ''
+order by
+  stroke_name;
+```
+
+> - `1` 代表 `横`，`2` 代表 `竖`，`3` 代表 `撇`，`4` 代表 `捺`，`5` 代表 `折`
 
 ### 按拼音查询
 
