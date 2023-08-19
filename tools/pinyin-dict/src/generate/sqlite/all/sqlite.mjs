@@ -418,6 +418,13 @@ WHERE
       traditional_: meta.traditional,
       weight_: meta.weight || 0
     };
+
+    // Note：字形权重再加上拼音权重，以使高频字更靠前
+    if (meta.pinyins.length > 0) {
+      const moreWeight = meta.pinyins[0].weight;
+      map[meta.value].weight_ += moreWeight > 0 ? moreWeight * 50 : 0;
+    }
+
     return map;
   }, {});
 
@@ -495,7 +502,11 @@ WHERE
           const weight_ = target.weight || 0;
 
           if (!target_chars_id_) {
-            console.log('拼音的字母组合不存在：', source.value_, target);
+            console.log(
+              '读音的字母组合不存在：',
+              source.value_,
+              JSON.stringify(target)
+            );
           }
 
           const code = source_id_ + ':' + target_id_;

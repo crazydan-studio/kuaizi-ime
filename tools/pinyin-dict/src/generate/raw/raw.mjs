@@ -240,45 +240,49 @@ export function plusPhraseUsageWeight(wordMetas, usages) {
 
 /** 根据字形计算字的权重 */
 export function calculateWordWeightByGlyph(wordMetas) {
-  // 按部首分组再按相似性计算字形权重
-  const radicalGroups = wordMetas.reduce((map, meta) => {
-    (map[meta.radical] ||= []).push(meta);
+  // // 按部首分组，再按相似性计算字形权重
+  // const radicalGroups = wordMetas.reduce((map, meta) => {
+  //   (map[meta.radical] ||= []).push(meta);
 
-    return map;
-  }, {});
+  //   return map;
+  // }, {});
 
-  Object.keys(radicalGroups)
-    .sort((r1, r2) => {
-      const r1_count = radicalGroups[r1][0].radical_stroke_count;
-      const r2_count = radicalGroups[r2][0].radical_stroke_count;
+  // console.log('部首列表：', Object.keys(radicalGroups).join(', '));
 
-      return r1_count - r2_count;
-    })
-    // 越复杂的部首，其权重越低
-    .reverse()
-    .forEach((radical, radicalIndex) => {
-      // if (radical !== '门') {
-      //   return;
-      // }
+  // let baseWeight = 0;
+  // Object.keys(radicalGroups)
+  //   .sort((r1, r2) => {
+  //     const r1_count = radicalGroups[r1][0].radical_stroke_count;
+  //     const r2_count = radicalGroups[r2][0].radical_stroke_count;
 
-      let metas = radicalGroups[radical];
+  //     return r1_count - r2_count;
+  //   })
+  //   // 越复杂的部首，其权重越低
+  //   .reverse()
+  //   .forEach((radical) => {
+  //     // if (radical !== '门') {
+  //     //   return;
+  //     // }
 
-      metas = sortWordMetasBySimilarity(metas);
-      console.log(
-        `- 部首 ${radical} 按相似性排序结果：` +
-          metas.map((meta) => meta.value).join(',')
-      );
+  //     let metas = radicalGroups[radical];
 
-      // Note: 按部首统计的字数最大为 1000+，故权重基数 x2500
-      const baseWeight = (radicalIndex + 1) * 2500;
-      for (let i = 0; i < metas.length; i++) {
-        const meta = metas[i];
+  //     metas = sortWordMetasBySimilarity(metas);
+  //     console.log(
+  //       `- 部首 ${radical} 按相似性排序结果：` +
+  //         metas.map((meta) => meta.value).join(',')
+  //     );
 
-        meta.weight = baseWeight - i;
-      }
-    });
+  //     // Note: 基数按部首分组的字数累加
+  //     baseWeight += metas.length + 10;
 
-  // 按拼音分组再按相似性计算拼音权重
+  //     for (let i = 0; i < metas.length; i++) {
+  //       const meta = metas[i];
+
+  //       meta.weight = baseWeight - i;
+  //     }
+  //   });
+
+  // 按拼音分组，再按相似性计算字形权重
   const pinyinCharsGroups = wordMetas.reduce((map, meta) => {
     meta.pinyins.forEach((pinyin) => {
       (map[pinyin.chars] ||= []).push(meta);
@@ -287,6 +291,7 @@ export function calculateWordWeightByGlyph(wordMetas) {
     return map;
   }, {});
 
+  let baseWeight = 0;
   Object.keys(pinyinCharsGroups).forEach((chars) => {
     // if (chars !== 'yi') {
     //   return;
@@ -300,18 +305,13 @@ export function calculateWordWeightByGlyph(wordMetas) {
         metas.map((meta) => meta.value).join(',')
     );
 
-    // Note: 按拼音统计的字数最大为 500+，故权重基数设置为 1000
-    // 不存在在拼音之间纵向比较的情况，无需拉开拼音间的权重距离
-    const baseWeight = 1000;
+    // Note: 基数按部首分组的字数累加
+    baseWeight += metas.length + 10;
+
     for (let i = 0; i < metas.length; i++) {
       const meta = metas[i];
-      const weight = baseWeight - i;
 
-      meta.pinyins.forEach((pinyin) => {
-        if (pinyin.chars === chars) {
-          pinyin.weight = weight;
-        }
-      });
+      meta.weight = baseWeight - i;
     }
   });
 }
