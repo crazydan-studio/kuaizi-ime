@@ -686,10 +686,8 @@ CREATE TABLE
         id_ INTEGER NOT NULL PRIMARY KEY,
         -- 短语 id
         source_id_ INTEGER NOT NULL,
-        -- 字 id
+        -- 字及其拼音关联表 link_word_with_pinyin 的 id
         target_id_ INTEGER NOT NULL,
-        -- 拼音 id
-        target_spell_id_ INTEGER NOT NULL,
         -- 拼音字母组合 id
         target_spell_chars_id_ INTEGER NOT NULL,
         -- 字在词中的序号
@@ -697,25 +695,21 @@ CREATE TABLE
         UNIQUE (
             source_id_,
             target_id_,
-            target_spell_id_,
             target_index_
         ),
         FOREIGN KEY (source_id_) REFERENCES meta_phrase (id_),
         FOREIGN KEY (
             target_id_,
-            target_spell_id_,
             target_spell_chars_id_
-        ) REFERENCES link_word_with_pinyin (source_id_, target_id_, target_chars_id_)
+        ) REFERENCES link_word_with_pinyin (id_, target_chars_id_)
     );
 CREATE TABLE
     IF NOT EXISTS link_phrase_with_zhuyin_word (
         id_ INTEGER NOT NULL PRIMARY KEY,
         -- 短语 id
         source_id_ INTEGER NOT NULL,
-        -- 字 id
+        -- 字及其注音关联表 link_word_with_zhuyin 的 id
         target_id_ INTEGER NOT NULL,
-        -- 注音 id
-        target_spell_id_ INTEGER NOT NULL,
         -- 注音字符组合 id
         target_spell_chars_id_ INTEGER NOT NULL,
         -- 字在词中的序号
@@ -723,15 +717,13 @@ CREATE TABLE
         UNIQUE (
             source_id_,
             target_id_,
-            target_spell_id_,
             target_index_
         ),
         FOREIGN KEY (source_id_) REFERENCES meta_phrase (id_),
         FOREIGN KEY (
             target_id_,
-            target_spell_id_,
             target_spell_chars_id_
-        ) REFERENCES link_word_with_zhuyin (source_id_, target_id_, target_chars_id_)
+        ) REFERENCES link_word_with_zhuyin (id_, target_chars_id_)
     );
 CREATE INDEX IF NOT EXISTS idx_lnk_phrs_pywd_chars ON link_phrase_with_pinyin_word (target_spell_chars_id_);
 CREATE INDEX IF NOT EXISTS idx_lnk_phrs_zywd_chars ON link_phrase_with_zhuyin_word (target_spell_chars_id_);
@@ -763,9 +755,11 @@ FROM
     meta_phrase phrase_
     --
     LEFT JOIN link_phrase_with_pinyin_word lnk_ on lnk_.source_id_ = phrase_.id_
-    LEFT JOIN meta_word word_ on word_.id_ = lnk_.target_id_
-    LEFT JOIN meta_pinyin spell_ on spell_.id_ = lnk_.target_spell_id_
-    LEFT JOIN meta_pinyin_chars spell_ch_ on spell_ch_.id_ = lnk_.target_spell_chars_id_
+    --
+    LEFT JOIN link_word_with_pinyin spell_lnk_ on spell_lnk_.id_ = lnk_.target_id_
+    LEFT JOIN meta_word word_ on word_.id_ = spell_lnk_.source_id_
+    LEFT JOIN meta_pinyin spell_ on spell_.id_ = spell_lnk_.target_id_
+    LEFT JOIN meta_pinyin_chars spell_ch_ on spell_ch_.id_ = spell_lnk_.target_chars_id_
 -- Note: group by 不能对组内元素排序，故，只能在视图内先排序
 ORDER BY
     phrase_.index_ asc,
@@ -798,9 +792,11 @@ FROM
     meta_phrase phrase_
     --
     LEFT JOIN link_phrase_with_zhuyin_word lnk_ on lnk_.source_id_ = phrase_.id_
-    LEFT JOIN meta_word word_ on word_.id_ = lnk_.target_id_
-    LEFT JOIN meta_zhuyin spell_ on spell_.id_ = lnk_.target_spell_id_
-    LEFT JOIN meta_zhuyin_chars spell_ch_ on spell_ch_.id_ = lnk_.target_spell_chars_id_
+    --
+    LEFT JOIN link_word_with_zhuyin spell_lnk_ on spell_lnk_.id_ = lnk_.target_id_
+    LEFT JOIN meta_word word_ on word_.id_ = spell_lnk_.source_id_
+    LEFT JOIN meta_zhuyin spell_ on spell_.id_ = spell_lnk_.target_id_
+    LEFT JOIN meta_zhuyin_chars spell_ch_ on spell_ch_.id_ = spell_lnk_.target_chars_id_
 -- Note: group by 不能对组内元素排序，故，只能在视图内先排序
 ORDER BY
     phrase_.index_ asc,
@@ -896,7 +892,7 @@ ORDER BY
       (
         await db.all(
           `SELECT
-              t_.id_ as id_,
+              ts_lnk_.id_ as id_,
               t_.value_ as value_,
               ts_.id_ as spell_id_,
               ts_.value_ as spell_value_,
@@ -919,14 +915,13 @@ ORDER BY
 
       const linkData = {};
       (await db.all(`SELECT * FROM ${table}`)).forEach((row) => {
-        const code = `${row.source_id_}:${row.target_id_}:${row.target_spell_id_}:${row.target_index_}`;
+        const code = `${row.source_id_}:${row.target_id_}:${row.target_index_}`;
 
         linkData[code] = {
           __exist__: row,
           id_: row.id_,
           source_id_: row.source_id_,
           target_id_: row.target_id_,
-          target_spell_id_: row.target_spell_id_,
           target_spell_chars_id_: row.target_spell_chars_id_,
           target_index_: row.target_index_
         };
@@ -935,15 +930,15 @@ ORDER BY
       Object.values(phraseMetaMap).forEach((source) => {
         const source_value = source.value_;
         const target_values = source.__meta__.value;
-        const spell_values = source.__meta__[prop];
+        const target_spell_values = source.__meta__[prop];
 
         // 字和读音个数不同，则忽略该词组
         if (
-          target_values.length !== spell_values.length &&
-          spell_values.length !== 0
+          target_values.length !== target_spell_values.length &&
+          target_spell_values.length !== 0
         ) {
           console.log(
-            `词组 '${source_value}' 的字数与读音数不同(${prop})：${spell_values.join(
+            `词组 '${source_value}' 的字数与读音数不同(${prop})：${target_spell_values.join(
               ','
             )}`
           );
@@ -951,16 +946,22 @@ ORDER BY
         }
 
         const targets = [];
-        for (let index = 0; index < target_values.length; index++) {
-          const target_value = target_values[index];
-          const spell_value = spell_values[index];
-          const target_code = `${target_value}:${spell_value}`;
+        for (
+          let target_value_index = 0;
+          target_value_index < target_values.length;
+          target_value_index++
+        ) {
+          const target_value = target_values[target_value_index];
+          const target_spell_value = target_spell_values[target_value_index];
+
+          // 字+读音
+          const target_code = `${target_value}:${target_spell_value}`;
           const target = targetData[target_code];
 
           // 对应读音的字不存在，则直接跳过该词组
           if (!target) {
             console.log(
-              `词组 '${source_value}' 中不存在字 '${target_value}(${spell_value})': ${spell_values.join(
+              `词组 '${source_value}' 中不存在字 '${target_value}(${target_spell_value})': ${target_spell_values.join(
                 ','
               )}`
             );
@@ -973,18 +974,22 @@ ORDER BY
           return;
         }
 
-        for (let index = 0; index < targets.length; index++) {
-          const target = targets[index];
-          const link_code = `${source.id_}:${target.id_}:${target.spell_id_}:${index}`;
+        for (
+          let target_index = 0;
+          target_index < targets.length;
+          target_index++
+        ) {
+          const target = targets[target_index];
+          const link_code = `${source.id_}:${target.id_}:${target_index}`;
 
           if (!linkData[link_code]) {
             // 新增关联
             linkData[link_code] = {
               source_id_: source.id_,
+              // 与 字 的读音关联表建立联系
               target_id_: target.id_,
-              target_spell_id_: target.spell_id_,
               target_spell_chars_id_: target.spell_chars_id_,
-              target_index_: index
+              target_index_: target_index
             };
           } else {
             // 关联无需更新

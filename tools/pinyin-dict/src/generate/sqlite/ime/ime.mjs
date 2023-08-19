@@ -203,10 +203,8 @@ CREATE TABLE
         id_ INTEGER NOT NULL PRIMARY KEY,
         -- 短语 id
         source_id_ INTEGER NOT NULL,
-        -- 字 id
+        -- 字及其拼音关联表 link_word_with_pinyin 的 id
         target_id_ INTEGER NOT NULL,
-        -- 拼音 id
-        target_spell_id_ INTEGER NOT NULL,
         -- 拼音字母组合 id
         target_spell_chars_id_ INTEGER NOT NULL,
         -- 字在词中的序号
@@ -214,15 +212,13 @@ CREATE TABLE
         UNIQUE (
             source_id_,
             target_id_,
-            target_spell_id_,
             target_index_
         ),
         FOREIGN KEY (source_id_) REFERENCES meta_phrase (id_),
         FOREIGN KEY (
             target_id_,
-            target_spell_id_,
             target_spell_chars_id_
-        ) REFERENCES link_word_with_pinyin (source_id_, target_id_, target_chars_id_)
+        ) REFERENCES link_word_with_pinyin (id_, target_chars_id_)
     );
 CREATE INDEX IF NOT EXISTS idx_lnk_phrs_pywd_chars ON link_phrase_with_pinyin_word (target_spell_chars_id_);
 
@@ -253,9 +249,11 @@ FROM
     meta_phrase phrase_
     --
     LEFT JOIN link_phrase_with_pinyin_word lnk_ on lnk_.source_id_ = phrase_.id_
-    LEFT JOIN meta_word word_ on word_.id_ = lnk_.target_id_
-    LEFT JOIN meta_pinyin spell_ on spell_.id_ = lnk_.target_spell_id_
-    LEFT JOIN meta_pinyin_chars spell_ch_ on spell_ch_.id_ = lnk_.target_spell_chars_id_
+    --
+    LEFT JOIN link_word_with_pinyin spell_lnk_ on spell_lnk_.id_ = lnk_.target_id_
+    LEFT JOIN meta_word word_ on word_.id_ = spell_lnk_.source_id_
+    LEFT JOIN meta_pinyin spell_ on spell_.id_ = spell_lnk_.target_id_
+    LEFT JOIN meta_pinyin_chars spell_ch_ on spell_ch_.id_ = spell_lnk_.target_chars_id_
 -- Note: group by 不能对组内元素排序，故，只能在视图内先排序
 ORDER BY
     phrase_.index_ asc,
@@ -263,6 +261,7 @@ ORDER BY
       `
   );
 
+  // Note：仅同步有权重的短语
   await syncTableData(imeDB, rawDB, [
     {
       name: 'meta_phrase',
