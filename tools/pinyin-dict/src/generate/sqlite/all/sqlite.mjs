@@ -150,6 +150,8 @@ CREATE TABLE
         target_id_ INTEGER NOT NULL,
         -- 拼音字母组合 id
         target_chars_id_ INTEGER NOT NULL,
+        -- 字形权重：用于对相同拼音字母组合的字按字形相似性排序
+        glyph_weight_ INTEGER DEFAULT 0,
         -- 按使用频率等排序的权重
         weight_ INTEGER DEFAULT 0,
         UNIQUE (source_id_, target_id_),
@@ -166,6 +168,8 @@ CREATE TABLE
         target_id_ INTEGER NOT NULL,
         -- 注音字符组合 id
         target_chars_id_ INTEGER NOT NULL,
+        -- 字形权重：用于对相同拼音字母组合的字按字形相似性排序
+        glyph_weight_ INTEGER DEFAULT 0,
         -- 按使用频率等排序的权重
         weight_ INTEGER DEFAULT 0,
         UNIQUE (source_id_, target_id_),
@@ -254,6 +258,7 @@ CREATE VIEW
         spell_weight_,
         spell_chars_,
         spell_chars_id_,
+        glyph_weight_,
         glyph_struct_,
         radical_,
         stroke_order_,
@@ -273,6 +278,7 @@ SELECT
     lnk_.weight_,
     spell_ch_.value_,
     spell_ch_.id_,
+    lnk_.glyph_weight_,
     word_.glyph_struct_,
     word_.radical_,
     word_.stroke_order_,
@@ -307,6 +313,7 @@ CREATE VIEW
         spell_weight_,
         spell_chars_,
         spell_chars_id_,
+        glyph_weight_,
         glyph_struct_,
         radical_,
         stroke_order_,
@@ -326,6 +333,7 @@ SELECT
     lnk_.weight_,
     spell_ch_.value_,
     spell_ch_.id_,
+    lnk_.glyph_weight_,
     word_.glyph_struct_,
     word_.radical_,
     word_.stroke_order_,
@@ -419,25 +427,20 @@ WHERE
       weight_: meta.weight || 0
     };
 
-    // Note：字形权重再加上拼音权重，以使高频字更靠前
-    if (meta.pinyins.length > 0) {
-      const moreWeight = meta.pinyins[0].weight;
-      map[meta.value].weight_ += moreWeight > 0 ? moreWeight * 50 : 0;
-    }
-
     return map;
   }, {});
 
   // 保存字信息
   const missingWords = [];
   (await db.all('SELECT * FROM meta_word')).forEach((row) => {
-    const value = row.value_;
     const id = row.id_;
+    const value = row.value_;
 
     if (wordMetaMap[value]) {
       wordMetaMap[value].id_ = id;
       wordMetaMap[value].__exist__ = row;
     } else {
+      // 在库中已存在，但未使用
       missingWords.push(id);
     }
   });
@@ -467,20 +470,6 @@ WHERE
       }
     ],
     async ({ prop, table, target_meta_table, target_chars_table }) => {
-      const linkData = {};
-      (await db.all(`SELECT * FROM ${table}`)).forEach((row) => {
-        const code = row.source_id_ + ':' + row.target_id_;
-
-        linkData[code] = {
-          __exist__: row,
-          id_: row.id_,
-          source_id_: row.source_id_,
-          target_id_: row.target_id_,
-          target_chars_id_: row.target_chars_id_,
-          weight_: row.weight_
-        };
-      });
-
       const targetMetaMap = {};
       (await db.all(`SELECT id_, value_ FROM ${target_meta_table}`)).forEach(
         (row) => {
@@ -494,12 +483,14 @@ WHERE
         }
       );
 
+      const linkDataMap = {};
       Object.values(wordMetaMap).forEach((source) => {
         source.__meta__[prop].forEach((target) => {
           const source_id_ = source.id_;
           const target_id_ = targetMetaMap[target.value];
           const target_chars_id_ = targetCharsMap[target.chars];
           const weight_ = target.weight || 0;
+          const glyph_weight_ = target.glyph_weight || 0;
 
           if (!target_chars_id_) {
             console.log(
@@ -510,33 +501,31 @@ WHERE
           }
 
           const code = source_id_ + ':' + target_id_;
-          if (!linkData[code]) {
-            // 新增关联
-            linkData[code] = {
-              source_id_,
-              target_id_,
-              target_chars_id_,
-              weight_
-            };
-          } else {
-            // 关联无需更新
-            delete linkData[code];
-          }
+          linkDataMap[code] = {
+            source_id_,
+            target_id_,
+            target_chars_id_,
+            weight_,
+            glyph_weight_
+          };
         });
       });
 
       const missingLinks = [];
-      Object.keys(linkData).forEach((code) => {
-        const id = linkData[code].id_;
-        if (id) {
-          // 关联在库中已存在，但未变更
-          missingLinks.push(id);
+      (await db.all(`SELECT * FROM ${table}`)).forEach((row) => {
+        const id = row.id_;
+        const code = row.source_id_ + ':' + row.target_id_;
 
-          delete linkData[code];
+        if (linkDataMap[code]) {
+          linkDataMap[code].id_ = id;
+          linkDataMap[code].__exist__ = row;
+        } else {
+          // 在库中已存在，但未使用
+          missingLinks.push(id);
         }
       });
 
-      await saveToDB(db, table, linkData);
+      await saveToDB(db, table, linkDataMap);
       await removeFromDB(db, table, missingLinks);
     }
   );
@@ -562,10 +551,8 @@ WHERE
       (await db.all(`SELECT * FROM ${table}`)).forEach((row) => {
         const code = row.source_id_ + ':' + row.target_id_;
         linkData[code] = {
-          __exist__: row,
-          id_: row.id_,
-          source_id_: row.source_id_,
-          target_id_: row.target_id_
+          ...row,
+          __exist__: row
         };
       });
 
@@ -594,6 +581,7 @@ WHERE
       const missingLinks = [];
       Object.keys(linkData).forEach((code) => {
         const id = linkData[code].id_;
+
         if (id) {
           // 关联在库中已存在，但未变更
           missingLinks.push(id);
@@ -632,10 +620,8 @@ WHERE
       (await db.all(`SELECT * FROM ${table}`)).forEach((row) => {
         const code = row.value_ + ':' + row.word_id_;
         linkData[code] = {
-          __exist__: row,
-          id_: row.id_,
-          value_: row.value_,
-          word_id_: row.word_id_
+          ...row,
+          __exist__: row
         };
       });
 
@@ -661,6 +647,7 @@ WHERE
       const missingLinks = [];
       Object.keys(linkData).forEach((code) => {
         const id = linkData[code].id_;
+
         if (id) {
           // 关联在库中已存在，但未变更
           missingLinks.push(id);
@@ -929,12 +916,8 @@ ORDER BY
         const code = `${row.source_id_}:${row.target_id_}:${row.target_index_}`;
 
         linkData[code] = {
-          __exist__: row,
-          id_: row.id_,
-          source_id_: row.source_id_,
-          target_id_: row.target_id_,
-          target_spell_chars_id_: row.target_spell_chars_id_,
-          target_index_: row.target_index_
+          ...row,
+          __exist__: row
         };
       });
 
@@ -1012,6 +995,7 @@ ORDER BY
       const missingLinks = [];
       Object.keys(linkData).forEach((code) => {
         const id = linkData[code].id_;
+
         if (id) {
           // 关联在库中已存在，但未变更
           missingLinks.push(id);
@@ -1152,12 +1136,8 @@ ORDER BY
         const code = `${row.source_id_}:${row.target_index_}:${row.target_word_id_}:${row.target_word_index_}`;
 
         linkData[code] = {
-          __exist__: row,
-          id_: row.id_,
-          source_id_: row.source_id_,
-          target_index_: row.target_index_,
-          target_word_id_: row.target_word_id_,
-          target_word_index_: row.target_word_index_
+          ...row,
+          __exist__: row
         };
       });
 
@@ -1199,6 +1179,7 @@ ORDER BY
       const missingLinks = [];
       Object.keys(linkData).forEach((code) => {
         const id = linkData[code].id_;
+
         if (id) {
           // 关联在库中已存在，但未变更
           missingLinks.push(id);

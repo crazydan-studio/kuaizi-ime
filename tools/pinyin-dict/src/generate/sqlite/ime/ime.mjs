@@ -45,8 +45,6 @@ CREATE TABLE
         stroke_order_ TEXT DEFAULT '',
         -- 是否为繁体字
         traditional_ INTEGER DEFAULT 0,
-        -- 按字形排序的权重
-        weight_ INTEGER DEFAULT 0,
         UNIQUE (value_)
     );
 
@@ -59,6 +57,8 @@ CREATE TABLE
         target_id_ INTEGER NOT NULL,
         -- 拼音字母组合 id
         target_chars_id_ INTEGER NOT NULL,
+        -- 字形权重：用于对相同拼音字母组合的字按字形相似性排序
+        glyph_weight_ INTEGER DEFAULT 0,
         -- 按使用频率等排序的权重
         weight_ INTEGER DEFAULT 0,
         UNIQUE (source_id_, target_id_),
@@ -96,9 +96,9 @@ CREATE VIEW
     IF NOT EXISTS pinyin_word (
         id_,
         value_,
-        weight_,
         spell_,
         spell_weight_,
+        glyph_weight_,
         spell_chars_,
         spell_chars_id_,
         stroke_order_,
@@ -107,9 +107,9 @@ CREATE VIEW
 SELECT
     word_.id_,
     word_.value_,
-    word_.weight_,
     spell_.value_,
     lnk_.weight_,
+    lnk_.glyph_weight_,
     spell_ch_.value_,
     spell_ch_.id_,
     word_.stroke_order_,

@@ -71,7 +71,7 @@ export async function saveToDB(db, table, dataMap) {
     if (data.id_) {
       const needToUpdate =
         data.__exist__ &&
-        columns.reduce((r, c) => r || data[c] != data.__exist__[c], false);
+        columns.reduce((r, c) => r || data[c] !== data.__exist__[c], false);
 
       if (needToUpdate) {
         await updateStatement.run(...columns.concat('id_').map((c) => data[c]));

@@ -218,8 +218,8 @@ export function plusWordUsageWeight(wordMetas, usages) {
     // 以拼音内最大字数为基数，在使用权重上加上该基数，
     // 以确保处于最后位置的常用字能够靠前排列
     weight += 1000;
-    meta.pinyins.forEach((pinyin) => {
-      pinyin.weight = (pinyin.weight || 0) + weight;
+    [].concat(meta.pinyins, meta.zhuyins).forEach((spell) => {
+      spell.weight = (spell.weight || 0) + weight;
     });
   });
 }
@@ -240,58 +240,58 @@ export function plusPhraseUsageWeight(wordMetas, usages) {
 
 /** 根据字形计算字的权重 */
 export function calculateWordWeightByGlyph(wordMetas) {
-  // // 按部首分组，再按相似性计算字形权重
-  // const radicalGroups = wordMetas.reduce((map, meta) => {
-  //   (map[meta.radical] ||= []).push(meta);
+  // 按部首分组，再按相似性计算字形权重
+  const radicalGroups = wordMetas.reduce((map, meta) => {
+    (map[meta.radical] ||= []).push(meta);
 
-  //   return map;
-  // }, {});
+    return map;
+  }, {});
 
-  // console.log('部首列表：', Object.keys(radicalGroups).join(', '));
+  console.log('部首列表：', Object.keys(radicalGroups).join(', '));
 
-  // let baseWeight = 0;
-  // Object.keys(radicalGroups)
-  //   .sort((r1, r2) => {
-  //     const r1_count = radicalGroups[r1][0].radical_stroke_count;
-  //     const r2_count = radicalGroups[r2][0].radical_stroke_count;
+  let radicalBaseWeight = 0;
+  Object.keys(radicalGroups)
+    .sort((r1, r2) => {
+      const r1_count = radicalGroups[r1][0].radical_stroke_count;
+      const r2_count = radicalGroups[r2][0].radical_stroke_count;
 
-  //     return r1_count - r2_count;
-  //   })
-  //   // 越复杂的部首，其权重越低
-  //   .reverse()
-  //   .forEach((radical) => {
-  //     // if (radical !== '门') {
-  //     //   return;
-  //     // }
+      return r1_count - r2_count;
+    })
+    // 越复杂的部首，其权重越低
+    .reverse()
+    .forEach((radical) => {
+      // if (radical !== '门') {
+      //   return;
+      // }
 
-  //     let metas = radicalGroups[radical];
+      let metas = radicalGroups[radical];
 
-  //     metas = sortWordMetasBySimilarity(metas);
-  //     console.log(
-  //       `- 部首 ${radical} 按相似性排序结果：` +
-  //         metas.map((meta) => meta.value).join(',')
-  //     );
+      metas = sortWordMetasBySimilarity(metas);
+      console.log(
+        `- 部首 ${radical} 按相似性排序结果：` +
+          metas.map((meta) => meta.value).join(',')
+      );
 
-  //     // Note: 基数按部首分组的字数累加
-  //     baseWeight += metas.length + 10;
+      // Note: 基数按部首分组的字数累加
+      radicalBaseWeight += metas.length + 10;
 
-  //     for (let i = 0; i < metas.length; i++) {
-  //       const meta = metas[i];
+      for (let i = 0; i < metas.length; i++) {
+        const meta = metas[i];
 
-  //       meta.weight = baseWeight - i;
-  //     }
-  //   });
+        meta.weight = radicalBaseWeight - i;
+      }
+    });
 
   // 按拼音分组，再按相似性计算字形权重
   const pinyinCharsGroups = wordMetas.reduce((map, meta) => {
-    meta.pinyins.forEach((pinyin) => {
-      (map[pinyin.chars] ||= []).push(meta);
+    meta.pinyins.forEach((spell) => {
+      (map[spell.chars] ||= []).push(meta);
     });
 
     return map;
   }, {});
 
-  let baseWeight = 0;
+  let pinyinBaseWeight = 0;
   Object.keys(pinyinCharsGroups).forEach((chars) => {
     // if (chars !== 'yi') {
     //   return;
@@ -306,12 +306,17 @@ export function calculateWordWeightByGlyph(wordMetas) {
     );
 
     // Note: 基数按部首分组的字数累加
-    baseWeight += metas.length + 10;
+    pinyinBaseWeight += metas.length + 10;
 
     for (let i = 0; i < metas.length; i++) {
       const meta = metas[i];
+      const weight = pinyinBaseWeight - i;
 
-      meta.weight = baseWeight - i;
+      meta.pinyins.forEach((spell) => {
+        if (spell.chars === chars) {
+          spell.glyph_weight = weight;
+        }
+      });
     }
   });
 }
