@@ -251,10 +251,12 @@ CREATE TABLE
 CREATE VIEW
     IF NOT EXISTS pinyin_word (
         id_,
-        value_,
+        word_,
+        word_id_,
         unicode_,
         weight_,
         spell_,
+        spell_id_,
         spell_weight_,
         spell_chars_,
         spell_chars_id_,
@@ -270,11 +272,13 @@ CREATE VIEW
         variant_word_
     ) AS
 SELECT
-    word_.id_,
+    lnk_.id_,
     word_.value_,
+    word_.id_,
     word_.unicode_,
     word_.weight_,
     spell_.value_,
+    spell_.id_,
     lnk_.weight_,
     spell_ch_.value_,
     spell_ch_.id_,
@@ -306,10 +310,12 @@ FROM
 CREATE VIEW
     IF NOT EXISTS zhuyin_word (
         id_,
-        value_,
+        word_,
+        word_id_,
         unicode_,
         weight_,
         spell_,
+        spell_id_,
         spell_weight_,
         spell_chars_,
         spell_chars_id_,
@@ -325,11 +331,13 @@ CREATE VIEW
         variant_word_
     ) AS
 SELECT
-    word_.id_,
+    lnk_.id_,
     word_.value_,
+    word_.id_,
     word_.unicode_,
     word_.weight_,
     spell_.value_,
+    spell_.id_,
     lnk_.weight_,
     spell_ch_.value_,
     spell_ch_.id_,

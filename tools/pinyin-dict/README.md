@@ -180,7 +180,7 @@ order by
 ```sql
 select
   spell_chars_,
-  count(distinct value_) as amount
+  count(distinct word_) as amount
 from
   pinyin_word
 group by
@@ -194,7 +194,7 @@ order by
 ```sql
 select
   spell_chars_,
-  group_concat(distinct value_)
+  group_concat(distinct word_)
 from
   (
     select
@@ -217,7 +217,7 @@ order by
 ```sql
 select
   id_,
-  value_,
+  word_,
   unicode_,
   group_concat(distinct spell_),
   group_concat(distinct spell_chars_),
@@ -233,7 +233,7 @@ select
 from
   pinyin_word
 where
-  value_ = '国'
+  word_ = '国'
 group by
   id_;
 ```

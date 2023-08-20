@@ -91,35 +91,34 @@ CREATE TABLE
         FOREIGN KEY (target_id_) REFERENCES meta_word (id_)
     );
 
--- 字及其拼音：先按字形权重降序排序，再在 top5 候选字页面显示按读音权重排序的结果
+-- 字及其拼音
 CREATE VIEW
     IF NOT EXISTS pinyin_word (
         id_,
-        value_,
+        word_,
         spell_,
-        spell_weight_,
-        glyph_weight_,
-        spell_chars_,
+        spell_id_,
         spell_chars_id_,
+        weight_,
+        glyph_weight_,
         stroke_order_,
         traditional_
     ) AS
 SELECT
-    word_.id_,
+    lnk_.id_,
     word_.value_,
     spell_.value_,
+    lnk_.target_id_,
+    lnk_.target_chars_id_,
     lnk_.weight_,
     lnk_.glyph_weight_,
-    spell_ch_.value_,
-    spell_ch_.id_,
     word_.stroke_order_,
     word_.traditional_
 FROM
     meta_word word_
     --
-    LEFT JOIN link_word_with_pinyin lnk_ on lnk_.source_id_ = word_.id_
-    LEFT JOIN meta_pinyin spell_ on spell_.id_ = lnk_.target_id_
-    LEFT JOIN meta_pinyin_chars spell_ch_ on spell_ch_.id_ = lnk_.target_chars_id_;
+    INNER JOIN link_word_with_pinyin lnk_ on lnk_.source_id_ = word_.id_
+    INNER JOIN meta_pinyin spell_ on spell_.id_ = lnk_.target_id_;
 
 -- 繁体 -> 简体
 CREATE VIEW
@@ -189,13 +188,8 @@ export async function syncPhrases(imeDB, rawDB) {
 CREATE TABLE
     IF NOT EXISTS meta_phrase (
         id_ INTEGER NOT NULL PRIMARY KEY,
-        -- 短语文本内容
-        value_ TEXT NOT NULL,
-        -- 短语序号：针对排序后的多音词的词序号
-        index_ INTEGER NOT NULL,
         -- 按使用频率等排序的权重
-        weight_ INTEGER DEFAULT 0,
-        UNIQUE (value_, index_)
+        weight_ INTEGER DEFAULT 0
     );
 
 CREATE TABLE
@@ -226,38 +220,23 @@ CREATE INDEX IF NOT EXISTS idx_lnk_phrs_pywd_chars ON link_phrase_with_pinyin_wo
 CREATE VIEW
     IF NOT EXISTS pinyin_phrase (
         id_,
-        value_,
-        index_,
         weight_,
-        word_,
-        word_index_,
-        word_spell_,
-        word_spell_chars_,
-        word_spell_chars_id_
+        source_id_,
+        target_id_,
+        target_index_,
+        target_spell_chars_id_
     ) AS
 SELECT
-    phrase_.id_,
-    phrase_.value_,
-    phrase_.index_,
+    lnk_.id_,
     phrase_.weight_,
-    word_.value_,
+    lnk_.source_id_,
+    lnk_.target_id_,
     lnk_.target_index_,
-    spell_.value_,
-    spell_ch_.value_,
-    spell_ch_.id_
+    lnk_.target_spell_chars_id_
 FROM
     meta_phrase phrase_
     --
-    LEFT JOIN link_phrase_with_pinyin_word lnk_ on lnk_.source_id_ = phrase_.id_
-    --
-    LEFT JOIN link_word_with_pinyin spell_lnk_ on spell_lnk_.id_ = lnk_.target_id_
-    LEFT JOIN meta_word word_ on word_.id_ = spell_lnk_.source_id_
-    LEFT JOIN meta_pinyin spell_ on spell_.id_ = spell_lnk_.target_id_
-    LEFT JOIN meta_pinyin_chars spell_ch_ on spell_ch_.id_ = spell_lnk_.target_chars_id_
--- Note: group by 不能对组内元素排序，故，只能在视图内先排序
-ORDER BY
-    phrase_.index_ asc,
-    lnk_.target_index_ asc;
+    LEFT JOIN link_phrase_with_pinyin_word lnk_ on lnk_.source_id_ = phrase_.id_;
       `
   );
 
