@@ -140,8 +140,8 @@ SELECT
 FROM
     meta_word word_
     --
-    LEFT JOIN link_word_with_simple_word sw_lnk_ on sw_lnk_.source_id_ = word_.id_
-    LEFT JOIN meta_word sw_ on sw_.id_ = sw_lnk_.target_id_
+    INNER JOIN link_word_with_simple_word sw_lnk_ on sw_lnk_.source_id_ = word_.id_
+    INNER JOIN meta_word sw_ on sw_.id_ = sw_lnk_.target_id_
 WHERE
     sw_.id_ IS NOT NULL;
 
@@ -165,8 +165,8 @@ SELECT
 FROM
     meta_word word_
     --
-    LEFT JOIN link_word_with_traditional_word tw_lnk_ on tw_lnk_.source_id_ = word_.id_
-    LEFT JOIN meta_word tw_ on tw_.id_ = tw_lnk_.target_id_
+    INNER JOIN link_word_with_traditional_word tw_lnk_ on tw_lnk_.source_id_ = word_.id_
+    INNER JOIN meta_word tw_ on tw_.id_ = tw_lnk_.target_id_
 WHERE
     tw_.id_ IS NOT NULL;
       `
@@ -236,7 +236,7 @@ SELECT
 FROM
     meta_phrase phrase_
     --
-    LEFT JOIN link_phrase_with_pinyin_word lnk_ on lnk_.source_id_ = phrase_.id_;
+    INNER JOIN link_phrase_with_pinyin_word lnk_ on lnk_.source_id_ = phrase_.id_;
       `
   );
 
