@@ -771,7 +771,8 @@ function addMissingPinyin(wordMeta) {
     綠: 'lù',
     頻: 'pín',
     衝: 'chòng',
-    膊: 'bo'
+    膊: 'bo',
+    嘀: 'dī'
   };
 
   const pinyin = missing[wordMeta.value];
