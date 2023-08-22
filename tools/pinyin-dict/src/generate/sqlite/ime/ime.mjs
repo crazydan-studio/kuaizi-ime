@@ -66,7 +66,8 @@ CREATE TABLE
         FOREIGN KEY (target_id_) REFERENCES meta_pinyin (id_),
         FOREIGN KEY (target_chars_id_) REFERENCES meta_pinyin_chars (id_)
     );
-CREATE INDEX IF NOT EXISTS idx_lnk_wrd_py_chars ON link_word_with_pinyin (target_chars_id_);
+-- 索引放在输入法初始化时创建，以降低索引造成的字典文件过大
+-- CREATE INDEX IF NOT EXISTS idx_lnk_wrd_py_chars ON link_word_with_pinyin (target_chars_id_);
 
 CREATE TABLE
     IF NOT EXISTS link_word_with_simple_word (
@@ -96,6 +97,7 @@ CREATE VIEW
     IF NOT EXISTS pinyin_word (
         id_,
         word_,
+        word_id_,
         spell_,
         spell_id_,
         spell_chars_id_,
@@ -107,6 +109,7 @@ CREATE VIEW
 SELECT
     lnk_.id_,
     word_.value_,
+    word_.id_,
     spell_.value_,
     lnk_.target_id_,
     lnk_.target_chars_id_,
@@ -214,7 +217,8 @@ CREATE TABLE
             target_spell_chars_id_
         ) REFERENCES link_word_with_pinyin (id_, target_chars_id_)
     );
-CREATE INDEX IF NOT EXISTS idx_lnk_phrs_pywd_chars ON link_phrase_with_pinyin_word (target_spell_chars_id_);
+-- 索引放在输入法初始化时创建，以降低索引造成的字典文件过大
+-- CREATE INDEX IF NOT EXISTS idx_lnk_phrs_pywd_chars ON link_phrase_with_pinyin_word (target_spell_chars_id_);
 
 -- 词及其拼音
 CREATE VIEW
@@ -295,7 +299,8 @@ CREATE TABLE
         FOREIGN KEY (source_id_) REFERENCES meta_emotion (id_),
         FOREIGN KEY (target_word_id_) REFERENCES meta_word (id_)
     );
-CREATE INDEX IF NOT EXISTS idx_lnk_emo_kwd_wrd ON link_emotion_with_keyword (target_word_id_);
+-- 索引放在输入法初始化时创建，以降低索引造成的字典文件过大
+-- CREATE INDEX IF NOT EXISTS idx_lnk_emo_kwd_wrd ON link_emotion_with_keyword (target_word_id_);
 
 -- 表情及其关键字
 CREATE VIEW
@@ -303,26 +308,24 @@ CREATE VIEW
         id_,
         value_,
         keyword_index_,
-        keyword_word_,
         keyword_word_id_,
-        keyword_word_index_
+        keyword_word_index_,
+        keyword_word_spell_chars_id_,
+        keyword_word_spell_link_id_
     ) AS
 SELECT
     emo_.id_,
     emo_.value_,
     lnk_.target_index_,
-    word_.value_,
-    word_.id_,
-    lnk_.target_word_index_
+    lnk_.target_word_id_,
+    lnk_.target_word_index_,
+    pw_lnk_.spell_chars_id_,
+    pw_lnk_.id_
 FROM
     meta_emotion emo_
     --
-    LEFT JOIN link_emotion_with_keyword lnk_ on lnk_.source_id_ = emo_.id_
-    LEFT JOIN meta_word word_ on word_.id_ = lnk_.target_word_id_
--- Note: group by 不能对组内元素排序，故，只能在视图内先排序
-ORDER BY
-    lnk_.target_index_ asc,
-    lnk_.target_word_index_ asc;
+    INNER JOIN link_emotion_with_keyword lnk_ on lnk_.source_id_ = emo_.id_
+    INNER JOIN link_word_with_pinyin pw_lnk_ on pw_lnk_.source_id_ = lnk_.target_word_id_;
       `
   );
 
