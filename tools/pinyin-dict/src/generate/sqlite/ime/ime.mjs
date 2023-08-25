@@ -272,11 +272,18 @@ export async function syncEmojis(imeDB, rawDB) {
     imeDB,
     `
 CREATE TABLE
+    IF NOT EXISTS meta_emoji_group (
+        id_ INTEGER NOT NULL PRIMARY KEY,
+        value_ TEXT NOT NULL,
+        UNIQUE (value_)
+    );
+CREATE TABLE
     IF NOT EXISTS meta_emoji (
         id_ INTEGER NOT NULL PRIMARY KEY,
         value_ TEXT NOT NULL,
-        unicode_version_ REAL NOT NULL,
-        UNIQUE (value_)
+        group_id_ INTERGET NOT NULL,
+        UNIQUE (value_),
+        FOREIGN KEY (group_id_) REFERENCES meta_emoji_group (id_)
     );
 
 CREATE TABLE
@@ -302,12 +309,28 @@ CREATE TABLE
 -- 索引放在输入法初始化时创建，以降低索引造成的字典文件过大
 -- CREATE INDEX IF NOT EXISTS idx_lnk_emo_kwd_wrd ON link_emoji_with_keyword (target_word_id_);
 
+-- 分组表情
+CREATE VIEW
+    IF NOT EXISTS group_emoji (
+        id_,
+        value_,
+        group_
+    ) AS
+SELECT
+    emo_.id_,
+    emo_.value_,
+    grp_.value_
+FROM
+    meta_emoji emo_
+    --
+    INNER JOIN meta_emoji_group grp_ on grp_.id_ = emo_.group_id_;
+
 -- 表情及其关键字
 CREATE VIEW
     IF NOT EXISTS emoji (
         id_,
         value_,
-        unicode_version_,
+        group_,
         keyword_index_,
         keyword_word_id_,
         keyword_word_index_,
@@ -317,7 +340,7 @@ CREATE VIEW
 SELECT
     emo_.id_,
     emo_.value_,
-    emo_.unicode_version_,
+    grp_.value_,
     lnk_.target_index_,
     lnk_.target_word_id_,
     lnk_.target_word_index_,
@@ -327,11 +350,13 @@ FROM
     meta_emoji emo_
     --
     INNER JOIN link_emoji_with_keyword lnk_ on lnk_.source_id_ = emo_.id_
-    INNER JOIN link_word_with_pinyin pw_lnk_ on pw_lnk_.source_id_ = lnk_.target_word_id_;
+    INNER JOIN link_word_with_pinyin pw_lnk_ on pw_lnk_.source_id_ = lnk_.target_word_id_
+    INNER JOIN meta_emoji_group grp_ on grp_.id_ = emo_.group_id_;
       `
   );
 
   await syncTableData(imeDB, rawDB, [
+    'meta_emoji_group',
     'meta_emoji',
     'link_emoji_with_keyword'
   ]);

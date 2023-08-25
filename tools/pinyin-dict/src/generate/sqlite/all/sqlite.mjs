@@ -1019,12 +1019,18 @@ ORDER BY
 }
 
 /** 保存表情符号 */
-export async function saveEmojis(db, emojiMetas) {
+export async function saveEmojis(db, groupEmojiMetas) {
   // 对表情关键字采取按字（非拼音）匹配策略，
   // 仅关键字与查询字相同时才视为匹配上，可做单字或多字匹配
   await execSQL(
     db,
     `
+CREATE TABLE
+    IF NOT EXISTS meta_emoji_group (
+        id_ INTEGER NOT NULL PRIMARY KEY,
+        value_ TEXT NOT NULL,
+        UNIQUE (value_)
+    );
 CREATE TABLE
     IF NOT EXISTS meta_emoji (
         id_ INTEGER NOT NULL PRIMARY KEY,
@@ -1032,7 +1038,9 @@ CREATE TABLE
         value_ TEXT NOT NULL,
         unicode_ TEXT NOT NULL,
         unicode_version_ REAL NOT NULL,
-        UNIQUE (value_)
+        group_id_ INTERGET NOT NULL,
+        UNIQUE (value_),
+        FOREIGN KEY (group_id_) REFERENCES meta_emoji_group (id_)
     );
 
 CREATE TABLE
@@ -1064,6 +1072,7 @@ CREATE VIEW
         value_,
         unicode_,
         unicode_version_,
+        group_,
         keyword_index_,
         keyword_word_,
         keyword_word_id_,
@@ -1074,6 +1083,7 @@ SELECT
     emo_.value_,
     emo_.unicode_,
     emo_.unicode_version_,
+    grp_.value_,
     lnk_.target_index_,
     word_.value_,
     word_.id_,
@@ -1083,6 +1093,7 @@ FROM
     --
     LEFT JOIN link_emoji_with_keyword lnk_ on lnk_.source_id_ = emo_.id_
     LEFT JOIN meta_word word_ on word_.id_ = lnk_.target_word_id_
+    LEFT JOIN meta_emoji_group grp_ on grp_.id_ = emo_.group_id_
 -- Note: group by 不能对组内元素排序，故，只能在视图内先排序
 ORDER BY
     lnk_.target_index_ asc,
@@ -1090,19 +1101,50 @@ ORDER BY
     `
   );
 
-  const emojiMetaMap = emojiMetas.reduce((map, meta) => {
-    meta.keywords = meta.keywords.sort();
-
-    const code = meta.value;
-    map[code] = {
-      __meta__: meta,
-      value_: meta.value,
-      unicode_: meta.unicode,
-      unicode_version_: meta.unicode_version
-    };
+  const emojiGroupMap = Object.keys(groupEmojiMetas).reduce((map, group) => {
+    map[group] = { value_: group };
 
     return map;
   }, {});
+
+  // 保存表情分组信息
+  const missingEmojiGroups = [];
+  (await db.all('SELECT * FROM meta_emoji_group')).forEach((row) => {
+    const id = row.id_;
+    const code = row.value_;
+
+    if (emojiGroupMap[code]) {
+      emojiGroupMap[code].id_ = id;
+      emojiGroupMap[code].__exist__ = row;
+    } else {
+      missingEmojiGroups.push(id);
+    }
+  });
+  await saveToDB(db, 'meta_emoji_group', emojiGroupMap);
+  await removeFromDB(db, 'meta_emoji_group', missingEmojiGroups);
+
+  // 获取新增表情分组 id
+  (await db.all('SELECT * FROM meta_emoji_group')).forEach((row) => {
+    const code = row.value_;
+
+    emojiGroupMap[code].id_ = row.id_;
+  });
+
+  const emojiMetaMap = {};
+  Object.keys(groupEmojiMetas).forEach((group) => {
+    groupEmojiMetas[group].forEach((meta) => {
+      meta.keywords = meta.keywords.sort();
+
+      const code = meta.value;
+      emojiMetaMap[code] = {
+        __meta__: meta,
+        value_: meta.value,
+        unicode_: meta.unicode,
+        unicode_version_: meta.unicode_version,
+        group_id_: emojiGroupMap[group].id_
+      };
+    });
+  });
 
   // 保存表情信息
   const missingEmojis = [];
