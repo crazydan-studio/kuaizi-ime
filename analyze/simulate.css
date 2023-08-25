@@ -173,6 +173,7 @@ body {
   background-color: rgb(157, 23, 77);
 }
 
+.key[name="n"] .hex-inner,
 .key[name="t"] .hex-inner,
 .key[name="p"] .hex-inner,
 .key[name="q"] .hex-inner,
@@ -196,21 +197,21 @@ body {
 }
 
 .key[name="w"] .hex-inner,
-.key[name="h"] .hex-inner,
 .key[name="x"] .hex-inner,
 .key[name="y"] .hex-inner,
 .key[name="z"] .hex-inner {
   background-color: rgb(134, 25, 143);
 }
 
+.key[name="h"] .hex-inner,
 .key[name="m"] .hex-inner,
 .key[name="l"] .hex-inner,
-.key[name="n"] .hex-inner,
 .key[name="j"] .hex-inner,
 .key[name="k"] .hex-inner {
   background-color: rgb(55, 48, 163);
 }
 
+.key[name="；"] .hex-inner,
 .key[name="："] .hex-inner,
 .key[name="！"] .hex-inner,
 .key[name="？"] .hex-inner,

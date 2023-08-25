@@ -13,57 +13,31 @@ const lineCount = 9;
 const hexWidth = 100;
 const hexSpacing = 5;
 const hexOuterWidth = hexWidth + 2 * hexSpacing;
-const keyMapping = {
-  10: 'f',
-  22: 'l',
-  12: 'b',
-  19: 'j',
-  23: '空格',
-  21: 'm',
-  13: 'c',
-  15: '删除',
-  0: '翻转',
-  //0: '键盘',
-  18: 'k',
-  4: 'o',
-  5: 'e',
-  6: 'a',
-  1: 'zh',
-  2: 'ch',
-  3: 'sh',
-  28: 'r',
-  27: 'p',
-  29: '<&lt;o&gt;>',
-  30: 'h',
-  31: 'w',
-  32: '换行',
-  17: '拉丁',
-  34: '！',
-  36: 's',
-  35: 'q',
-  37: 't',
-  38: 'x',
-  39: 'y',
-  14: 'd',
-  26: '算数',
-  9: '表情',
-  11: 'g',
-  20: 'n',
-  43: '？',
-  44: 'u',
-  45: 'i',
-  46: 'ü',
-  40: 'z',
-  47: '。',
-  48: '，',
-  49: '标点'
-};
+const keys = [
+  // row 0
+  ['翻转', '；', 'zh', 'ch', 'sh', 'o', 'e', 'a', null],
+  // row 1
+  ['算数', '：', 'r', 'g', 'f', 'd', 'c', 'b'],
+  // row 2
+  ['拉丁', '！', 's', 'm','l','k','j','h', null],
+  // row 3
+  ['表情', '？', 't', 'n', '&lt;定位>', 'q', 'p', '换行'],
+  // row 4
+  ['标点', '。', 'ü', 'z', 'y', 'x', 'w', '空格', null],
+  // row 5
+  ['撤回', '，', 'u', 'i', '😂', '😄', '😉', '删除']
+];
 
 initKeyboard();
 
 function initKeyboard() {
-  for (let i = 0; i < line * lineCount - 4; i++) {
-    const keyChar = keyMapping[i] || '';
+  for (let i = 0, row = 0, column = 0; i < line * lineCount - 4; i++) {
+    const keyRow = keys[row] || [];
+    const keyChar = keyRow[column++] || '';
+    if (column >= keyRow.length) {
+      row += 1;
+      column = 0;
+    }
 
     const $key = document.createElement('li');
     $key.className = 'key ' + (keyChar ? '' : 'disabled');
