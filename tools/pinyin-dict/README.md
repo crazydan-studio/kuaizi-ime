@@ -320,7 +320,7 @@ select
   keyword_index_,
   group_concat(keyword_word_, '')
 from
-  emotion
+  emoji
 group by
   id_,
   keyword_index_;
