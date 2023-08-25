@@ -6,7 +6,7 @@ import { sleep } from '../../utils/utils.mjs';
 const baseUrl = 'https://emojixd.com';
 const gotOptions = { timeout: { connect: 50000 } };
 
-export async function fetchEmotions() {
+export async function fetchEmojis() {
   const html = await got(baseUrl, gotOptions).text();
   const $dom = new JSDOM(html);
   const $doc = (($dom || {}).window || {}).document;
@@ -24,19 +24,19 @@ export async function fetchEmotions() {
     groups.push({
       url,
       name: { zh: zhName, en: enName },
-      emotions: []
+      emojis: []
     });
   });
 
   for (const group of groups) {
-    const emotions = await fetchGroupEmotions(group.name.zh, group.url);
-    group.emotions = emotions;
+    const emojis = await fetchGroupEmojis(group.name.zh, group.url);
+    group.emojis = emojis;
   }
 
   return groups;
 }
 
-async function fetchGroupEmotions(groupName, groupUrl) {
+async function fetchGroupEmojis(groupName, groupUrl) {
   const html = await got(groupUrl, gotOptions).text();
   const $dom = new JSDOM(html);
   const $doc = (($dom || {}).window || {}).document;
@@ -44,52 +44,53 @@ async function fetchGroupEmotions(groupName, groupUrl) {
     return [];
   }
 
-  const $emotionLinks = $doc.querySelectorAll('a.emoji-item');
-  const emotionUrls = [];
-  $emotionLinks.forEach(($el) => {
+  const $emojiLinks = $doc.querySelectorAll('a.emoji-item');
+  const emojiUrls = [];
+  $emojiLinks.forEach(($el) => {
     const url = baseUrl + $el.getAttribute('href');
 
-    emotionUrls.push(url);
+    emojiUrls.push(url);
   });
 
   const batchSize = 50;
-  const emotions = [];
-  for (let i = 0; i < emotionUrls.length; i += batchSize) {
-    const urls = emotionUrls.slice(i, i + batchSize);
-    const data = await Promise.all(urls.map(fetchEmotion));
+  const emojis = [];
+  for (let i = 0; i < emojiUrls.length; i += batchSize) {
+    const urls = emojiUrls.slice(i, i + batchSize);
+    const data = await Promise.all(urls.map(fetchEmoji));
 
     console.log(
       `已抓取到 ${groupName} 第 ${i + 1} 到 ${i + 1 + batchSize} 之间的数据.`
     );
 
     data.forEach((e) => {
-      emotions.push(e);
+      emojis.push(e);
     });
 
     await sleep(1500);
   }
 
-  return emotions;
+  return emojis;
 }
 
-async function fetchEmotion(emotionUrl) {
-  const html = await got(emotionUrl, gotOptions).text();
+async function fetchEmoji(emojiUrl) {
+  const html = await got(emojiUrl, gotOptions).text();
   const $dom = new JSDOM(html);
   const $doc = (($dom || {}).window || {}).document;
   if (!$doc) {
-    return { url: emotionUrl };
+    return { url: emojiUrl };
   }
 
-  const emotion = {
+  const emoji = {
     value: '',
     name: { zh: '', en: '' },
     unicode: '',
-    url: emotionUrl,
+    unicode_version: '',
+    url: emojiUrl,
     keywords: []
   };
 
   const $value = $doc.querySelector('.center .emoji');
-  emotion.value = $value.textContent.trim();
+  emoji.value = $value.textContent.trim();
 
   $doc.querySelectorAll('dl > dt').forEach(($el) => {
     const title = $el.textContent.trim();
@@ -98,24 +99,27 @@ async function fetchEmotion(emotionUrl) {
 
     switch (title) {
       case 'Emoji名称':
-        emotion.name.zh = value;
+        emoji.name.zh = value;
         if (value.includes('旗:')) {
-          emotion.keywords.push(value.replaceAll(/^旗:\s*/g, ''));
+          emoji.keywords.push(value.replaceAll(/^旗:\s*/g, ''));
         }
         break;
       case '英文名称':
-        emotion.name.en = value;
+        emoji.name.en = value;
         break;
       case 'unicode编码':
-        emotion.unicode = value;
+        emoji.unicode = value;
+        break;
+      case 'unicode版本':
+        emoji.unicode_version = value;
         break;
       case '关键词':
         $next.querySelectorAll('a').forEach(($a) => {
-          emotion.keywords.push($a.textContent.trim());
+          emoji.keywords.push($a.textContent.trim());
         });
         break;
     }
   });
 
-  return emotion;
+  return emoji;
 }

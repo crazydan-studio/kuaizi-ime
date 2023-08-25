@@ -3,7 +3,7 @@ import { fromRootPath, readLineFromFile } from '../../../utils/utils.mjs';
 import * as sqlite from './sqlite.mjs';
 
 const dictDataValidFile = fromRootPath('data', 'pinyin-dict.valid.txt');
-const emotionDataFile = fromRootPath('data', 'emotions.json');
+const emojiDataFile = fromRootPath('data', 'emojis.json');
 // 包含完整拼音和字信息的 SQLite 数据库
 const dictDataSQLiteFile = fromRootPath('data', 'pinyin-dict.all.sqlite');
 // 分析数据
@@ -56,27 +56,28 @@ console.log();
 
 console.log();
 console.log('读取已收集的表情符号 ...');
-const emotionMetas = [];
-await readLineFromFile(emotionDataFile, (line) => {
+const emojiMetas = [];
+await readLineFromFile(emojiDataFile, (line) => {
   if (!line || !line.trim()) {
     return;
   }
 
   const groups = JSON.parse(line);
   groups.forEach((group) => {
-    group.emotions.forEach((emotion) => {
-      emotionMetas.push(emotion);
+    group.emojis.forEach((emoji) => {
+      emoji.group = group;
+      emojiMetas.push(emoji);
     });
   });
 });
-console.log('- 表情符号总数：' + emotionMetas.length);
+console.log('- 表情符号总数：' + emojiMetas.length);
 console.log();
 
 console.log();
 console.log('写入表情符号到 SQLite ...');
 let db2 = await sqlite.open(dictDataSQLiteFile);
 try {
-  await sqlite.saveEmotions(db2, emotionMetas);
+  await sqlite.saveEmojis(db2, emojiMetas);
   console.log('- 已保存表情符号数据');
 } catch (e) {
   console.error(e);

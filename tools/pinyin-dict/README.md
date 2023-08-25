@@ -123,6 +123,18 @@ order by
   amount desc;
 ```
 
+- 根据笔画数排序的字
+
+```sql
+select
+  value_,
+  total_stroke_count_
+from
+  meta_word
+order by
+  total_stroke_count_ desc;
+```
+
 - 根据字形权重排序
 
 ```sql

@@ -33,7 +33,7 @@ try {
   await ime.syncPhrases(imeDictDB, fullDictDB);
   console.log('- 已同步词组信息');
 
-  await ime.syncEmotions(imeDictDB, fullDictDB);
+  await ime.syncEmojis(imeDictDB, fullDictDB);
   console.log('- 已同步表情符号数据');
 } catch (e) {
   console.error(e);

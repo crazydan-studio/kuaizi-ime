@@ -267,20 +267,20 @@ FROM
 }
 
 /** 同步表情符号信息 */
-export async function syncEmotions(imeDB, rawDB) {
+export async function syncEmojis(imeDB, rawDB) {
   await execSQL(
     imeDB,
     `
 CREATE TABLE
-    IF NOT EXISTS meta_emotion (
+    IF NOT EXISTS meta_emoji (
         id_ INTEGER NOT NULL PRIMARY KEY,
-        -- 表情符号
         value_ TEXT NOT NULL,
+        unicode_version_ REAL NOT NULL,
         UNIQUE (value_)
     );
 
 CREATE TABLE
-    IF NOT EXISTS link_emotion_with_keyword (
+    IF NOT EXISTS link_emoji_with_keyword (
         id_ INTEGER NOT NULL PRIMARY KEY,
         -- 表情 id
         source_id_ INTEGER NOT NULL,
@@ -296,17 +296,18 @@ CREATE TABLE
             target_word_id_,
             target_word_index_
         ),
-        FOREIGN KEY (source_id_) REFERENCES meta_emotion (id_),
+        FOREIGN KEY (source_id_) REFERENCES meta_emoji (id_),
         FOREIGN KEY (target_word_id_) REFERENCES meta_word (id_)
     );
 -- 索引放在输入法初始化时创建，以降低索引造成的字典文件过大
--- CREATE INDEX IF NOT EXISTS idx_lnk_emo_kwd_wrd ON link_emotion_with_keyword (target_word_id_);
+-- CREATE INDEX IF NOT EXISTS idx_lnk_emo_kwd_wrd ON link_emoji_with_keyword (target_word_id_);
 
 -- 表情及其关键字
 CREATE VIEW
-    IF NOT EXISTS emotion (
+    IF NOT EXISTS emoji (
         id_,
         value_,
+        unicode_version_,
         keyword_index_,
         keyword_word_id_,
         keyword_word_index_,
@@ -316,22 +317,23 @@ CREATE VIEW
 SELECT
     emo_.id_,
     emo_.value_,
+    emo_.unicode_version_,
     lnk_.target_index_,
     lnk_.target_word_id_,
     lnk_.target_word_index_,
-    pw_lnk_.spell_chars_id_,
+    pw_lnk_.target_chars_id_,
     pw_lnk_.id_
 FROM
-    meta_emotion emo_
+    meta_emoji emo_
     --
-    INNER JOIN link_emotion_with_keyword lnk_ on lnk_.source_id_ = emo_.id_
+    INNER JOIN link_emoji_with_keyword lnk_ on lnk_.source_id_ = emo_.id_
     INNER JOIN link_word_with_pinyin pw_lnk_ on pw_lnk_.source_id_ = lnk_.target_word_id_;
       `
   );
 
   await syncTableData(imeDB, rawDB, [
-    'meta_emotion',
-    'link_emotion_with_keyword'
+    'meta_emoji',
+    'link_emoji_with_keyword'
   ]);
 }
 

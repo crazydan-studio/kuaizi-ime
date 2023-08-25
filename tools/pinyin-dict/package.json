@@ -10,7 +10,7 @@
     "generate:sqlite": "node src/generate/sqlite/all/index.mjs",
     "generate:sqlite:ime": "node src/generate/sqlite/ime/index.mjs",
     "generate:sqlite:debug": "node --inspect-brk src/generate/sqlite/all/index.mjs",
-    "generate:emotion": "node src/generate/emotion/index.mjs"
+    "generate:emoji": "node src/generate/emoji/index.mjs"
   },
   "author": "flytreeleft@crazydan.org",
   "license": "Apache-2.0",

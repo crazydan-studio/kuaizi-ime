@@ -1019,22 +1019,24 @@ ORDER BY
 }
 
 /** 保存表情符号 */
-export async function saveEmotions(db, emotionMetas) {
+export async function saveEmojis(db, emojiMetas) {
   // 对表情关键字采取按字（非拼音）匹配策略，
   // 仅关键字与查询字相同时才视为匹配上，可做单字或多字匹配
   await execSQL(
     db,
     `
 CREATE TABLE
-    IF NOT EXISTS meta_emotion (
+    IF NOT EXISTS meta_emoji (
         id_ INTEGER NOT NULL PRIMARY KEY,
         -- 表情符号
         value_ TEXT NOT NULL,
+        unicode_ TEXT NOT NULL,
+        unicode_version_ REAL NOT NULL,
         UNIQUE (value_)
     );
 
 CREATE TABLE
-    IF NOT EXISTS link_emotion_with_keyword (
+    IF NOT EXISTS link_emoji_with_keyword (
         id_ INTEGER NOT NULL PRIMARY KEY,
         -- 表情 id
         source_id_ INTEGER NOT NULL,
@@ -1050,16 +1052,18 @@ CREATE TABLE
             target_word_id_,
             target_word_index_
         ),
-        FOREIGN KEY (source_id_) REFERENCES meta_emotion (id_),
+        FOREIGN KEY (source_id_) REFERENCES meta_emoji (id_),
         FOREIGN KEY (target_word_id_) REFERENCES meta_word (id_)
     );
-CREATE INDEX IF NOT EXISTS idx_lnk_emo_kwd_wrd ON link_emotion_with_keyword (target_word_id_);
+CREATE INDEX IF NOT EXISTS idx_lnk_emo_kwd_wrd ON link_emoji_with_keyword (target_word_id_);
 
 -- 表情及其关键字
 CREATE VIEW
-    IF NOT EXISTS emotion (
+    IF NOT EXISTS emoji (
         id_,
         value_,
+        unicode_,
+        unicode_version_,
         keyword_index_,
         keyword_word_,
         keyword_word_id_,
@@ -1068,14 +1072,16 @@ CREATE VIEW
 SELECT
     emo_.id_,
     emo_.value_,
+    emo_.unicode_,
+    emo_.unicode_version_,
     lnk_.target_index_,
     word_.value_,
     word_.id_,
     lnk_.target_word_index_
 FROM
-    meta_emotion emo_
+    meta_emoji emo_
     --
-    LEFT JOIN link_emotion_with_keyword lnk_ on lnk_.source_id_ = emo_.id_
+    LEFT JOIN link_emoji_with_keyword lnk_ on lnk_.source_id_ = emo_.id_
     LEFT JOIN meta_word word_ on word_.id_ = lnk_.target_word_id_
 -- Note: group by 不能对组内元素排序，故，只能在视图内先排序
 ORDER BY
@@ -1084,45 +1090,48 @@ ORDER BY
     `
   );
 
-  const emotionMetaMap = emotionMetas.reduce((map, meta) => {
+  const emojiMetaMap = emojiMetas.reduce((map, meta) => {
     meta.keywords = meta.keywords.sort();
 
     const code = meta.value;
     map[code] = {
       __meta__: meta,
-      value_: meta.value
+      value_: meta.value,
+      unicode_: meta.unicode,
+      unicode_version_: meta.unicode_version
     };
 
     return map;
   }, {});
 
   // 保存表情信息
-  const missingPhrases = [];
-  (await db.all('SELECT * FROM meta_emotion')).forEach((row) => {
-    const code = row.value_;
+  const missingEmojis = [];
+  (await db.all('SELECT * FROM meta_emoji')).forEach((row) => {
     const id = row.id_;
+    const code = row.value_;
 
-    if (emotionMetaMap[code]) {
-      emotionMetaMap[code].id_ = id;
-      emotionMetaMap[code].__exist__ = row;
+    if (emojiMetaMap[code]) {
+      emojiMetaMap[code].id_ = id;
+      emojiMetaMap[code].__exist__ = row;
     } else {
-      missingPhrases.push(id);
+      missingEmojis.push(id);
     }
   });
-  await saveToDB(db, 'meta_emotion', emotionMetaMap);
-  await removeFromDB(db, 'meta_emotion', missingPhrases);
+  await saveToDB(db, 'meta_emoji', emojiMetaMap);
+  await removeFromDB(db, 'meta_emoji', missingEmojis);
 
   // 获取新增表情 id
-  (await db.all('SELECT id_, value_ FROM meta_emotion')).forEach((row) => {
+  (await db.all('SELECT * FROM meta_emoji')).forEach((row) => {
     const code = row.value_;
-    emotionMetaMap[code].id_ = row.id_;
+
+    emojiMetaMap[code].id_ = row.id_;
   });
 
   // 绑定关键字关联
   await asyncForEach(
     [
       {
-        table: 'link_emotion_with_keyword',
+        table: 'link_emoji_with_keyword',
         target_word_table: 'meta_word'
       }
     ],
@@ -1149,7 +1158,7 @@ ORDER BY
         };
       });
 
-      Object.values(emotionMetaMap).forEach((source) => {
+      Object.values(emojiMetaMap).forEach((source) => {
         const source_value = source.value_;
         const target_values = source.__meta__.keywords;
 
