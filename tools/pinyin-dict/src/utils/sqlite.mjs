@@ -40,8 +40,8 @@ export async function closeDB(db, skipClean) {
 }
 
 /** 新增或更新数据 */
-export async function saveToDB(db, table, dataMap) {
-  const dataArray = mapToArray(dataMap);
+export async function saveToDB(db, table, dataMap, disableSorting) {
+  const dataArray = mapToArray(dataMap, disableSorting);
   if (dataArray.length === 0) {
     return;
   }
@@ -119,7 +119,11 @@ export async function asyncForEach(array, cb) {
   }
 }
 
-function mapToArray(obj) {
+function mapToArray(obj, disableSorting) {
+  if (disableSorting === true) {
+    return Object.keys(obj).map((k) => obj[k]);
+  }
+
   const charSpecials = {
     a: ['ā', 'á', 'ǎ', 'à'],
     o: ['ō', 'ó', 'ǒ', 'ò'],

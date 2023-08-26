@@ -1159,7 +1159,7 @@ ORDER BY
       missingEmojis.push(id);
     }
   });
-  await saveToDB(db, 'meta_emoji', emojiMetaMap);
+  await saveToDB(db, 'meta_emoji', emojiMetaMap, true);
   await removeFromDB(db, 'meta_emoji', missingEmojis);
 
   // 获取新增表情 id
