@@ -152,7 +152,7 @@ body {
 }
 
 .key[name="空格"] .hex-inner,
-.key[name="<&lt;o&gt;>"] .hex-inner {
+.key[name="&lt;定位>"] .hex-inner {
   color: rgb(57, 57, 57);
   background-color: rgb(236, 236, 236);
 }
@@ -164,6 +164,8 @@ body {
 .key[name="数字"] .hex-inner,
 .key[name="标点"] .hex-inner {}
 
+/* .key[name="n"] .hex-inner,
+.key[name="r"] .hex-inner, */
 .key[name="ü"] .hex-inner,
 .key[name="i"] .hex-inner,
 .key[name="u"] .hex-inner,
@@ -173,13 +175,11 @@ body {
   background-color: rgb(157, 23, 77);
 }
 
-.key[name="n"] .hex-inner,
 .key[name="t"] .hex-inner,
 .key[name="p"] .hex-inner,
 .key[name="q"] .hex-inner,
-.key[name="r"] .hex-inner,
 .key[name="s"] .hex-inner {
-  background-color: rgb(91, 33, 182);
+  /* background-color: rgb(91, 33, 182); */
 }
 
 .key[name="f"] .hex-inner,
@@ -187,7 +187,7 @@ body {
 .key[name="c"] .hex-inner,
 .key[name="b"] .hex-inner,
 .key[name="d"] .hex-inner {
-  background-color: rgb(21, 94, 117);
+  /* background-color: rgb(21, 94, 117); */
 }
 
 .key[name="zh"] .hex-inner,
@@ -200,7 +200,7 @@ body {
 .key[name="x"] .hex-inner,
 .key[name="y"] .hex-inner,
 .key[name="z"] .hex-inner {
-  background-color: rgb(134, 25, 143);
+  /* background-color: rgb(134, 25, 143); */
 }
 
 .key[name="h"] .hex-inner,
@@ -208,7 +208,7 @@ body {
 .key[name="l"] .hex-inner,
 .key[name="j"] .hex-inner,
 .key[name="k"] .hex-inner {
-  background-color: rgb(55, 48, 163);
+  /* background-color: rgb(55, 48, 163); */
 }
 
 .key[name="；"] .hex-inner,
@@ -218,5 +218,5 @@ body {
 .key[name="；"] .hex-inner,
 .key[name="，"] .hex-inner,
 .key[name="。"] .hex-inner {
-  background-color: rgb(2, 170, 245);
+  /* background-color: rgb(2, 170, 245); */
 }
