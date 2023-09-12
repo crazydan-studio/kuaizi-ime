@@ -98,6 +98,8 @@ body {
   transform: skewY(-30deg) rotate(60deg);
 }
 
+.hex-inner .index {}
+
 .hex-inner .char {
   font-size: 2em;
   line-height: 2em;

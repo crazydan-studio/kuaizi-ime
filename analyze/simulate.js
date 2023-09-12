@@ -15,17 +15,17 @@ const hexSpacing = 5;
 const hexOuterWidth = hexWidth + 2 * hexSpacing;
 const keys = [
   // row 0
-  ['翻转', '😂', '！', 'ü', 'u', 'i', 'o', 'a', null],
+  ['翻转', '😂', '！', 'ü', 'i', 'u', 'o', 'a', null],
   // row 1
   ['算数', '？', 'd', 'b', 'x', 'q', 'j', 'e'],
   // row 2
-  ['拉丁', '😄', '；', 's', 'm', 'y', 'p', 'g', null],
+  ['拉丁', '😄', '；', 'm', 'l', 'y', 'p', '删除', null],
   // row 3
-  ['表情', '：', 'c', 't', '&lt;定位>', 'n', 'k', '换行'],
+  ['表情', '：', 's', 't', '&lt;定位>', 'r', 'g', '换行'],
   // row 4
-  ['标点', '😉', '。', 'z', 'l', 'r', 'h', '空格', null],
+  ['标点', '😉', '。', 'c', 'z', 'f', 'k', '空格', null],
   // row 5
-  ['撤回', '，', 'sh', 'ch', 'zh', 'f', 'w', '删除']
+  ['撤回', '，', 'sh', 'ch', 'zh', 'n', 'w', 'h']
 ];
 
 initKeyboard();
@@ -33,25 +33,27 @@ initKeyboard();
 function initKeyboard() {
   for (let i = 0, row = 0, column = 0; i < line * lineCount - 4; i++) {
     const keyRow = keys[row] || [];
-    const keyChar = keyRow[column++] || '';
-    if (column >= keyRow.length) {
-      row += 1;
-      column = 0;
-    }
+    const keyChar = keyRow[column] || '';
 
     const $key = document.createElement('li');
-    $key.className = 'key ' + (keyChar ? '' : 'disabled');
+    $key.className = 'key ' + (keyChar ? '' : 'hidden');
     $key.id = getKeyElementId(keyChar || i);
     $key.setAttribute('name', keyChar || '');
     $key.innerHTML = `
           <span class="hex"><span class="hex-inner">
-          <span class="index">${i}</span><br/>
+          <span class="index">${row},${column}</span><br/>
           <span class="char">${keyChar}</span>
           <!--<input type="text" style="width: 24px;margin-left: 8px;">-->
           </span></span>
           `;
 
     $keyboard.appendChild($key);
+
+    column += 1;
+    if (column >= keyRow.length) {
+      row += 1;
+      column = 0;
+    }
   }
 
   $keyboard.style.width = `${lineCount * hexOuterWidth}px`;
