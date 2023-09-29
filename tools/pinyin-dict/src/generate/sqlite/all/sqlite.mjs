@@ -1256,12 +1256,22 @@ ORDER BY
 /** 生成拼音字母组合数据 */
 export async function generatePinyinChars(db, file) {
   const values = [];
+  const nextCharsMap = {};
   (
     await db.all('SELECT value_ FROM meta_pinyin_chars ORDER BY value_')
   ).forEach((row) => {
     const value = row.value_;
     values.push(value);
+
+    const nextChars =
+      value.charAt(1) === 'h' ? value.substring(2) : value.substring(1);
+    nextChars && (nextCharsMap[nextChars] = true);
   });
+
+  console.log(
+    '- 后继字母列表: ',
+    JSON.stringify(Object.keys(nextCharsMap).sort())
+  );
 
   appendLineToFile(file, values.join('\n'), true);
 }

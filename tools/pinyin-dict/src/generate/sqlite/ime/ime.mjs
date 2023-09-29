@@ -286,6 +286,7 @@ CREATE TABLE
         FOREIGN KEY (group_id_) REFERENCES meta_emoji_group (id_)
     );
 
+-- Note：表情的关键字唯一标识由 表情 id 和 关键字的序号 组合而成
 CREATE TABLE
     IF NOT EXISTS link_emoji_with_keyword (
         id_ INTEGER NOT NULL PRIMARY KEY,
