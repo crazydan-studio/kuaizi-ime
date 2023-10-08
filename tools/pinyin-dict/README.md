@@ -271,6 +271,172 @@ order by
   start_ asc;
 ```
 
+- 声母后的韵母组成的拼音数
+
+```sql
+select
+  start_,
+  sum(total_),
+  group_concat (follow_ || ':' || total_)
+from
+  (
+    select
+      substr (value_, 1, 2) as start_,
+      substr (value_, 3, 1) as follow_,
+      count(value_) as total_
+    from
+      meta_pinyin_chars
+    where
+      substr (value_, 1, 2) in ('ch', 'zh', 'sh')
+    group by
+      start_,
+      follow_
+    order by
+      start_ asc,
+      follow_ asc
+  )
+group by
+  start_
+union
+select
+  start_,
+  sum(total_),
+  group_concat (follow_ || ':' || total_)
+from
+  (
+    select
+      substr (value_, 1, 1) as start_,
+      substr (value_, 2, 1) as follow_,
+      count(value_) as total_
+    from
+      meta_pinyin_chars
+    where
+      substr (value_, 1, 2) not in ('ch', 'zh', 'sh')
+    group by
+      start_,
+      follow_
+    order by
+      start_ asc,
+      follow_ asc
+  )
+group by
+  start_
+order by
+  start_ asc;
+```
+
+以上输出结果为：
+
+```
+j|14|i:10,u:4
+q|14|i:10,u:4
+x|14|i:10,u:4
+
+o|1+1|u:1 ,:1
+a|4+1|i:1,n:2,o:1 ,:1
+e|4+1|i:1,n:2,r:1 ,:1
+
+f|10|a:3,e:3,i:1,o:2,u:1
+r|15|a:3,e:3,i:1,o:2,u:6
+y|15|a:4,e:1,i:3,o:3,u:4
+b|16|a:5,e:3,i:6,o:1,u:1
+c|16|a:5,e:3,i:1,o:2,u:5
+s|16|a:5,e:3,i:1,o:2,u:5
+p|17|a:5,e:3,i:6,o:2,u:1
+z|17|a:5,e:4,i:1,o:2,u:5
+t|19|a:5,e:2,i:5,o:2,u:5
+ch|19|a:5,e:3,i:1,o:2,u:8
+sh|19|a:5,e:4,i:1,o:1,u:8
+zh|20|a:5,e:4,i:1,o:2,u:8
+m|20|a:5,e:4,i:7,o:2,u:1 ,:1
+d|23|a:5,e:4,i:7,o:2,u:5
+
+l|24+2|a:5,e:3,i:9,o:3,u:4 ,ü:2
+n|23+4|a:5,e:4,i:8,o:2,u:4 ,ü:2 ,:1,g:1
+
+w|9|a:4,e:3,o:1,u:1
+g|19|a:5,e:4,o:2,u:8
+k|19|a:5,e:4,o:2,u:8
+h|19+1|a:5,e:4,o:2,u:8 ,n:1
+```
+
+- 各声母组成的拼音数
+
+```sql
+select
+  substr (value_, 1, 2) as start_,
+  count(value_) as total_,
+  group_concat (distinct value_)
+from
+  (
+    select
+      *
+    from
+      meta_pinyin_chars
+    where
+      substr (value_, 1, 2) in ('ch', 'zh', 'sh')
+    order by
+      substr (value_, 3, 1) asc,
+      length (value_) asc
+  )
+group by
+  start_
+union
+select
+  substr (value_, 1, 1) as start_,
+  count(value_) as total_,
+  group_concat (distinct value_)
+from
+  (
+    select
+      *
+    from
+      meta_pinyin_chars
+    where
+      substr (value_, 1, 2) not in ('ch', 'zh', 'sh')
+    order by
+      substr (value_, 2, 1) asc,
+      length (value_) asc
+  )
+group by
+  start_
+order by
+  total_ desc,
+  start_ asc;
+```
+
+以上输出结果为：
+
+```
+zh|20|zha,zhai,zhan,zhao,zhang, zhe,zhei,zhen,zheng, zhi, zhou,zhong, zhu,zhua,zhui,zhun,zhuo,zhuai,zhuan,zhuang
+ch|19|cha,chai,chan,chao,chang, che,chen,cheng, chi, chou,chong, chu,chua,chui,chun,chuo,chuai,chuan,chuang
+sh|19|sha,shai,shan,shao,shang, she,shei,shen,sheng, shi, shou, shu,shua,shui,shun,shuo,shuai,shuan,shuang
+
+n|27|n, na,nai,nan,nao,nang, ne,nei,nen,neng, ng, ni,nie,nin,niu,nian,niao,ning,niang, nou,nong, nu,nun,nuo,nuan, nü,nüe
+l|26|la,lai,lan,lao,lang, le,lei,leng, li,lia,lie,lin,liu,lian,liao,ling,liang, lo,lou,long, lu,lun,luo,luan, lü,lüe
+d|23|da,dai,dan,dao,dang, de,dei,den,deng, di,dia,die,diu,dian,diao,ding, dou,dong, du,dui,dun,duo,duan
+h|20|ha,hai,han,hao,hang, he,hei,hen,heng, hng, hou,hong, hu,hua,hui,hun,huo,huai,huan,huang
+m|20|m, ma,mai,man,mao,mang, me,mei,men,meng, mi,mie,min,miu,mian,miao,ming, mo,mou, mu
+g|19|ga,gai,gan,gao,gang, ge,gei,gen,geng, gou,gong, gu,gua,gui,gun,guo,guai,guan,guang
+k|19|ka,kai,kan,kao,kang, ke,kei,ken,keng, kou,kong, ku,kua,kui,kun,kuo,kuai,kuan,kuang
+t|19|ta,tai,tan,tao,tang, te,teng, ti,tie,tian,tiao,ting, tou,tong, tu,tui,tun,tuo,tuan
+p|17|pa,pai,pan,pao,pang, pei,pen,peng, pi,pie,pin,pian,piao,ping,po,pou,pu
+z|17|za,zai,zan,zao,zang, ze,zei,zen,zeng, zi, zou,zong,zu,zui,zun,zuo,zuan
+b|16|ba,bai,ban,bao,bang, bei,ben,beng, bi,bie,bin,bian,biao,bing, bo, bu
+c|16|ca,cai,can,cao,cang, ce,cen,ceng, ci, cou,cong, cu,cui,cun,cuo,cuan
+s|16|sa,sai,san,sao,sang, se,sen,seng, si, sou,song, su,sui,sun,suo,suan
+r|15|ran,rao,rang, re,ren,reng, ri, rou,rong, ru,rua,rui,run,ruo,ruan
+y|15|ya,yan,yao,yang, ye, yi,yin,ying, yo,you,yong, yu,yue,yun,yuan
+j|14|ji,jia,jie,jin,jiu,jian,jiao,jing,jiang,jiong, ju,jue,jun,juan
+q|14|qi,qia,qie,qin,qiu,qian,qiao,qing,qiang,qiong, qu,que,qun,quan
+x|14|xi,xia,xie,xin,xiu,xian,xiao,xing,xiang,xiong, xu,xue,xun,xuan
+f|10|fa,fan,fang, fei,fen,feng, fiao, fo,fou, fu
+w|9|wa,wai,wan,wang, wei,wen,weng, wo, wu
+a|5|a,ai,an,ang,ao
+e|5|e,ei,en,eng,er
+o|2|o,ou
+```
+
 ### 按词组查询
 
 - 词组（拼音）组成信息
