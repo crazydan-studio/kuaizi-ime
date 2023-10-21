@@ -41,6 +41,36 @@
 - 支持直接输入括号、引号等配对的标点符号，并自动将选中内容包裹在配对符号中
 - 在拉丁字符与汉字、操作数与运算符之间自动添加空格，以规范输入格式
 
+## 功能演示
+
+### 拼音滑屏输入
+
+https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/eb2f74f9-f64e-4d02-ad80-98e3ecb9d61b
+
+### 算数输入
+
+https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/f461b564-0ac4-4257-82ad-11afcd3e1d6c
+
+### 内容编辑
+
+https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/992a0a5e-7e1e-4b93-a1ac-c893d0e3ff2e
+
+### 表情符号匹配
+
+https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/7fff6ddf-9e10-408f-b160-3b3b8e2ab215
+
+### 配对符号输入
+
+https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/97b0f99b-92e1-4b28-a5b6-d45150c4bada
+
+### 英文/拼音输入补全
+
+https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/c77c37e8-054c-41f7-a5ba-db407964fb60
+
+### 拼音输入提交选项
+
+https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/274d41dd-e858-4b71-a041-31df3dd24f7d
+
 ## License
 
 [Apache 2.0](./LICENSE)
