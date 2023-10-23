@@ -41,10 +41,14 @@
 - 支持直接输入括号、引号等配对的标点符号，并自动将选中内容包裹在配对符号中
 - 在拉丁字符与汉字、操作数与运算符之间自动添加空格，以规范输入格式
 
-|   |   |   |   |
-|---|---|---|---|
-| <img src="https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/766cea91-5a1b-48d5-9ce0-d921a43fefe3" height="300"/> | <img src="https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/b21413f0-1357-426f-b536-d5bfe6b47f2f" height="300"/> | <img src="https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/eef674fb-b41c-4514-9167-37b9b88cfe8a" height="300"/> | <img src="https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/8ecd285d-aa9a-4274-b5f9-879bc20b0ab5" height="300"/> |
-| <img src="https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/643016b6-462b-4079-93d5-50a54a97de1b" height="300"/> | <img src="https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/4e0afd48-d9e9-4b84-a17d-bd8f570bbadc" height="300"/> | <img src="https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/e13c6f18-c9e1-4141-bed2-2024ac77782f" height="300"/> | <img src="https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/04cb3b6b-343a-4174-8521-ca1b34afa175" height="300"/> |
+<img src="https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/766cea91-5a1b-48d5-9ce0-d921a43fefe3" height="300"/>
+<img src="https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/b21413f0-1357-426f-b536-d5bfe6b47f2f" height="300"/>
+<img src="https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/eef674fb-b41c-4514-9167-37b9b88cfe8a" height="300"/>
+<img src="https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/8ecd285d-aa9a-4274-b5f9-879bc20b0ab5" height="300"/>
+<img src="https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/643016b6-462b-4079-93d5-50a54a97de1b" height="300"/>
+<img src="https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/4e0afd48-d9e9-4b84-a17d-bd8f570bbadc" height="300"/>
+<img src="https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/e13c6f18-c9e1-4141-bed2-2024ac77782f" height="300"/>
+<img src="https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/04cb3b6b-343a-4174-8521-ca1b34afa175" height="300"/>
 
 ## 功能演示
 
