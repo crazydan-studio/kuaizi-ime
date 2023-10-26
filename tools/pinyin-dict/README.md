@@ -21,6 +21,8 @@ npm run generate:raw
 >   否则，仅更新 `data/pinyin-dict.valid.txt` 的数据；
 > - 涉及按字形排序等的权重计算，故而生成时间会比较长；
 
+> 注：解压 `data/pinyin-dict-data.zip` 也可以得到已经就绪的上述两个文件。
+
 - 从 [EmojiXD](https://emojixd.com/) 抓取表情符号，
   并将 json 数据存放在 `data/emotions.json` 中：
 
