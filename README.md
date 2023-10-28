@@ -4,7 +4,7 @@
 <img src="./assets/img/logo.svg" width="172px" />
 
 > - Google Play 地址: https://play.google.com/store/apps/details?id=org.crazydan.studio.app.ime.kuaizi
-> - 内测尝鲜版下载地址（需解压）: https://github.com/crazydan-studio/kuaizi-ime/files/13160954/Kuaizi_IME-1.0.1-alpha.zip
+> - 内测尝鲜版下载地址（需解压）: https://github.com/crazydan-studio/kuaizi-ime/files/13194753/Kuaizi_IME-1.1.0-alpha.zip
 
 **筷字输入法** 是一款根据汉语拼音的组合特征而专门设计的、
 高效且快速的、适用于电子触屏设备的拼音输入法。
