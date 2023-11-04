@@ -1276,7 +1276,7 @@ export async function generatePinyinChars(db, file) {
   appendLineToFile(file, values.join('\n'), true);
 }
 
-/** 生成拼音字母关联数据 */
+/** 生成拼音字母组合数据 */
 export async function generatePinyinCharLinks(db, file) {
   const links = {};
   (
@@ -1305,9 +1305,9 @@ export async function generatePinyinCharLinks(db, file) {
   appendLineToFile(file, JSON.stringify(results), true);
 }
 
-/** 生成拼音字母后继关联数据 */
-export async function generatePinyinNextCharLinks(db, file) {
-  const links = {};
+/** 生成拼音字母后继树数据 */
+export async function generatePinyinCharTree(db, file) {
+  const tree = {};
   (
     await db.all('SELECT value_ FROM meta_pinyin_chars ORDER BY value_')
   ).forEach((row) => {
@@ -1315,7 +1315,7 @@ export async function generatePinyinNextCharLinks(db, file) {
     const chars = splitChars(value);
 
     if (chars.length > 1) {
-      let parent = links;
+      let parent = tree;
       let child;
 
       for (let i = 1; i < chars.length; i++) {
@@ -1329,7 +1329,7 @@ export async function generatePinyinNextCharLinks(db, file) {
       child.__is_pinyin__ = true;
     } else {
       const source = chars[0];
-      links[source] = { __is_pinyin__: true };
+      tree[source] = { __is_pinyin__: true };
     }
   });
 
@@ -1390,8 +1390,8 @@ export async function generatePinyinNextCharLinks(db, file) {
   };
 
   const results = [];
-  getKeys(links).forEach((source) => {
-    const child = traverse(links, source, 0);
+  getKeys(tree).forEach((source) => {
+    const child = traverse(tree, source, 0);
     results.push(child);
   });
 

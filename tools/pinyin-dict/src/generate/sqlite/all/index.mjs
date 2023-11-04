@@ -12,9 +12,9 @@ const pinyinCharLinksFile = fromRootPath(
   '../..',
   'analyze/files/char-links.json'
 );
-const pinyinNextCharLinksFile = fromRootPath(
+const pinyinCharTreeFile = fromRootPath(
   '../..',
-  'analyze/files/next-char-links.json'
+  'analyze/files/char-tree.json'
 );
 
 console.log();
@@ -121,7 +121,7 @@ try {
   await sqlite.generatePinyinCharLinks(db3, pinyinCharLinksFile);
   console.log('- 已保存拼音字母关联数据');
 
-  await sqlite.generatePinyinNextCharLinks(db3, pinyinNextCharLinksFile);
+  await sqlite.generatePinyinCharTree(db3, pinyinCharTreeFile);
   console.log('- 已保存拼音字母后继数据');
 } catch (e) {
   console.error(e);
