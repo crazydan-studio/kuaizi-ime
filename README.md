@@ -83,6 +83,11 @@ https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/c77c37e8-054c-41f7-
 
 https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/274d41dd-e858-4b71-a041-31df3dd24f7d
 
+## 开发工具
+
+- [拼音按键布局在线分析工具](./analyze/README.md)
+- [拼音字典数据采集和校正程序](./tools/pinyin-dict/README.md)
+
 ## License
 
 [Apache 2.0](./LICENSE)

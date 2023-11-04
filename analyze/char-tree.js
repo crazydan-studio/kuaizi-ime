@@ -204,7 +204,7 @@ export function define(runtime, observer) {
     [
       'data.json',
       {
-        url: new URL('./files/next-char-links.json', import.meta.url),
+        url: new URL('./files/char-tree.json', import.meta.url),
         mimeType: 'application/json',
         toString
       }
