@@ -40,28 +40,23 @@ const keys = [
 initKeyboard();
 
 function initKeyboard() {
-  for (let i = 0, row = 0, column = 0; i < hexColumns * hexRows; i++) {
-    const keyRow = keys[row] || [];
-    const keyChar = keyRow[column] || '';
+  for (let i = 0; i < hexRows; i++) {
+    for (let j = 0; j < hexColumns; j++) {
+      const keyChar = (keys[i] || [])[j] || '';
 
-    const $key = document.createElement('li');
-    $key.className = 'key ' + (keyChar ? '' : 'hidden');
-    $key.id = getKeyElementId(keyChar || i);
-    $key.setAttribute('name', keyChar || '');
-    $key.innerHTML = `
+      const $key = document.createElement('li');
+      $key.className = 'key ' + (keyChar ? '' : 'hidden');
+      $key.id = getKeyElementId(keyChar || i + '-' + j);
+      $key.setAttribute('name', keyChar || '');
+      $key.innerHTML = `
           <span class="hex"><span class="hex-inner">
-          <span class="index">${row},${column}</span><br/>
+          <span class="index">${i},${j}</span><br/>
           <span class="char">${keyChar}</span>
           <!--<input type="text" style="width: 24px;margin-left: 8px;">-->
           </span></span>
           `;
 
-    $keyboard.appendChild($key);
-
-    column += 1;
-    if (column >= keyRow.length) {
-      row += 1;
-      column = 0;
+      $keyboard.appendChild($key);
     }
   }
 
