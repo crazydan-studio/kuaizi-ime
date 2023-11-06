@@ -8,22 +8,31 @@ const timer = {
   id: 0,
   duration: 500
 };
-const line = 8;
-const lineCount = 9;
-const hexWidth = 100;
+const cos_30 = Math.cos(Math.PI / 6);
+const sin_30 = Math.sin(Math.PI / 6);
+const hexRows = 6;
+const hexColumns = 8;
+const hexRadius = 50;
+const hexWidth = 2 * (hexRadius * cos_30);
+const hexHeight = 2 * hexRadius;
+// 正六边形间距通过嵌套外六边形实现
 const hexSpacing = 5;
-const hexOuterWidth = hexWidth + 2 * hexSpacing;
+const hexOuterRadius = hexRadius + hexSpacing / (2 * cos_30);
+const hexOuterWidth = 2 * (hexOuterRadius * cos_30);
+const hexOuterHeight = 2 * hexOuterRadius;
+const hexOuterMarginTop = -hexOuterRadius * sin_30;
+const hexRowsWidth = (hexColumns + 0.5) * hexOuterWidth;
 const keys = [
   // row 0
-  ['翻转', '😂', '！', 'ü', 'i', 'u', 'o', 'j', null],
+  ['翻转', '😂', '！', 'ü', 'i', 'u', 'o', 'j'],
   // row 1
   ['算数', '？', 'd', 'b', 'x', 'q', 'a', '删除'],
   // row 2
-  ['拉丁', '😄', '；', 'm', 'l', 'y', 'p', 'e', null],
+  ['拉丁', '😄', '；', 'm', 'l', 'y', 'p', 'e'],
   // row 3
   ['表情', '：', 's', 't', '&lt;定位>', 'r', 'h', '换行'],
   // row 4
-  ['标点', '😉', '。', 'c', 'z', 'f', 'n', 'k', null],
+  ['标点', '😉', '。', 'c', 'z', 'f', 'n', 'k'],
   // row 5
   ['撤回', '，', 'sh', 'ch', 'zh', 'g', 'w', '空格']
 ];
@@ -31,7 +40,7 @@ const keys = [
 initKeyboard();
 
 function initKeyboard() {
-  for (let i = 0, row = 0, column = 0; i < line * lineCount - 4; i++) {
+  for (let i = 0, row = 0, column = 0; i < hexColumns * hexRows; i++) {
     const keyRow = keys[row] || [];
     const keyChar = keyRow[column] || '';
 
@@ -56,19 +65,22 @@ function initKeyboard() {
     }
   }
 
-  $keyboard.style.width = `${lineCount * hexOuterWidth}px`;
+  $keyboard.style.width = `${hexRowsWidth}px`;
 
-  // 假设需要平行边距离为w的六边形，每个六边形之间的间隔为m。
-  // 如果第一排有x个六边形，那么为实现相邻两排交错排列的效果，
-  // 需要设置: .key:nth(`2x - 1`n + `x + 1`) { margin-left: 0.5(w+2m) }。
-  // 比如第一排有6个，那么li:nth(11n+7) { ... }
-  const $lineCount = document.createElement('style');
-  $lineCount.textContent = `
-      .key:nth-child(${2 * lineCount - 1}n+${lineCount + 1}) { margin-left: ${
-    0.5 * hexOuterWidth
-  }px; }
+  const $hexComputedStyle = document.createElement('style');
+  $hexComputedStyle.textContent = `
+      .demo { padding-top: ${-hexOuterMarginTop}px; }
+      .hex {
+        width: ${hexOuterWidth}px;
+        height: ${hexOuterHeight}px;
+        margin-top: ${hexOuterMarginTop}px;
+      }
+      .hex-inner { width: ${hexWidth}px; height: ${hexHeight}px; }
+      .key:nth-child(${hexColumns * 2}n+${hexColumns + 1}) {
+        margin-left: ${0.5 * hexOuterWidth}px;
+      }
       `;
-  document.head.appendChild($lineCount);
+  document.head.appendChild($hexComputedStyle);
 
   const $btnClear = document.body.querySelector('.data .btn [name="clear"]');
   const $btnStop = document.body.querySelector('.data .btn [name="stop"]');

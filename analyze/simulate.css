@@ -28,6 +28,7 @@ body {
 
 .data {
   padding: 2em;
+  margin-top: 5em;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -77,32 +78,29 @@ body {
   padding-bottom: 20px;
 }
 
-.key {
-  margin: 0 5px;
-  height: 96px;
-}
+.key {}
 
 .hex {
   overflow: hidden;
-  display: block;
-  width: 100px;
-  height: 116px;
-  transform: rotate(-60deg) skewY(30deg);
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .hex-inner {
-  display: block;
-  width: 100px;
-  height: 116px;
   text-align: center;
-  transform: skewY(-30deg) rotate(60deg);
+  clip-path: polygon(0% 25%, 0% 75%, 50% 100%, 100% 75%, 100% 25%, 50% 0%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
 }
 
 .hex-inner .index {}
 
 .hex-inner .char {
-  font-size: 2em;
-  line-height: 2em;
+  font-size: 1.5em;
+  line-height: 1.5em;
 }
 
 .key .hex-inner {
