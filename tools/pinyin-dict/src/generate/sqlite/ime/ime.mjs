@@ -24,12 +24,15 @@ CREATE TABLE
     IF NOT EXISTS meta_pinyin (
         id_ INTEGER NOT NULL PRIMARY KEY,
         value_ TEXT NOT NULL,
-        UNIQUE (value_)
+        -- 拼音字母组合 id
+        chars_id_ INTEGER NOT NULL,
+        UNIQUE (value_),
+        FOREIGN KEY (chars_id_) REFERENCES meta_pinyin_chars (id_)
     );
       `
   );
 
-  await syncTableData(imeDB, rawDB, ['meta_pinyin', 'meta_pinyin_chars']);
+  await syncTableData(imeDB, rawDB, ['meta_pinyin_chars', 'meta_pinyin']);
 }
 
 /** 同步字信息 */
@@ -37,6 +40,16 @@ export async function syncWords(imeDB, rawDB) {
   await execSQL(
     imeDB,
     `
+-- Note：索引放在输入法初始化时创建，以降低索引造成的字典文件过大
+CREATE TABLE
+    IF NOT EXISTS meta_word_radical (
+        id_ INTEGER NOT NULL PRIMARY KEY,
+        value_ TEXT NOT NULL,
+        stroke_count_ INTEGER DEFAULT 0,
+        UNIQUE (value_)
+    );
+
+-- --------------------------------------------------------------
 CREATE TABLE
     IF NOT EXISTS meta_word (
         id_ INTEGER NOT NULL PRIMARY KEY,
@@ -45,30 +58,49 @@ CREATE TABLE
         stroke_order_ TEXT DEFAULT '',
         -- 是否为繁体字
         traditional_ INTEGER DEFAULT 0,
-        UNIQUE (value_)
+        -- 部首 id
+        radical_id_ INTEGER DEFAULT NULL,
+        UNIQUE (value_),
+        FOREIGN KEY (radical_id_) REFERENCES meta_word_radical (id_)
     );
-
 CREATE TABLE
-    IF NOT EXISTS link_word_with_pinyin (
+    IF NOT EXISTS meta_word_with_pinyin (
         id_ INTEGER NOT NULL PRIMARY KEY,
         -- 字 id
-        source_id_ INTEGER NOT NULL,
+        word_id_ INTEGER NOT NULL,
         -- 拼音 id
-        target_id_ INTEGER NOT NULL,
-        -- 拼音字母组合 id
-        target_chars_id_ INTEGER NOT NULL,
+        spell_id_ INTEGER NOT NULL,
         -- 字形权重：用于对相同拼音字母组合的字按字形相似性排序
         glyph_weight_ INTEGER DEFAULT 0,
         -- 按使用频率等排序的权重
         weight_ INTEGER DEFAULT 0,
-        UNIQUE (source_id_, target_id_),
-        FOREIGN KEY (source_id_) REFERENCES meta_word (id_),
-        FOREIGN KEY (target_id_) REFERENCES meta_pinyin (id_),
-        FOREIGN KEY (target_chars_id_) REFERENCES meta_pinyin_chars (id_)
+        UNIQUE (word_id_, spell_id_),
+        FOREIGN KEY (word_id_) REFERENCES meta_word (id_),
+        FOREIGN KEY (spell_id_) REFERENCES meta_pinyin (id_)
     );
--- 索引放在输入法初始化时创建，以降低索引造成的字典文件过大
--- CREATE INDEX IF NOT EXISTS idx_lnk_wrd_py_chars ON link_word_with_pinyin (target_chars_id_);
 
+-- --------------------------------------------------------------
+CREATE VIEW
+    IF NOT EXISTS link_word_with_pinyin (
+        id_,
+        source_id_,
+        target_id_,
+        target_chars_id_,
+        glyph_weight_,
+        weight_
+    ) AS
+SELECT
+    meta_.id_,
+    meta_.word_id_,
+    meta_.spell_id_,
+    spell_.chars_id_,
+    meta_.glyph_weight_,
+    meta_.weight_
+FROM
+    meta_word_with_pinyin meta_
+    LEFT JOIN meta_pinyin spell_ on spell_.id_ = meta_.spell_id_;
+
+-- --------------------------------------------------------------
 CREATE TABLE
     IF NOT EXISTS link_word_with_simple_word (
         id_ INTEGER NOT NULL PRIMARY KEY,
@@ -92,6 +124,7 @@ CREATE TABLE
         FOREIGN KEY (target_id_) REFERENCES meta_word (id_)
     );
 
+-- --------------------------------------------------------------
 -- 字及其拼音
 CREATE VIEW
     IF NOT EXISTS pinyin_word (
@@ -104,25 +137,32 @@ CREATE VIEW
         weight_,
         glyph_weight_,
         stroke_order_,
-        traditional_
+        traditional_,
+        radical_,
+        radical_stroke_count_
     ) AS
 SELECT
     lnk_.id_,
     word_.value_,
     word_.id_,
     spell_.value_,
-    lnk_.target_id_,
-    lnk_.target_chars_id_,
+    spell_.id_,
+    spell_.chars_id_,
     lnk_.weight_,
     lnk_.glyph_weight_,
     word_.stroke_order_,
-    word_.traditional_
+    word_.traditional_,
+    radical_.value_,
+    radical_.stroke_count_
 FROM
     meta_word word_
     --
-    INNER JOIN link_word_with_pinyin lnk_ on lnk_.source_id_ = word_.id_
-    INNER JOIN meta_pinyin spell_ on spell_.id_ = lnk_.target_id_;
+    INNER JOIN meta_word_with_pinyin lnk_ on lnk_.word_id_ = word_.id_
+    INNER JOIN meta_pinyin spell_ on spell_.id_ = lnk_.spell_id_
+    INNER JOIN meta_word_radical radical_ on radical_.id_ = word_.radical_id_
+    ;
 
+-- --------------------------------------------------------------
 -- 繁体 -> 简体
 CREATE VIEW
     IF NOT EXISTS simple_word (
@@ -176,8 +216,9 @@ WHERE
   );
 
   await syncTableData(imeDB, rawDB, [
+    'meta_word_radical',
     'meta_word',
-    'link_word_with_pinyin',
+    'meta_word_with_pinyin',
     'link_word_with_simple_word',
     'link_word_with_traditional_word'
   ]);
@@ -188,6 +229,7 @@ export async function syncPhrases(imeDB, rawDB) {
   await execSQL(
     imeDB,
     `
+-- Note：索引放在输入法初始化时创建，以降低索引造成的字典文件过大
 CREATE TABLE
     IF NOT EXISTS meta_phrase (
         id_ INTEGER NOT NULL PRIMARY KEY,
@@ -196,31 +238,46 @@ CREATE TABLE
     );
 
 CREATE TABLE
-    IF NOT EXISTS link_phrase_with_pinyin_word (
+    IF NOT EXISTS meta_phrase_with_pinyin_word (
         id_ INTEGER NOT NULL PRIMARY KEY,
         -- 短语 id
-        source_id_ INTEGER NOT NULL,
-        -- 字及其拼音关联表 link_word_with_pinyin 的 id
-        target_id_ INTEGER NOT NULL,
-        -- 拼音字母组合 id
-        target_spell_chars_id_ INTEGER NOT NULL,
-        -- 字在词中的序号
-        target_index_ INTEGER NOT NULL,
+        phrase_id_ INTEGER NOT NULL,
+        -- 字及其拼音关联表 meta_word_with_pinyin 的 id
+        word_id_ INTEGER NOT NULL,
+        -- 字在短语中的序号
+        word_index_ INTEGER NOT NULL,
         UNIQUE (
-            source_id_,
-            target_id_,
-            target_index_
+            phrase_id_,
+            word_id_,
+            word_index_
         ),
-        FOREIGN KEY (source_id_) REFERENCES meta_phrase (id_),
-        FOREIGN KEY (
-            target_id_,
-            target_spell_chars_id_
-        ) REFERENCES link_word_with_pinyin (id_, target_chars_id_)
+        FOREIGN KEY (phrase_id_) REFERENCES meta_phrase (id_),
+        FOREIGN KEY (word_id_) REFERENCES meta_word_with_pinyin (id_)
     );
--- 索引放在输入法初始化时创建，以降低索引造成的字典文件过大
--- CREATE INDEX IF NOT EXISTS idx_lnk_phrs_pywd_chars ON link_phrase_with_pinyin_word (target_spell_chars_id_);
 
--- 词及其拼音
+-- --------------------------------------------------------------
+CREATE VIEW
+    IF NOT EXISTS link_phrase_with_pinyin_word (
+        id_,
+        source_id_,
+        target_id_,
+        target_spell_chars_id_,
+        target_index_
+    ) AS
+SELECT
+    meta_.id_,
+    meta_.phrase_id_,
+    meta_.word_id_,
+    spell_.chars_id_,
+    meta_.word_index_
+FROM
+    meta_phrase_with_pinyin_word meta_
+    --
+    LEFT JOIN meta_word_with_pinyin word_ on word_.id_ = meta_.word_id_
+    LEFT JOIN meta_pinyin spell_ on spell_.id_ = word_.spell_id_;
+
+-- --------------------------------------------------------------
+-- 短语及其拼音
 CREATE VIEW
     IF NOT EXISTS pinyin_phrase (
         id_,
@@ -233,14 +290,17 @@ CREATE VIEW
 SELECT
     lnk_.id_,
     phrase_.weight_,
-    lnk_.source_id_,
-    lnk_.target_id_,
-    lnk_.target_index_,
-    lnk_.target_spell_chars_id_
+    lnk_.phrase_id_,
+    lnk_.word_id_,
+    lnk_.word_index_,
+    spell_.chars_id_
 FROM
     meta_phrase phrase_
     --
-    INNER JOIN link_phrase_with_pinyin_word lnk_ on lnk_.source_id_ = phrase_.id_;
+    INNER JOIN meta_phrase_with_pinyin_word lnk_ on lnk_.phrase_id_ = phrase_.id_
+    --
+    LEFT JOIN meta_word_with_pinyin word_lnk_ on word_lnk_.id_ = lnk_.word_id_
+    LEFT JOIN meta_pinyin spell_ on spell_.id_ = word_lnk_.spell_id_;
       `
   );
 
@@ -251,14 +311,14 @@ FROM
       select: 'select * from meta_phrase where weight_ > 0'
     },
     {
-      name: 'link_phrase_with_pinyin_word',
+      name: 'meta_phrase_with_pinyin_word',
       select: `
     select
       *
     from
-      link_phrase_with_pinyin_word
+      meta_phrase_with_pinyin_word
     where
-      source_id_ in (
+      phrase_id_ in (
         select id_ from meta_phrase where weight_ > 0
       )
     `

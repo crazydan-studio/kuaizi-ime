@@ -89,10 +89,10 @@ group by
 ```sql
 select
   glyph_struct_,
-  value_,
+  word_,
   group_concat(distinct radical_)
 from
-  meta_word
+  pinyin_word
 group by
   glyph_struct_;
 ```
@@ -111,14 +111,29 @@ order by
   amount desc;
 ```
 
+- 各部首包含的字
+
+```sql
+select
+  radical_,
+  group_concat(distinct word_)
+from
+  pinyin_word
+group by
+  radical_
+order by
+  radical_stroke_count_ asc,
+  weight_ desc;
+```
+
 - 各部首包含的字数
 
 ```sql
 select
   radical_,
-  count(distinct value_) as amount
+  count(distinct word_) as amount
 from
-  meta_word
+  pinyin_word
 group by
   radical_
 order by
@@ -135,21 +150,6 @@ from
   meta_word
 order by
   total_stroke_count_ desc;
-```
-
-- 根据字形权重排序
-
-```sql
-select
-  radical_,
-  group_concat(distinct value_)
-from
-  meta_word
-group by
-  radical_
-order by
-  radical_stroke_count_ asc,
-  weight_ desc;
 ```
 
 - 统计所有字包含的笔画

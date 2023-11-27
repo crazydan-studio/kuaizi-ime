@@ -36,7 +36,7 @@ try {
   await ime.syncEmojis(imeDictDB, fullDictDB);
   console.log('- 已同步表情符号数据');
 } catch (e) {
-  console.error(e);
+  throw e;
 } finally {
   await ime.close(fullDictDB);
   await ime.close(imeDictDB);

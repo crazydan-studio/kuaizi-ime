@@ -47,7 +47,7 @@ try {
   await sqlite.savePhrases(db1, wordMetas);
   console.log('- 已保存词组信息');
 } catch (e) {
-  console.error(e);
+  throw e;
 } finally {
   await sqlite.close(db1);
 }
@@ -105,7 +105,7 @@ try {
   await sqlite.saveEmojis(db2, groupEmojiMetas);
   console.log('- 已保存表情符号数据');
 } catch (e) {
-  console.error(e);
+  throw e;
 } finally {
   await sqlite.close(db2);
 }
@@ -124,7 +124,7 @@ try {
   await sqlite.generatePinyinCharTree(db3, pinyinCharTreeFile);
   console.log('- 已保存拼音字母后继数据');
 } catch (e) {
-  console.error(e);
+  throw e;
 } finally {
   await sqlite.close(db3);
 }
