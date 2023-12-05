@@ -494,6 +494,78 @@ group by
   keyword_index_;
 ```
 
+## 新旧版本数据迁移
+
+Note：核心元数据（拼音、字、字读音）的 `id_` 和 `value_`
+不能发生变化，否则，已发布的输入法将出现用户已输入短语失效的问题。
+
+```sql
+PRAGMA foreign_keys = 0;
+PRAGMA ignore_check_constraints = 1;
+
+-- 直接删除不紧要或变更元数据不会影响输入法用户数据的表
+DROP TABLE meta_word_cangjie_code;
+DROP TABLE meta_word_sijiao_code;
+DROP TABLE meta_word_wubi_code;
+DROP TABLE meta_word_zhengma_code;
+DROP TABLE meta_zhuyin;
+DROP TABLE meta_zhuyin_chars;
+DROP TABLE meta_phrase;
+DROP TABLE link_phrase_with_pinyin_word;
+DROP TABLE link_phrase_with_zhuyin_word;
+DROP TABLE link_word_with_simple_word;
+DROP TABLE link_word_with_traditional_word ;
+DROP TABLE link_word_with_variant_word;
+DROP TABLE link_word_with_zhuyin;
+DROP VIEW pinyin_phrase;
+DROP VIEW pinyin_word;
+DROP VIEW simple_word;
+DROP VIEW traditional_word;
+DROP VIEW zhuyin_phrase;
+DROP VIEW zhuyin_word;
+
+-- 对核心的元数据表进行结构变更，直接变更为新版本的表结构
+-- Note：新增的非空列，只能设置为 DEFAULT NULL，完整性由代码检查
+ALTER TABLE meta_pinyin ADD COLUMN chars_id_ INTEGER DEFAULT NULL REFERENCES meta_pinyin_chars (id_);
+ALTER TABLE meta_word DROP COLUMN radical_;
+ALTER TABLE meta_word DROP COLUMN radical_stroke_count_;
+ALTER TABLE meta_word ADD COLUMN radical_id_ INTEGER DEFAULT NULL REFERENCES meta_word_radical (id_);
+
+-- 添加新表，并从原始表中迁移元数据，以确核型元数据的 id 和相互间的关联不变
+CREATE TABLE meta_word_with_pinyin (
+        id_ INTEGER NOT NULL PRIMARY KEY,
+        -- 字 id
+        word_id_ INTEGER NOT NULL,
+        -- 拼音 id
+        spell_id_ INTEGER NOT NULL,
+        -- 字形权重：用于对相同拼音字母组合的字按字形相似性排序
+        glyph_weight_ INTEGER DEFAULT 0,
+        -- 按使用频率等排序的权重
+        weight_ INTEGER DEFAULT 0,
+        UNIQUE (word_id_, spell_id_),
+        FOREIGN KEY (word_id_) REFERENCES meta_word (id_),
+        FOREIGN KEY (spell_id_) REFERENCES meta_pinyin (id_)
+    );
+
+INSERT INTO
+    meta_word_with_pinyin (id_, word_id_, spell_id_, glyph_weight_, weight_)
+SELECT
+    id_, source_id_, target_id_, glyph_weight_, weight_
+FROM link_word_with_pinyin;
+
+-- 删除旧表
+DROP TABLE link_word_with_pinyin;
+
+PRAGMA foreign_keys = 1;
+PRAGMA ignore_check_constraints = 1;
+
+-- 数据库无用空间回收
+VACUUM;
+
+-- 执行数据更新/升级脚本: npm run generate:sqlite
+-- 检查新旧版本数据是否存在差异（注意修改新旧数据库文件名）: npm run generate:sqlite:diff
+```
+
 ## License
 
 [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0)

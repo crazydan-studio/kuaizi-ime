@@ -8,6 +8,7 @@
     "generate:raw": "node src/generate/raw/index.mjs",
     "generate:raw:debug": "node --inspect-brk src/generate/raw/index.mjs",
     "generate:sqlite": "node src/generate/sqlite/all/index.mjs",
+    "generate:sqlite:diff": "node src/generate/sqlite/all/diff.mjs",
     "generate:sqlite:ime": "node src/generate/sqlite/ime/index.mjs",
     "generate:sqlite:debug": "node --inspect-brk src/generate/sqlite/all/index.mjs",
     "generate:emoji": "node src/generate/emoji/index.mjs"

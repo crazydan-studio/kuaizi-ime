@@ -513,10 +513,12 @@ WHERE
     };
 
     const radical = meta.radical;
-    wordRadicalMetaData[radical] = {
-      value_: radical,
-      stroke_count_: meta.radical_stroke_count
-    };
+    if (radical) {
+      wordRadicalMetaData[radical] = {
+        value_: radical,
+        stroke_count_: meta.radical_stroke_count || 0
+      };
+    }
   });
 
   // ================================================================

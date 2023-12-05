@@ -107,6 +107,13 @@ export async function removeFromDB(db, table, ids) {
   await deleteStatement.finalize();
 }
 
+export async function hasTable(db, table) {
+  const result = await db.get(
+    `SELECT count(*) as total FROM sqlite_master WHERE type='table' AND name='${table}'`
+  );
+  return result.total == 1;
+}
+
 export async function execSQL(db, sqls) {
   await asyncForEach(sqls.split(/;/g), async (sql) => {
     await db.exec(sql);
