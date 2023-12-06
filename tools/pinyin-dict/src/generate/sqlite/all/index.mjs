@@ -28,6 +28,14 @@ await readLineFromFile(dictDataValidFile, (line) => {
   const metas = JSON.parse(line);
   metas.forEach((meta) => {
     wordMetas.push(meta);
+
+    // 单独修正输入数据
+    if (
+      meta.value == '噷' &&
+      meta.pinyins.filter(({ value }) => value == 'hm').length == 0
+    ) {
+      meta.pinyins.push({ value: 'hm', chars: 'hm' });
+    }
   });
 });
 console.log('- 有效字信息总数：' + wordMetas.length);
