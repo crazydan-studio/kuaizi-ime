@@ -499,6 +499,8 @@ group by
 Note：核心元数据（拼音、字、字读音）的 `id_` 和 `value_`
 不能发生变化，否则，已发布的输入法将出现用户已输入短语失效的问题。
 
+> 操作之前务必先备份旧版本的数据库文件。
+
 ```sql
 PRAGMA foreign_keys = 0;
 PRAGMA ignore_check_constraints = 1;
