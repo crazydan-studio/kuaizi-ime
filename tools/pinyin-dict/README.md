@@ -417,7 +417,7 @@ sh|19|sha,shai,shan,shao,shang, she,shei,shen,sheng, shi, shou, shu,shua,shui,sh
 n|27|n, na,nai,nan,nao,nang, ne,nei,nen,neng, ng, ni,nie,nin,niu,nian,niao,ning,niang, nou,nong, nu,nun,nuo,nuan, nü,nüe
 l|26|la,lai,lan,lao,lang, le,lei,leng, li,lia,lie,lin,liu,lian,liao,ling,liang, lo,lou,long, lu,lun,luo,luan, lü,lüe
 d|23|da,dai,dan,dao,dang, de,dei,den,deng, di,dia,die,diu,dian,diao,ding, dou,dong, du,dui,dun,duo,duan
-h|21|ha,hai,han,hao,hang, he,hei,hen,heng, ,hm,hng, hou,hong, hu,hua,hui,hun,huo,huai,huan,huang
+h|21|ha,hai,han,hao,hang, he,hei,hen,heng, hm,hng, hou,hong, hu,hua,hui,hun,huo,huai,huan,huang
 m|20|m, ma,mai,man,mao,mang, me,mei,men,meng, mi,mie,min,miu,mian,miao,ming, mo,mou, mu
 g|19|ga,gai,gan,gao,gang, ge,gei,gen,geng, gou,gong, gu,gua,gui,gun,guo,guai,guan,guang
 k|19|ka,kai,kan,kao,kang, ke,kei,ken,keng, kou,kong, ku,kua,kui,kun,kuo,kuai,kuan,kuang
