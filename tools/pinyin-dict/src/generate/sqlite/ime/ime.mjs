@@ -7,6 +7,9 @@ import {
 
 export { openDB as open, closeDB as close } from '../../../utils/sqlite.mjs';
 
+// 查看表上的索引: PRAGMA index_list('MyTable');
+// 查看索引的列: PRAGMA index_info('MyIndex');
+
 /** 同步字读音信息 */
 export async function syncSpells(imeDB, rawDB) {
   await execSQL(
