@@ -6,6 +6,13 @@
 > - Google Play 地址: https://play.google.com/store/apps/details?id=org.crazydan.studio.app.ime.kuaizi
 > - 内测尝鲜版下载地址（需解压）: https://github.com/crazydan-studio/kuaizi-ime/files/13194753/Kuaizi_IME-1.1.0-alpha.zip
 
+> **Warning**：筷字输入法目前仅上线了 Google Play 应用商店，
+> 在国内外的其他应用发布平台均没有本团队的注册帐号，也没有在其上发布任何应用，
+> 请注意识别并警惕相关风险。此外，筷字输入法的内测版本仅在 Github
+> 上由 [Crazydan Studio](https://github.com/crazydan-studio) 发布，
+> 本团队均未在其他平台上传安装包，若需下载试用，
+> 请注意下载链接是以 https://github.com/crazydan-studio/kuaizi-ime/files/ 开头的。
+
 **筷字输入法** 是一款根据汉语拼音的组合特征而专门设计的、
 高效且快速的、适用于电子触屏设备的拼音输入法。
 
@@ -33,6 +40,8 @@
 ## 功能特性
 
 - 以连续滑屏方式录入拼音，且单次录入最多仅需滑屏两次
+- 内置 [8VIM](https://github.com/8VIM/8VIM)/[8pen](https://github.com/crazydan-studio/kuaizi-ime/files/13110790/504690_1_En.pdf)
+  输入模式，以画圈方式进行拼音或英文的连续输入，提供顺畅的输入体验
 - 所有候选字均附带显示完整的拼音，可清晰识别各个字的准确读音
 - 输入数据本地存储，不收集、不分析用户数据
 - 仅支持精确的拼音输入匹配，**不支持**拼音联想输入和模糊匹配机制
@@ -52,14 +61,17 @@
 <img src="https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/4e0afd48-d9e9-4b84-a17d-bd8f570bbadc" height="300"/>
 <img src="https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/e13c6f18-c9e1-4141-bed2-2024ac77782f" height="300"/>
 <img src="https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/04cb3b6b-343a-4174-8521-ca1b34afa175" height="300"/>
+<img src="https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/039ff5f0-a134-49ec-a4fc-3060bf6d5485" height="300"/>
 
 ## 功能演示
+
+> 最新版本的按键布局可能会与演示视频有出入，请以最新版本的为准。
 
 ### 拼音滑屏输入
 
 https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/eb2f74f9-f64e-4d02-ad80-98e3ecb9d61b
 
-### 算数输入
+### 算术输入
 
 https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/f461b564-0ac4-4257-82ad-11afcd3e1d6c
 
@@ -82,6 +94,10 @@ https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/c77c37e8-054c-41f7-
 ### 拼音输入提交选项
 
 https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/274d41dd-e858-4b71-a041-31df3dd24f7d
+
+### 类 8VIM/8pen 型输入
+
+https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/534fa61e-34dc-4e81-a7d1-5eb7cc3b291f
 
 ## 开发工具
 
