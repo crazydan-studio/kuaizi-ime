@@ -3,8 +3,9 @@
 
 <img src="./assets/img/logo.svg" width="172px" />
 
-> - Google Play 地址: https://play.google.com/store/apps/details?id=org.crazydan.studio.app.ime.kuaizi
-> - 内测尝鲜版下载地址（需解压）: https://github.com/crazydan-studio/kuaizi-ime/files/13194753/Kuaizi_IME-1.1.0-alpha.zip
+> - Google Play 付费购买地址: https://play.google.com/store/apps/details?id=org.crazydan.studio.app.ime.kuaizi
+> - v1.0 内测版下载地址（永久免费，需解压）: https://github.com/crazydan-studio/kuaizi-ime/files/13194753/Kuaizi_IME-1.1.0-alpha.zip
+> - v2.0 内测版下载地址（永久免费，需解压）: https://github.com/crazydan-studio/kuaizi-ime/files/13644988/Kuaizi_IME-2.0.0-alpha.zip
 
 > **Warning**：筷字输入法目前仅上线了 Google Play 应用商店，
 > 在国内外的其他应用发布平台均没有本团队的注册帐号，也没有在其上发布任何应用，
