@@ -33,6 +33,10 @@ export function fileSHA256(filepath) {
   return hash.digest('hex');
 }
 
+export function readJSONFromFile(filepath) {
+  return JSON.parse(fs.readFileSync(filepath, 'utf8'));
+}
+
 export async function readLineFromFile(filepath, consumer) {
   if (!fs.existsSync(filepath)) {
     return [];

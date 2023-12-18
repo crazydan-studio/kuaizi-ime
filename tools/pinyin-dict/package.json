@@ -11,7 +11,11 @@
     "generate:sqlite:diff": "node src/generate/sqlite/all/diff.mjs",
     "generate:sqlite:ime": "node src/generate/sqlite/ime/index.mjs",
     "generate:sqlite:debug": "node --inspect-brk src/generate/sqlite/all/index.mjs",
-    "generate:emoji": "node src/generate/emoji/index.mjs"
+    "generate:sqlite:pred": "node src/generate/sqlite/prediction/index.mjs",
+    "generate:sqlite:pred:debug": "node --inspect-brk src/generate/sqlite/prediction/index.mjs",
+    "generate:emoji": "node src/generate/emoji/index.mjs",
+    "pred:shell": "node src/generate/sqlite/prediction/shell.mjs",
+    "pred:shell:debug": "node --inspect-brk src/generate/sqlite/prediction/shell.mjs"
   },
   "author": "flytreeleft@crazydan.org",
   "license": "Apache-2.0",
