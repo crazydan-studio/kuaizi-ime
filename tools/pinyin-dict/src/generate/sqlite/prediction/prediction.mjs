@@ -335,12 +335,13 @@ export async function predict(predDictDB, wordDictDB, pinyinChars) {
   // 对串进行回溯即可得对应拼音的汉字
   const words = [];
   words[last] = Object.keys(viterbi[last]).reduce((acc, s) => {
-    return !acc || acc[0] < viterbi[last][s][0] ? viterbi[last][s] : acc;
+    const probability = viterbi[last][s][0];
+    // Note：取概率最大的末尾汉字
+    return !acc || acc[0] < probability ? [probability, s] : acc;
   }, null)[1];
 
   for (let n = last - 1; n > -1; n--) {
-    const post = words[n + 1];
-    words[n] = viterbi[n + 1][post][1];
+    words[n] = viterbi[n + 1][words[n + 1]][1];
   }
 
   return words.map((id) => pinyin_words[id]);

@@ -24,6 +24,7 @@
     "get-system-fonts": "^2.0.2",
     "got": "^13.0.0",
     "grapheme-splitter": "^1.0.4",
+    "inquirer": "^9.2.12",
     "jsdom": "^22.1.0",
     "sqlite": "^5.0.1",
     "sqlite3": "^5.1.6"
