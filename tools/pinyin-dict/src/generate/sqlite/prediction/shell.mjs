@@ -38,7 +38,9 @@ async function start(predDictDB, wordDictDB) {
   const chars = answer.pinyin.split(/\s+/g);
   const words = await prediction.predict(predDictDB, wordDictDB, chars);
 
-  console.log(words.join(''));
+  words.forEach((w, i) => {
+    console.log(i + 1, w[0], w[1].join(''));
+  });
 
   return true;
 }

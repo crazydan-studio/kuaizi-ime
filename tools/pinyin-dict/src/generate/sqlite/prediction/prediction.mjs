@@ -250,7 +250,7 @@ export async function predict(predDictDB, wordDictDB, pinyinChars) {
   const emiss_prob = {};
   const trans_prob = {};
 
-  const pinyin_word_ids = Object.keys(pinyin_words).join(', ');
+  const pinyin_word_ids = Object.keys(pinyin_words).concat(-1).join(', ');
   await asyncForEach(
     [
       {
@@ -267,7 +267,7 @@ export async function predict(predDictDB, wordDictDB, pinyinChars) {
         }
       },
       {
-        select: `select * from meta_trans_prob where word_id_ in (${pinyin_word_ids}) or word_id_ = -1 or prev_word_id_ = -1`,
+        select: `select * from meta_trans_prob where word_id_ in (${pinyin_word_ids}) or prev_word_id_ = -1`,
         convert: ({ word_id_, prev_word_id_, value_ }) => {
           trans_prob[word_id_] = trans_prob[word_id_] || [];
           trans_prob[word_id_][prev_word_id_] = value_;
@@ -334,17 +334,33 @@ export async function predict(predDictDB, wordDictDB, pinyinChars) {
 
   // 对串进行回溯即可得对应拼音的汉字
   const words = [];
-  words[last] = Object.keys(viterbi[last]).reduce((acc, s) => {
-    const probability = viterbi[last][s][0];
-    // Note：取概率最大的末尾汉字
-    return !acc || acc[0] < probability ? [probability, s] : acc;
-  }, null)[1];
+  words[last] = Object.keys(viterbi[last])
+    // Note：取概率最大前 N 各末尾汉字
+    .map((s) => {
+      const probability = viterbi[last][s][0];
+      return [probability, s];
+    })
+    .sort((a, b) => b[0] - a[0])
+    .slice(0, 5);
 
+  // 结构: words[n] = [[probability, s], ...]
   for (let n = last - 1; n > -1; n--) {
-    words[n] = viterbi[n + 1][words[n + 1]][1];
+    words[n] = words[n + 1].map((w) => viterbi[n + 1][w[1]] || [0, -1]);
   }
 
-  return words.map((id) => pinyin_words[id]);
+  // 结构: words[n] = [sum probability, [w1, w2, ..]]
+  return words.reduce(
+    (acc, w) => {
+      return w.map((tuple, i) => {
+        // [sum probability, [w1, w2, ..]]
+        const ww = pinyin_words[tuple[1]];
+        const total = acc[i][0];
+
+        return [total + tuple[0], [...acc[i][1], ww]];
+      });
+    },
+    words[0].map(() => [0, []])
+  );
 }
 
 function get(obj, key, defaultValue) {
