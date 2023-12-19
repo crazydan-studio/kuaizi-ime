@@ -7,15 +7,9 @@ const emojiDataFile = fromRootPath('data', 'emojis.json');
 // 包含完整拼音和字信息的 SQLite 数据库
 const dictDataSQLiteFile = fromRootPath('data', 'pinyin-dict.all.sqlite');
 // 分析数据
-const pinyinCharsFile = fromRootPath('../..', 'analyze/files/pinyin.txt');
-const pinyinCharLinksFile = fromRootPath(
-  '../..',
-  'analyze/files/char-links.json'
-);
-const pinyinCharTreeFile = fromRootPath(
-  '../..',
-  'analyze/files/char-tree.json'
-);
+const pinyinCharsFile = fromRootPath('..', 'analyze/files/pinyin.txt');
+const pinyinCharLinksFile = fromRootPath('..', 'analyze/files/char-links.json');
+const pinyinCharTreeFile = fromRootPath('..', 'analyze/files/char-tree.json');
 
 console.log();
 console.log('读取已收集的有效字信息 ...');

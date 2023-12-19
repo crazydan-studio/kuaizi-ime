@@ -102,7 +102,7 @@ https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/534fa61e-34dc-4e81-
 
 ## 开发工具
 
-- [拼音按键布局在线分析工具](./analyze/README.md)
+- [拼音按键布局在线分析工具](./tools/analyze/README.md)
 - [拼音字典数据采集和校正程序](./tools/pinyin-dict/README.md)
 
 ## License
