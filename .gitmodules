@@ -16,3 +16,6 @@
 [submodule "data/zi-dataset"]
 	path = data/zi-dataset
 	url = git@github.com:crazydan-studio/zi-dataset.git
+[submodule "data/Pinyin2ChineseChars"]
+	path = data/Pinyin2ChineseChars
+	url = git@github.com:crazydan-studio/Pinyin2ChineseChars.git
