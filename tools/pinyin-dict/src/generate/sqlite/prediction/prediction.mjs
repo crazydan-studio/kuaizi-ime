@@ -224,7 +224,7 @@ CREATE TABLE
 
 /** 词组预测 */
 export async function predict(predDictDB, wordDictDB, pinyinChars) {
-  const pinyin_states = {};
+  const pinyin_char_and_words = {};
   const pinyin_chars = {};
   const pinyin_words = {};
 
@@ -241,8 +241,9 @@ export async function predict(predDictDB, wordDictDB, pinyinChars) {
     pinyin_chars[spell_chars_] = spell_chars_id_;
     pinyin_words[word_id_] = word_;
 
-    pinyin_states[spell_chars_id_] = pinyin_states[spell_chars_id_] || [];
-    pinyin_states[spell_chars_id_].push(word_id_);
+    pinyin_char_and_words[spell_chars_id_] =
+      pinyin_char_and_words[spell_chars_id_] || [];
+    pinyin_char_and_words[spell_chars_id_].push(word_id_);
   });
 
   // =====================================================
@@ -284,7 +285,7 @@ export async function predict(predDictDB, wordDictDB, pinyinChars) {
   // =====================================================
   const length = pinyinChars.length;
   const last = length - 1;
-  const seq = pinyinChars.map((ch) => pinyin_chars[ch]);
+  const pinyin_char_ids = pinyinChars.map((ch) => pinyin_chars[ch]);
 
   // 用于log平滑时所取的最小值，用于代替0
   const min_f = -3.14e100;
@@ -292,71 +293,76 @@ export async function predict(predDictDB, wordDictDB, pinyinChars) {
   // probability 为从 pre_word 上一汉字即上一状态转移到目前状态的概率
   // viterbi[pos][word] = (probability, pre_word)
   const viterbi = [];
-  // 针对每个拼音切分，首先根据第一个拼音，
-  // 从 pinyin_states 中找出所有可能的汉字s，
-  // 然后通过 init_prob 得出初始概率，通过 emiss_prob 得出发射概率，
-  // 从而算出 viterbi[0][s]
-  pinyin_states[seq[0]].forEach((s) => {
-    const probability =
-      get(init_prob, s, min_f) +
-      get(get(emiss_prob, s, {}), seq[0], min_f) +
-      get(get(trans_prob, s, {}), -1, min_f);
 
-    viterbi[0] = viterbi[0] || {};
-    viterbi[0][s] = [probability, -1];
-  });
+  for (let prev_index = -1; prev_index < last; prev_index++) {
+    const current_index = prev_index + 1;
+    const current_char_id = pinyin_char_ids[current_index];
+    const current_word_ids = pinyin_char_and_words[current_char_id];
 
-  for (let i = 0; i < last; i++) {
-    // 遍历 pinyin_states，找出所有可能与当前拼音相符的汉字 s，
+    // Note：首拼音的前序字设为 -1
+    const prev_char_id = pinyin_char_ids[prev_index];
+    const prev_word_ids = pinyin_char_and_words[prev_char_id] || [-1];
+
+    const current_word_viterbi = (viterbi[current_index] =
+      viterbi[current_index] || {});
+
+    // 遍历 pinyin_char_and_words，找出所有可能与当前拼音相符的汉字 s，
     // 利用动态规划算法从前往后，推出每个拼音汉字状态的概率 viterbi[i+1][s]
-    pinyin_states[seq[i + 1]].forEach((s) => {
-      viterbi[i + 1] = viterbi[i + 1] || {};
+    current_word_ids.forEach((current_word_id) => {
+      current_word_viterbi[current_word_id] = prev_word_ids.reduce(
+        (acc, prev_word_id) => {
+          let probability = 0;
 
-      viterbi[i + 1][s] = pinyin_states[seq[i]].reduce((acc, pre) => {
-        const probability =
-          viterbi[i][pre][0] +
-          get(get(emiss_prob, s, {}), seq[i + 1], min_f) +
-          get(get(trans_prob, s, {}), pre, min_f);
+          // 首拼音的初始概率为 单字的使用概率
+          if (current_index == 0) {
+            probability += get(init_prob, current_word_id, min_f);
+          } else {
+            probability += viterbi[prev_index][prev_word_id][0];
+          }
 
-        return !acc || acc[0] < probability ? [probability, pre] : acc;
-      }, null);
+          probability +=
+            get(get(emiss_prob, current_word_id, {}), current_char_id, min_f) +
+            get(get(trans_prob, current_word_id, {}), prev_word_id, min_f);
+
+          // 加上末尾字的转移概率
+          if (current_index == last) {
+            probability += get(get(trans_prob, -1, {}), current_word_id, min_f);
+          }
+
+          return !acc || acc[0] < probability
+            ? [probability, prev_word_id]
+            : acc;
+        },
+        null
+      );
     });
   }
-
-  // 取概率最大的串（可从大到小取多个串），即概率最大的 viterbi[n][s]（s为末尾的汉字）
-  pinyin_states[seq[last]].forEach((s) => {
-    const probability =
-      viterbi[last][s][0] + //
-      get(get(trans_prob, -1, {}), s, min_f);
-
-    viterbi[last][s] = [probability, viterbi[last][s][1]];
-  });
 
   // 对串进行回溯即可得对应拼音的汉字
   const words = [];
   words[last] = Object.keys(viterbi[last])
     // Note：取概率最大前 N 各末尾汉字
-    .map((s) => {
-      const probability = viterbi[last][s][0];
-      return [probability, s];
+    .map((word_id) => {
+      const probability = viterbi[last][word_id][0];
+      return [probability, word_id];
     })
     .sort((a, b) => b[0] - a[0])
     .slice(0, 5);
 
   // 结构: words[n] = [[probability, s], ...]
   for (let n = last - 1; n > -1; n--) {
-    words[n] = words[n + 1].map((w) => viterbi[n + 1][w[1]] || [0, -1]);
+    words[n] = words[n + 1].map((pair) => viterbi[n + 1][pair[1]] || [0, -1]);
   }
 
   // 结构: words[n] = [sum probability, [w1, w2, ..]]
   return words.reduce(
     (acc, w) => {
-      return w.map((tuple, i) => {
+      return w.map((pair, i) => {
         // [sum probability, [w1, w2, ..]]
-        const ww = pinyin_words[tuple[1]];
+        const word = pinyin_words[pair[1]];
         const total = acc[i][0];
 
-        return [total + tuple[0], [...acc[i][1], ww]];
+        return [total + pair[0], [...acc[i][1], word]];
       });
     },
     words[0].map(() => [0, []])

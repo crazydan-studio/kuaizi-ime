@@ -31,11 +31,13 @@ async function start(predDictDB, wordDictDB) {
       message: '请输入拼音，拼音之间以空格分隔:'
     }
   ]);
-  if (!answer.pinyin) {
+
+  const pinyin = answer.pinyin.trim();
+  if (!pinyin) {
     return false;
   }
 
-  const chars = answer.pinyin.split(/\s+/g);
+  const chars = pinyin.split(/\s+/g);
   const words = await prediction.predict(predDictDB, wordDictDB, chars);
 
   words.forEach((w, i) => {

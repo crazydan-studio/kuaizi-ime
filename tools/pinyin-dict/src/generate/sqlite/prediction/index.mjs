@@ -56,6 +56,7 @@ try {
 //   true
 // );
 
+// Note：去掉 id 列以减少数据库文件大小
 // const imeDictDBFileHash = fileSHA256(predDictSQLiteFile);
 // appendLineToFile(dictImeSQLiteHashFile, imeDictDBFileHash, true);
 // console.log('- 已记录数据库 Hash 值：' + imeDictDBFileHash);
