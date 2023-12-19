@@ -298,7 +298,8 @@ export async function predict(predDictDB, wordDictDB, pinyinCharsArray) {
 
   const first_pinyin_chars_id = pinyin_chars[pinyinCharsArray[0]];
   const pinyin_chars_ids = pinyinCharsArray.map((ch) => pinyin_chars[ch]);
-  const joined_pinyin_chars_ids = pinyin_chars_ids.join(', ');
+  const unique_pinyin_chars_ids = Array.from(new Set(pinyin_chars_ids));
+  const joined_pinyin_chars_ids = unique_pinyin_chars_ids.join(', ');
 
   const init_prob = {};
   const emiss_prob = {};
@@ -331,20 +332,72 @@ export async function predict(predDictDB, wordDictDB, pinyinCharsArray) {
         }
       },
       {
-        select: `with recursive
-          word_ids(word_id_) as (
-            select -1
-            union
-              select t_.word_id_
-              from meta_word_with_pinyin t_
-              where t_.chars_id_ in (${joined_pinyin_chars_ids})
-          )
+        select:
+          'with recursive\n' +
+          (() => {
+            const chars_ids = [-1, ...unique_pinyin_chars_ids, -1];
+            const word_tables = [];
+            const union_sqls = [];
+            for (let i = 1; i < chars_ids.length; i++) {
+              const prev_chars_id = chars_ids[i - 1];
+              const curr_chars_id = chars_ids[i];
+
+              if (curr_chars_id != -1) {
+                word_tables.push(`
+                  word_ids_${curr_chars_id}(word_id_) as (
+                    select
+                      word_id_
+                    from
+                      meta_word_with_pinyin
+                    where
+                      chars_id_ = ${curr_chars_id}
+                  )
+                `);
+              }
+
+              if (prev_chars_id == -1) {
+                union_sqls.push(`
+                  select
+                    -1 as prev_word_id_
+                    , curr_.word_id_ as curr_word_id_
+                  from
+                    word_ids_${curr_chars_id} curr_
+                `);
+              } else if (curr_chars_id == -1) {
+                union_sqls.push(`
+                  select
+                    prev_.word_id_ as prev_word_id_
+                    , -1 as curr_word_id_
+                  from
+                    word_ids_${prev_chars_id} prev_
+                `);
+              } else {
+                union_sqls.push(`
+                  select
+                    prev_.word_id_ as prev_word_id_
+                    , curr_.word_id_ as curr_word_id_
+                  from
+                    word_ids_${prev_chars_id} prev_
+                      , word_ids_${curr_chars_id} curr_
+                `);
+              }
+            }
+
+            return (
+              word_tables.join(', ') +
+              (', word_ids(prev_word_id_, curr_word_id_) as (' +
+                union_sqls.join(' union ') +
+                ')')
+            );
+          })() +
+          `
         select distinct s_.*
         from
           meta_trans_prob s_
+          , word_ids t_
         where
-          s_.word_id_ in (select word_id_ from word_ids)
-          and s_.prev_word_id_ in (select word_id_ from word_ids)
+          s_.word_id_ = t_.curr_word_id_
+          and s_.prev_word_id_ = t_.prev_word_id_
         `,
         convert: ({ word_id_, prev_word_id_, value_ }) => {
           trans_prob[word_id_] = trans_prob[word_id_] || {};
