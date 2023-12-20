@@ -1,8 +1,6 @@
 /* SQLite 词典库 */
 import {
   fromRootPath,
-  fileSHA256,
-  appendLineToFile,
   readJSONFromFile
 } from '../../../utils/utils.mjs';
 import * as sqlite from './sqlite.mjs';
@@ -24,7 +22,7 @@ let phraseDictDB = await sqlite.open(phraseDictSQLiteFile);
 
 try {
   await sqlite.updateData(phraseDictDB, wordDictDB, {
-    // 初始概率矩阵：单字的使用概率
+    // 初始概率矩阵：每个汉字作为句首的概率
     init_prob: readJSONFromFile(hmmParamsDir + '/init_prob.json'),
     // 汉字-拼音发射概率矩阵：字的对应拼音（多音字）的使用概率，概率为 0 的表示单音字
     emiss_prob: readJSONFromFile(hmmParamsDir + '/emiss_prob.json'),

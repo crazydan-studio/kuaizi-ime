@@ -34,7 +34,7 @@ CREATE TABLE
         PRIMARY KEY (word_id_, chars_id_)
     );
 
--- 初始概率矩阵：单字的使用概率
+-- 初始概率矩阵：每个汉字作为句首的概率
 CREATE TABLE
     IF NOT EXISTS meta_init_prob (
         -- 概率值
