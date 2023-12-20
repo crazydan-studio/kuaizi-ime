@@ -30,6 +30,18 @@ PRAGMA temp_store = MEMORY;
   return db;
 }
 
+export async function attachDB(db, sources) {
+  // 附加数据库（连接期内有效）: https://www.sqlite.org/lang_attach.html
+  await execSQL(
+    db,
+    Object.keys(sources)
+      .map((name) => `attach database '${sources[name]}' as ${name}`)
+      .join(';')
+  );
+
+  return db;
+}
+
 export async function closeDB(db, skipClean) {
   try {
     if (db.config.mode != sqlite3.OPEN_READONLY && !skipClean) {

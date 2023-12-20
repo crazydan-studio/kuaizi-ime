@@ -5,28 +5,22 @@ import {
   asyncForEach
 } from '../../../utils/sqlite.mjs';
 
-export { openDB as open, closeDB as close } from '../../../utils/sqlite.mjs';
+export {
+  openDB as open,
+  closeDB as close,
+  attachDB as attach
+} from '../../../utils/sqlite.mjs';
 
 // 查看表上的索引: PRAGMA index_list('MyTable');
 // 查看索引的列: PRAGMA index_info('MyIndex');
 // 基于HMM的拼音输入法: https://zhuanlan.zhihu.com/p/508599305
 
-/** 根据 HMM 参数创建预测词库 */
-export async function updateData(predDictDB, wordDictDB, hmmParams) {
+/** 根据 HMM 参数创建词典库 */
+export async function updateData(phraseDictDB, wordDictDB, hmmParams) {
   await execSQL(
-    predDictDB,
+    phraseDictDB,
     `
 -- Note：采用联合主键，以降低数据库文件大小
-
--- 字与其拼音数据
-CREATE TABLE
-    IF NOT EXISTS meta_word_with_pinyin (
-        -- 字 id
-        word_id_ INTEGER NOT NULL,
-        -- 拼音字母组合 id
-        chars_id_ INTEGER NOT NULL,
-        PRIMARY KEY (word_id_, chars_id_)
-    );
 
 -- 初始概率矩阵：单字的使用概率
 CREATE TABLE
@@ -97,15 +91,9 @@ CREATE TABLE
 
   // =======================================================
   const predDict = {
-    word_chars: {},
     init_prob: {},
     emiss_prob: {},
     trans_prob: {}
-  };
-
-  const pred_dict_words = {};
-  const collect_pred_dict_words = (word_id_) => {
-    pred_dict_words[word_id_] = true;
   };
 
   // {'<word>': 0.11, ...}
@@ -120,8 +108,6 @@ CREATE TABLE
         word_id_,
         value_
       };
-
-      collect_pred_dict_words(word_id_);
     }
   });
 
@@ -134,8 +120,6 @@ CREATE TABLE
       console.log('汉字-拼音发射概率矩阵中的字不存在：', word);
       return;
     }
-
-    collect_pred_dict_words(word_id_);
 
     Object.keys(data).forEach((chars) => {
       const value_ = data[chars];
@@ -178,8 +162,6 @@ CREATE TABLE
       return;
     }
 
-    collect_pred_dict_words(word_id_);
-
     Object.keys(data).forEach((prev_word) => {
       const value_ = data[prev_word];
       const prev_word_id_ = wordDict.word[prev_word];
@@ -198,36 +180,13 @@ CREATE TABLE
           prev_word_id_,
           value_
         };
-
-        collect_pred_dict_words(prev_word_id_);
       }
     });
-  });
-
-  // 收集字与其拼音信息
-  Object.keys(wordDict.pinyin_word).forEach((code) => {
-    const splits = code.split(/_/g);
-    const word_id_ = splits[0];
-    const chars_id_ = splits[1];
-
-    if (!pred_dict_words[word_id_]) {
-      return;
-    }
-
-    predDict.word_chars[code] = {
-      word_id_,
-      chars_id_
-    };
   });
 
   // =======================================================
   await asyncForEach(
     [
-      {
-        table: 'meta_word_with_pinyin',
-        prop: 'word_chars',
-        primaryKeys: ['word_id_', 'chars_id_']
-      },
       {
         table: 'meta_init_prob',
         prop: 'init_prob',
@@ -248,7 +207,7 @@ CREATE TABLE
       const data = predDict[prop];
       const missing = [];
 
-      (await predDictDB.all(`select * from ${table}`)).forEach((row) => {
+      (await phraseDictDB.all(`select * from ${table}`)).forEach((row) => {
         const codeObj = primaryKeys.reduce((acc, key) => {
           acc[key] = row[key];
           return acc;
@@ -266,21 +225,21 @@ CREATE TABLE
         return;
       }
 
-      await saveToDB(predDictDB, table, data, true, primaryKeys);
-      await removeFromDB(predDictDB, table, missing, primaryKeys);
+      await saveToDB(phraseDictDB, table, data, true, primaryKeys);
+      await removeFromDB(phraseDictDB, table, missing, primaryKeys);
     }
   );
 }
 
-/** 词组预测 */
-export async function predict(predDictDB, wordDictDB, pinyinCharsArray) {
+/** 词组预测：通过 attach database 连接字典库 */
+export async function predict(phraseDictDB, pinyinCharsArray) {
   const pinyin_chars_and_words = {};
   const pinyin_chars = {};
   const pinyin_words = {};
 
   // ====================================================
   (
-    await wordDictDB.all(
+    await phraseDictDB.all(
       `select * from pinyin_word where spell_chars_ in (${
         "'" + pinyinCharsArray.join("', '") + "'"
       })`
@@ -337,6 +296,7 @@ export async function predict(predDictDB, wordDictDB, pinyinCharsArray) {
       },
       {
         select:
+          // https://www.sqlite.org/lang_with.html
           'with recursive\n' +
           (() => {
             // Note：确保表唯一
@@ -404,7 +364,7 @@ export async function predict(predDictDB, wordDictDB, pinyinCharsArray) {
       }
     ],
     async ({ select, convert }) => {
-      (await predDictDB.all(select)).forEach((row) => {
+      (await phraseDictDB.all(select)).forEach((row) => {
         convert(row);
       });
     }

@@ -1,29 +1,29 @@
-/* 词组预测的 SQLite 词库 */
+/* SQLite 词典库 */
 import { fromRootPath } from '../../../utils/utils.mjs';
-import * as prediction from './prediction.mjs';
+import * as phrase from './phrase.mjs';
 import inquirer from 'inquirer';
 
-// 包含完整拼音和字信息的 SQLite 数据库
+// SQLite 字库
 const wordDictSQLiteFile = fromRootPath('data', 'pinyin-dict.all.sqlite');
-// 词组预测的 SQLite 数据库
-const predDictSQLiteFile = fromRootPath('data', 'pinyin-pred-dict.sqlite');
+// SQLite 词典库
+const phraseDictSQLiteFile = fromRootPath('data', 'pinyin-phrase-dict.sqlite');
 
 console.log();
-let wordDictDB = await prediction.open(wordDictSQLiteFile, true);
-let predDictDB = await prediction.open(predDictSQLiteFile, true);
+let wordDictDB = await phrase.open(wordDictSQLiteFile, true);
+let phraseDictDB = await phrase.open(phraseDictSQLiteFile, true);
 
 try {
-  while (await start(predDictDB, wordDictDB)) {}
+  while (await start(phraseDictDB, wordDictDB)) {}
 } catch (e) {
   throw e;
 } finally {
-  await prediction.close(wordDictDB);
-  await prediction.close(predDictDB);
+  await phrase.close(wordDictDB);
+  await phrase.close(phraseDictDB);
 }
 
 console.log();
 
-async function start(predDictDB, wordDictDB) {
+async function start(phraseDictDB, wordDictDB) {
   const answer = await inquirer.prompt([
     {
       type: 'input',
@@ -38,7 +38,7 @@ async function start(predDictDB, wordDictDB) {
   }
 
   const chars = pinyin.split(/\s+/g);
-  const words = await prediction.predict(predDictDB, wordDictDB, chars);
+  const words = await phrase.predict(phraseDictDB, wordDictDB, chars);
 
   words.forEach((w, i) => {
     console.log(i + 1, w[0], w[1].join(''));
