@@ -32,13 +32,13 @@ npm run generate:emotion
 
 - 根据 `data/pinyin-dict.valid.txt` 和 `data/emotions.json`
   将字、词拼音、表情符号等数据写入 SQLite 数据库
-  `data/pinyin-dict.all.sqlite`：
+  `data/pinyin-word-dict.sqlite`：
 
 ```bash
-npm run generate:sqlite
+npm run generate:sqlite:word
 ```
 
-- 根据 `data/pinyin-dict.all.sqlite`
+- 根据 `data/pinyin-word-dict.sqlite`
   生成`筷字输入法`专用的 SQLite 数据库：
 
 ```bash
@@ -54,7 +54,7 @@ npm run generate:sqlite:ime
 打开 SQLite 数据库：
 
 ```bash
-sqlite3 data/pinyin-dict.all.sqlite
+sqlite3 data/pinyin-word-dict.sqlite
 ```
 
 ### 按字查询
@@ -564,8 +564,8 @@ PRAGMA ignore_check_constraints = 1;
 -- 数据库无用空间回收
 VACUUM;
 
--- 执行数据更新/升级脚本: npm run generate:sqlite
--- 检查新旧版本数据是否存在差异（注意修改新旧数据库文件名）: npm run generate:sqlite:diff
+-- 执行数据更新/升级脚本: npm run generate:sqlite:word
+-- 检查新旧版本数据是否存在差异（注意修改新旧数据库文件名）: npm run generate:sqlite:word:diff
 ```
 
 ## License

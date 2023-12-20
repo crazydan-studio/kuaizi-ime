@@ -1,29 +1,30 @@
 /* SQLite 词典库 */
 import { fromRootPath } from '../../../utils/utils.mjs';
-import * as phrase from './phrase.mjs';
+import * as sqlite from './sqlite.mjs';
 import inquirer from 'inquirer';
 
-// SQLite 字库
-const wordDictSQLiteFile = fromRootPath('data', 'pinyin-dict.all.sqlite');
 // SQLite 词典库
 const phraseDictSQLiteFile = fromRootPath('data', 'pinyin-phrase-dict.sqlite');
 
 console.log();
-let wordDictDB = await phrase.open(wordDictSQLiteFile, true);
-let phraseDictDB = await phrase.open(phraseDictSQLiteFile, true);
+let phraseDictDB = await sqlite.open(phraseDictSQLiteFile, true);
+
+phraseDictDB = await sqlite.attach(phraseDictDB, {
+  // SQLite 字典库
+  word: fromRootPath('data', 'pinyin-word-dict.sqlite')
+});
 
 try {
-  while (await start(phraseDictDB, wordDictDB)) {}
+  while (await start(phraseDictDB)) {}
 } catch (e) {
   throw e;
 } finally {
-  await phrase.close(wordDictDB);
-  await phrase.close(phraseDictDB);
+  await sqlite.close(phraseDictDB);
 }
 
 console.log();
 
-async function start(phraseDictDB, wordDictDB) {
+async function start(phraseDictDB) {
   const answer = await inquirer.prompt([
     {
       type: 'input',
@@ -38,7 +39,7 @@ async function start(phraseDictDB, wordDictDB) {
   }
 
   const chars = pinyin.split(/\s+/g);
-  const words = await phrase.predict(phraseDictDB, wordDictDB, chars);
+  const words = await sqlite.predict(phraseDictDB, chars);
 
   words.forEach((w, i) => {
     console.log(i + 1, w[0], w[1].join(''));

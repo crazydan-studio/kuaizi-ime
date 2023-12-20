@@ -1,20 +1,22 @@
-/* 含完整信息的 SQLite 数据库 */
+/* SQLite 字典库 */
 import { fromRootPath, readLineFromFile } from '../../../utils/utils.mjs';
 import * as sqlite from './sqlite.mjs';
 
-const dictDataValidFile = fromRootPath('data', 'pinyin-dict.valid.txt');
+// 收集数据
+const wordDataValidFile = fromRootPath('data', 'pinyin-dict.valid.txt');
 const emojiDataFile = fromRootPath('data', 'emojis.json');
-// 包含完整拼音和字信息的 SQLite 数据库
-const dictDataSQLiteFile = fromRootPath('data', 'pinyin-dict.all.sqlite');
 // 分析数据
 const pinyinCharsFile = fromRootPath('..', 'analyze/files/pinyin.txt');
 const pinyinCharLinksFile = fromRootPath('..', 'analyze/files/char-links.json');
 const pinyinCharTreeFile = fromRootPath('..', 'analyze/files/char-tree.json');
 
+// SQLite 字典库
+const wordDictDataSQLiteFile = fromRootPath('data', 'pinyin-word-dict.sqlite');
+
 console.log();
 console.log('读取已收集的有效字信息 ...');
 const wordMetas = [];
-await readLineFromFile(dictDataValidFile, (line) => {
+await readLineFromFile(wordDataValidFile, (line) => {
   if (!line || !line.trim()) {
     return;
   }
@@ -37,7 +39,7 @@ console.log();
 
 console.log();
 console.log('写入字信息到 SQLite ...');
-let db1 = await sqlite.open(dictDataSQLiteFile);
+let db1 = await sqlite.open(wordDictDataSQLiteFile);
 
 try {
   await sqlite.saveSpells(db1, wordMetas);
@@ -102,7 +104,7 @@ console.log();
 
 console.log();
 console.log('写入表情符号到 SQLite ...');
-let db2 = await sqlite.open(dictDataSQLiteFile);
+let db2 = await sqlite.open(wordDictDataSQLiteFile);
 try {
   await sqlite.saveEmojis(db2, groupEmojiMetas);
   console.log('- 已保存表情符号数据');
@@ -115,7 +117,7 @@ console.log();
 
 console.log();
 console.log('通过 SQLite 生成分析数据 ...');
-let db3 = await sqlite.open(dictDataSQLiteFile);
+let db3 = await sqlite.open(wordDictDataSQLiteFile);
 try {
   await sqlite.generatePinyinChars(db3, pinyinCharsFile);
   console.log('- 已保存拼音字母组合数据');

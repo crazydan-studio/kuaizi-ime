@@ -1,4 +1,4 @@
-/* 供输入法使用的 SQLite 数据库 */
+/* 供输入法使用的 SQLite 字典库 */
 import {
   fromRootPath,
   fileSHA256,
@@ -6,44 +6,54 @@ import {
 } from '../../../utils/utils.mjs';
 import * as ime from './ime.mjs';
 
-// 包含完整拼音和字信息的 SQLite 数据库
-const dictDataSQLiteFile = fromRootPath('data', 'pinyin-dict.all.sqlite');
-// 适用于 IME 输入法的拼音字典 SQLite 数据库
-const dictImeSQLiteFile = fromRootPath(
+// SQLite 字典库
+const wordDictDataSQLiteFile = fromRootPath('data', 'pinyin-word-dict.sqlite');
+
+// 适用于 IME 输入法的 SQLite 字典库
+const wordDictImeSQLiteFile = fromRootPath(
   '../..',
   'android/app/src/main/res/raw/pinyin_dict.db'
 );
-const dictImeSQLiteHashFile = fromRootPath(
+const wordDictImeSQLiteHashFile = fromRootPath(
   '../..',
   'android/app/src/main/res/raw/pinyin_dict_db_hash'
 );
+// 输入法的 SQLite 词典库
+const phraseDictImeSQLiteFile = fromRootPath(
+  '../..',
+  'android/app/src/main/res/raw/pinyin_phrase_dict.db'
+);
+const phraseDictImeSQLiteHashFile = fromRootPath(
+  '../..',
+  'android/app/src/main/res/raw/pinyin_phrase_dict_db_hash'
+);
 
 console.log();
-console.log('同步汉字数据到输入法 SQLite 库 ...');
-let fullDictDB = await ime.open(dictDataSQLiteFile, true);
-let imeDictDB = await ime.open(dictImeSQLiteFile);
+console.log('同步汉字数据到输入法的 SQLite 字典库 ...');
+let wordDictDB = await ime.open(wordDictDataSQLiteFile, true);
+let imeWordDictDB = await ime.open(wordDictImeSQLiteFile);
 
 try {
-  await ime.syncSpells(imeDictDB, fullDictDB);
+  await ime.syncSpells(imeWordDictDB, wordDictDB);
   console.log('- 已同步字读音信息');
 
-  await ime.syncWords(imeDictDB, fullDictDB);
+  await ime.syncWords(imeWordDictDB, wordDictDB);
   console.log('- 已同步字信息');
 
-  await ime.syncPhrases(imeDictDB, fullDictDB);
+  await ime.syncPhrases(imeWordDictDB, wordDictDB);
   console.log('- 已同步词组信息');
 
-  await ime.syncEmojis(imeDictDB, fullDictDB);
+  await ime.syncEmojis(imeWordDictDB, wordDictDB);
   console.log('- 已同步表情符号数据');
 } catch (e) {
   throw e;
 } finally {
-  await ime.close(fullDictDB);
-  await ime.close(imeDictDB);
+  await ime.close(wordDictDB);
+  await ime.close(imeWordDictDB);
 }
 
-const imeDictDBFileHash = fileSHA256(dictImeSQLiteFile);
-appendLineToFile(dictImeSQLiteHashFile, imeDictDBFileHash, true);
-console.log('- 已记录数据库 Hash 值：' + imeDictDBFileHash);
+const imeWordDictDBFileHash = fileSHA256(wordDictImeSQLiteFile);
+appendLineToFile(wordDictImeSQLiteHashFile, imeWordDictDBFileHash, true);
+console.log('- 已记录数据库 Hash 值：' + imeWordDictDBFileHash);
 
 console.log();

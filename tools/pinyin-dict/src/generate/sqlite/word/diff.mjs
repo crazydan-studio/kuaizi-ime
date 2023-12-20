@@ -1,13 +1,13 @@
-/* 对比不同版本的 SQLite 数据库的数据差异 */
+/* 对比不同版本的 SQLite 字典库的数据差异 */
 import { fromRootPath } from '../../../utils/utils.mjs';
 
 import { openDB, closeDB, asyncForEach } from '../../../utils/sqlite.mjs';
 
-const oldDictDataSQLiteFile = fromRootPath('data', 'pinyin-dict.all.v1.sqlite');
-const dictDataSQLiteFile = fromRootPath(
+const oldDictDataSQLiteFile = fromRootPath(
   'data',
-  'pinyin-dict.all.sqlite'
+  'pinyin-word-dict.v1.sqlite'
 );
+const dictDataSQLiteFile = fromRootPath('data', 'pinyin-word-dict.sqlite');
 
 let oldDb = await openDB(oldDictDataSQLiteFile);
 let newDb = await openDB(dictDataSQLiteFile);
@@ -17,9 +17,9 @@ try {
   console.log('对比元数据的差异 ...');
   await diffMetaData(oldDb, newDb);
 
-    console.log();
-    console.log('对比字数据的差异 ...');
-    await diffWordData(oldDb, newDb);
+  console.log();
+  console.log('对比字数据的差异 ...');
+  await diffWordData(oldDb, newDb);
 } catch (e) {
   throw e;
 } finally {
@@ -74,7 +74,7 @@ async function diffMetaData(oldDb, newDb) {
 
 async function diffWordData(oldDb, newDb) {
   await asyncForEach(
-    ['link_word_with_pinyin'/*, 'link_word_with_zhuyin'*/],
+    ['link_word_with_pinyin' /*, 'link_word_with_zhuyin'*/],
     async (table) => {
       const oldData = {};
       const newData = {};
