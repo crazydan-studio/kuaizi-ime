@@ -9,8 +9,10 @@ const phraseDictSQLiteFile = fromRootPath('data', 'pinyin-phrase-dict.sqlite');
 console.log();
 let phraseDictDB = await sqlite.open(phraseDictSQLiteFile, true);
 
-phraseDictDB = await sqlite.attach(phraseDictDB, {
-  // SQLite 字典库
+await sqlite.attach(phraseDictDB, {
+  // SQLite 字典库：通过 attach database 连接字典库，
+  // 两个库中的非同名表可以直接使用，无需通过连接名称区分
+  // Note：性能不太好
   word: fromRootPath('data', 'pinyin-word-dict.sqlite')
 });
 

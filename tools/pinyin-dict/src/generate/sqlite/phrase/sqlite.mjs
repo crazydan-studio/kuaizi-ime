@@ -22,6 +22,18 @@ export async function updateData(phraseDictDB, wordDictDB, hmmParams) {
     `
 -- Note：采用联合主键，以降低数据库文件大小
 
+-- 字与其拼音数据：基于性能考虑而加的表。
+-- 在 IME 中可以仅包含其他表数据，
+-- 而在 IME 初始化时再从字典库中创建并初始化该表
+CREATE TABLE
+    IF NOT EXISTS meta_word_with_pinyin (
+        -- 字 id
+        word_id_ INTEGER NOT NULL,
+        -- 拼音字母组合 id
+        chars_id_ INTEGER NOT NULL,
+        PRIMARY KEY (word_id_, chars_id_)
+    );
+
 -- 初始概率矩阵：单字的使用概率
 CREATE TABLE
     IF NOT EXISTS meta_init_prob (
@@ -91,9 +103,15 @@ CREATE TABLE
 
   // =======================================================
   const predDict = {
+    word_chars: {},
     init_prob: {},
     emiss_prob: {},
     trans_prob: {}
+  };
+
+  const pred_dict_words = {};
+  const collect_pred_dict_words = (word_id_) => {
+    pred_dict_words[word_id_] = true;
   };
 
   // {'<word>': 0.11, ...}
@@ -108,6 +126,8 @@ CREATE TABLE
         word_id_,
         value_
       };
+
+      collect_pred_dict_words(word_id_);
     }
   });
 
@@ -120,6 +140,8 @@ CREATE TABLE
       console.log('汉字-拼音发射概率矩阵中的字不存在：', word);
       return;
     }
+
+    collect_pred_dict_words(word_id_);
 
     Object.keys(data).forEach((chars) => {
       const value_ = data[chars];
@@ -162,6 +184,8 @@ CREATE TABLE
       return;
     }
 
+    collect_pred_dict_words(word_id_);
+
     Object.keys(data).forEach((prev_word) => {
       const value_ = data[prev_word];
       const prev_word_id_ = wordDict.word[prev_word];
@@ -180,13 +204,36 @@ CREATE TABLE
           prev_word_id_,
           value_
         };
+
+        collect_pred_dict_words(prev_word_id_);
       }
     });
+  });
+
+  // 收集字与其拼音信息
+  Object.keys(wordDict.pinyin_word).forEach((code) => {
+    const splits = code.split(/_/g);
+    const word_id_ = splits[0];
+    const chars_id_ = splits[1];
+
+    if (!pred_dict_words[word_id_]) {
+      return;
+    }
+
+    predDict.word_chars[code] = {
+      word_id_,
+      chars_id_
+    };
   });
 
   // =======================================================
   await asyncForEach(
     [
+      {
+        table: 'meta_word_with_pinyin',
+        prop: 'word_chars',
+        primaryKeys: ['word_id_', 'chars_id_']
+      },
       {
         table: 'meta_init_prob',
         prop: 'init_prob',
@@ -231,7 +278,10 @@ CREATE TABLE
   );
 }
 
-/** 词组预测：通过 attach database 连接字典库 */
+/** 词组预测
+ *
+ * Note：在用户数据中，对首次出现的多音字的概率，按多音字的数量做均分
+ */
 export async function predict(phraseDictDB, pinyinCharsArray) {
   const pinyin_chars_and_words = {};
   const pinyin_chars = {};
