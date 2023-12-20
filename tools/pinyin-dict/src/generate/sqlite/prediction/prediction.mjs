@@ -16,52 +16,50 @@ export async function updateData(predDictDB, wordDictDB, hmmParams) {
   await execSQL(
     predDictDB,
     `
+-- Note：采用联合主键，以降低数据库文件大小
+
 -- 字与其拼音数据
 CREATE TABLE
     IF NOT EXISTS meta_word_with_pinyin (
-        id_ INTEGER NOT NULL PRIMARY KEY,
         -- 字 id
         word_id_ INTEGER NOT NULL,
         -- 拼音字母组合 id
         chars_id_ INTEGER NOT NULL,
-        UNIQUE (word_id_, chars_id_)
+        PRIMARY KEY (word_id_, chars_id_)
     );
 
 -- 初始概率矩阵：单字的使用概率
 CREATE TABLE
     IF NOT EXISTS meta_init_prob (
-        id_ INTEGER NOT NULL PRIMARY KEY,
         -- 概率值
         value_ REAL NOT NULL,
         -- 字 id
         word_id_ INTEGER NOT NULL,
-        UNIQUE (word_id_)
+        PRIMARY KEY (word_id_)
     );
 
 -- 汉字-拼音发射概率矩阵：字的对应拼音（多音字）的使用概率，概率为 0 的表示单音字
 CREATE TABLE
     IF NOT EXISTS meta_emiss_prob (
-        id_ INTEGER NOT NULL PRIMARY KEY,
         -- 概率值
         value_ REAL NOT NULL,
         -- 字 id
         word_id_ INTEGER NOT NULL,
         -- 拼音字母组合 id
         chars_id_ INTEGER NOT NULL,
-        UNIQUE (word_id_, chars_id_)
+        PRIMARY KEY (word_id_, chars_id_)
     );
 
 -- 汉字间转移概率矩阵：当前字与前一个字的关联概率
 CREATE TABLE
     IF NOT EXISTS meta_trans_prob (
-        id_ INTEGER NOT NULL PRIMARY KEY,
         -- 概率值
         value_ REAL NOT NULL,
         -- 当前字 id: EOS 用 -1 代替
         word_id_ INTEGER NOT NULL,
         -- 前序字 id: BOS 用 -1 代替
         prev_word_id_ INTEGER NOT NULL,
-        UNIQUE (word_id_, prev_word_id_)
+        PRIMARY KEY (word_id_, prev_word_id_)
     );
     `
   );
@@ -228,42 +226,48 @@ CREATE TABLE
       {
         table: 'meta_word_with_pinyin',
         prop: 'word_chars',
-        getCode: (row) => `${row.word_id_}_${row.chars_id_}`
+        primaryKeys: ['word_id_', 'chars_id_']
       },
       {
         table: 'meta_init_prob',
         prop: 'init_prob',
-        getCode: (row) => row.word_id_
+        primaryKeys: ['word_id_']
       },
       {
         table: 'meta_emiss_prob',
         prop: 'emiss_prob',
-        getCode: (row) => `${row.word_id_}_${row.chars_id_}`
+        primaryKeys: ['word_id_', 'chars_id_']
       },
       {
         table: 'meta_trans_prob',
         prop: 'trans_prob',
-        getCode: (row) => `${row.word_id_}_${row.prev_word_id_}`
+        primaryKeys: ['word_id_', 'prev_word_id_']
       }
     ],
-    async ({ table, prop, getCode }) => {
+    async ({ table, prop, primaryKeys }) => {
       const data = predDict[prop];
       const missing = [];
 
       (await predDictDB.all(`select * from ${table}`)).forEach((row) => {
-        const id_ = row.id_;
-        const code = getCode(row);
+        const codeObj = primaryKeys.reduce((acc, key) => {
+          acc[key] = row[key];
+          return acc;
+        }, {});
+        const code = primaryKeys.map((k) => row[k]).join('_');
 
         if (!data[code]) {
-          missing.push(id_);
+          missing.push(codeObj);
         } else {
-          data[code].id_ = id_;
           data[code].__exist__ = row;
         }
       });
 
-      await saveToDB(predDictDB, table, data);
-      await removeFromDB(predDictDB, table, missing);
+      if (primaryKeys.length == 0) {
+        return;
+      }
+
+      await saveToDB(predDictDB, table, data, true, primaryKeys);
+      await removeFromDB(predDictDB, table, missing, primaryKeys);
     }
   );
 }
@@ -335,44 +339,39 @@ export async function predict(predDictDB, wordDictDB, pinyinCharsArray) {
         select:
           'with recursive\n' +
           (() => {
-            const chars_ids = [-1, ...unique_pinyin_chars_ids, -1];
-            const word_tables = [];
+            // Note：确保表唯一
+            const word_tables = unique_pinyin_chars_ids
+              .map(
+                (id) => `
+              word_ids_${id}(word_id_) as (
+                select
+                  word_id_
+                from
+                  meta_word_with_pinyin
+                where
+                  chars_id_ = ${id}
+              )
+            `
+              )
+              .concat('word_ids_0(word_id_) as (values(-1))');
+
             const union_sqls = [];
+            // Note：确保前后序准确
+            const union_codes = {};
+            // 0 对应表 word_ids_0
+            const chars_ids = [0, ...pinyin_chars_ids, 0];
+
             for (let i = 1; i < chars_ids.length; i++) {
               const prev_chars_id = chars_ids[i - 1];
               const curr_chars_id = chars_ids[i];
 
-              if (curr_chars_id != -1) {
-                word_tables.push(`
-                  word_ids_${curr_chars_id}(word_id_) as (
-                    select
-                      word_id_
-                    from
-                      meta_word_with_pinyin
-                    where
-                      chars_id_ = ${curr_chars_id}
-                  )
-                `);
+              const union_code = `${prev_chars_id}_${curr_chars_id}`;
+              if (union_codes[union_code]) {
+                continue;
               }
+              union_codes[union_code] = true;
 
-              if (prev_chars_id == -1) {
-                union_sqls.push(`
-                  select
-                    -1 as prev_word_id_
-                    , curr_.word_id_ as curr_word_id_
-                  from
-                    word_ids_${curr_chars_id} curr_
-                `);
-              } else if (curr_chars_id == -1) {
-                union_sqls.push(`
-                  select
-                    prev_.word_id_ as prev_word_id_
-                    , -1 as curr_word_id_
-                  from
-                    word_ids_${prev_chars_id} prev_
-                `);
-              } else {
-                union_sqls.push(`
+              union_sqls.push(`
                   select
                     prev_.word_id_ as prev_word_id_
                     , curr_.word_id_ as curr_word_id_
@@ -380,7 +379,6 @@ export async function predict(predDictDB, wordDictDB, pinyinCharsArray) {
                     word_ids_${prev_chars_id} prev_
                       , word_ids_${curr_chars_id} curr_
                 `);
-              }
             }
 
             return (

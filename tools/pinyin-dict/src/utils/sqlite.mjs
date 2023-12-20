@@ -31,77 +31,115 @@ PRAGMA temp_store = MEMORY;
 }
 
 export async function closeDB(db, skipClean) {
-  if (db.config.mode != sqlite3.OPEN_READONLY && !skipClean) {
-    // 数据库无用空间回收
-    await execSQL(db, 'VACUUM');
-  }
+  try {
+    if (db.config.mode != sqlite3.OPEN_READONLY && !skipClean) {
+      // 数据库无用空间回收
+      await execSQL(db, 'VACUUM');
+    }
 
-  await db.close();
+    await db.close();
+  } catch (e) {
+    console.error(e);
+  }
 }
 
 /** 新增或更新数据 */
-export async function saveToDB(db, table, dataMap, disableSorting) {
+export async function saveToDB(
+  db,
+  table,
+  dataMap,
+  disableSorting,
+  primaryKeys
+) {
   const dataArray = mapToArray(dataMap, disableSorting);
   if (dataArray.length === 0) {
     return;
   }
 
-  const columnsWithId = Object.keys(dataArray[0]).filter(
+  primaryKeys = primaryKeys || ['id_'];
+  const hasOnlyIdKey = primaryKeys.length == 1 && primaryKeys[0] == 'id_';
+
+  const columnsWithPrimaryKey = Object.keys(dataArray[0]).filter(
     (k) => !k.startsWith('__')
   );
-  const columns = columnsWithId.filter((k) => k != 'id_');
+  const columns = columnsWithPrimaryKey.filter((k) => !primaryKeys.includes(k));
 
-  const insertStatement = await db.prepare(
-    `insert into ${table} (${columns.join(', ')}) values (${columns
-      .map(() => '?')
-      .join(', ')})`
-  );
-  const insertWithIdStatement = await db.prepare(
-    `insert into ${table} (${columnsWithId.join(', ')}) values (${columnsWithId
-      .map(() => '?')
-      .join(', ')})`
-  );
-  const updateStatement = await db.prepare(
-    `update ${table} set ${columns
-      .map((c) => c + ' = ?')
-      .join(', ')} where id_ = ?`
-  );
+  const insertWithIdSql = `insert into ${table} (${columnsWithPrimaryKey.join(
+    ', '
+  )}) values (${columnsWithPrimaryKey.map(() => '?').join(', ')})
+  `;
+  const insertWithIdStatement = await db.prepare(insertWithIdSql);
+  const insertStatement = hasOnlyIdKey
+    ? await db.prepare(
+        `insert into ${table} (${columns.join(', ')}) values (${columns
+          .map(() => '?')
+          .join(', ')})
+          `
+      )
+    : await db.prepare(insertWithIdSql);
+  const updateStatement =
+    columns.length > 0
+      ? await db.prepare(
+          `update ${table} set ${columns
+            .map((c) => c + ' = ?')
+            .join(', ')} where ${primaryKeys
+            .map((key) => key + ' = ?')
+            .join(' and ')}
+    `
+        )
+      : // 所有的列都为主键，则不需要更新
+        null;
 
+  const getId = (d) => primaryKeys.map((k) => d[k]).join('');
   await asyncForEach(dataArray, async (data) => {
-    if (data.id_) {
+    if (getId(data)) {
       const needToUpdate =
         data.__exist__ &&
         columns.reduce((r, c) => r || data[c] !== data.__exist__[c], false);
 
       if (needToUpdate) {
-        await updateStatement.run(...columns.concat('id_').map((c) => data[c]));
+        await updateStatement.run(
+          ...columns.concat(primaryKeys).map((c) => data[c])
+        );
       }
       // 新增包含 id 的数据
       else if (!data.__exist__) {
-        await insertWithIdStatement.run(...columnsWithId.map((c) => data[c]));
+        await insertWithIdStatement.run(
+          ...columnsWithPrimaryKey.map((c) => data[c])
+        );
       }
     } else {
-      await insertStatement.run(...columns.map((c) => data[c]));
+      const params = (hasOnlyIdKey ? columns : columnsWithPrimaryKey).map(
+        (c) => data[c]
+      );
+      await insertStatement.run(...params);
     }
   });
 
   await insertStatement.finalize();
   await insertWithIdStatement.finalize();
-  await updateStatement.finalize();
+  updateStatement && (await updateStatement.finalize());
 }
 
 /** 删除数据 */
-export async function removeFromDB(db, table, ids) {
+export async function removeFromDB(db, table, ids, primaryKeys) {
   if (ids.length === 0) {
     return;
   }
 
+  primaryKeys = primaryKeys || ['id_'];
+  const hasOnlyIdKey = primaryKeys.length == 1 && primaryKeys[0] == 'id_';
+
   const deleteStatement = await db.prepare(
-    `delete from ${table} where id_ = ?`
+    `delete from ${table} where ${primaryKeys
+      .map((key) => key + ' = ?')
+      .join(' and ')}
+    `
   );
 
   await asyncForEach(ids, async (id) => {
-    await deleteStatement.run(id);
+    const params = hasOnlyIdKey ? [id] : primaryKeys.map((c) => id[c]);
+    await deleteStatement.run(...params);
   });
 
   await deleteStatement.finalize();
