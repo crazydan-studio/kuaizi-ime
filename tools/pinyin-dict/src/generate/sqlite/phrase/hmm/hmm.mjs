@@ -23,11 +23,10 @@ export function countParams(sampleText, words, exist_params, debugDataFile) {
     appendLineToFile(debugDataFile, JSON.stringify(phrases, null, 2), true);
   }
 
-  exist_params = exist_params || { base: { phrase_size: 0 }, trans_prob: {} };
+  exist_params = exist_params || { trans_prob: {} };
 
   return {
-    base: { phrase_size: phrases.length + exist_params.base.phrase_size },
-    // 前序为 BOS 的次数之和即为 初始概率 init_prob 的短语总数，
+    // 当前字为 EOS 且其前序为 BOS 的转移次数即为 训练的句子总数，
     // 而各个包含 BOS 前序的字即为句首字，且其出现次数即为 BOS 的值
     trans_prob: countTrans(phrases, exist_params.trans_prob)
   };
