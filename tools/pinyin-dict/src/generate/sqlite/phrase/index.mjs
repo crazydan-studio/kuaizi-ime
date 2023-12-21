@@ -1,17 +1,11 @@
 /* SQLite 词典库 */
-import {
-  fromRootPath,
-  readJSONFromFile
-} from '../../../utils/utils.mjs';
+import { fromRootPath, readJSONFromFile } from '../../../utils/utils.mjs';
 import * as sqlite from './sqlite.mjs';
 
 // SQLite 字典库
 const wordDictSQLiteFile = fromRootPath('data', 'pinyin-word-dict.sqlite');
 // HMM 参数目录
-const hmmParamsDir = fromRootPath(
-  '../..',
-  'data/Pinyin2ChineseChars/model_params'
-);
+const hmmParamsDir = fromRootPath('data/hmm_params');
 // SQLite 词典库
 const phraseDictSQLiteFile = fromRootPath('data', 'pinyin-phrase-dict.sqlite');
 
@@ -27,9 +21,7 @@ try {
     // 汉字-拼音发射概率矩阵：字的对应拼音（多音字）的使用概率，概率为 0 的表示单音字
     emiss_prob: readJSONFromFile(hmmParamsDir + '/emiss_prob.json'),
     // 汉字间转移概率矩阵：当前字与前一个字的关联概率
-    trans_prob: readJSONFromFile(hmmParamsDir + '/trans_prob.json'),
-    // 拼音中的字列表
-    pinyin_states: readJSONFromFile(hmmParamsDir + '/pinyin_states.json')
+    trans_prob: readJSONFromFile(hmmParamsDir + '/trans_prob.json')
   });
   console.log('- 已创建词典库');
 } catch (e) {
@@ -38,11 +30,5 @@ try {
   await sqlite.close(wordDictDB);
   await sqlite.close(phraseDictDB);
 }
-
-// appendLineToFile(
-//   hmmParamsDir + '/trans_prob.json',
-//   JSON.stringify(readJSONFromFile(hmmParamsDir + '/trans_prob.json'), null, 2),
-//   true
-// );
 
 console.log();

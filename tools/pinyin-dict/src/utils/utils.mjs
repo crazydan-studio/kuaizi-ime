@@ -34,7 +34,15 @@ export function fileSHA256(filepath) {
 }
 
 export function readJSONFromFile(filepath) {
-  return JSON.parse(fs.readFileSync(filepath, 'utf8'));
+  return JSON.parse(readFile(filepath));
+}
+
+export function readFile(filepath) {
+  return fs.readFileSync(filepath, 'utf8');
+}
+
+export function readAllFiles(dir) {
+  return fs.readdirSync(dir).map((file) => readFile(dir + '/' + file));
 }
 
 export async function readLineFromFile(filepath, consumer) {
