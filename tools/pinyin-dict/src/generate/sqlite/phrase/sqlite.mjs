@@ -27,44 +27,41 @@ export async function updateData(phraseDictDB, wordDictDB, hmmParams) {
 -- 而在 IME 初始化时再从字典库中创建并初始化该表
 CREATE TABLE
     IF NOT EXISTS meta_word_with_pinyin (
-        -- 字 id
+        -- 拼音字 id
+        -- Note：其为字典库中 字及其拼音表（link_word_with_pinyin）中的 id
         word_id_ INTEGER NOT NULL,
+
         -- 拼音字母组合 id
+        -- Note：其为字典库中 字及其拼音表（link_word_with_pinyin）中的 target_chars_id_
         chars_id_ INTEGER NOT NULL,
+
         PRIMARY KEY (word_id_, chars_id_)
     );
 
--- 初始概率矩阵：每个汉字作为句首的概率
-CREATE TABLE
-    IF NOT EXISTS meta_init_prob (
-        -- 概率值
-        value_ REAL NOT NULL,
-        -- 字 id
-        word_id_ INTEGER NOT NULL,
-        PRIMARY KEY (word_id_)
-    );
-
--- 汉字-拼音发射概率矩阵：字的对应拼音（多音字）的使用概率，概率为 0 的表示单音字
-CREATE TABLE
-    IF NOT EXISTS meta_emiss_prob (
-        -- 概率值
-        value_ REAL NOT NULL,
-        -- 字 id
-        word_id_ INTEGER NOT NULL,
-        -- 拼音字母组合 id
-        chars_id_ INTEGER NOT NULL,
-        PRIMARY KEY (word_id_, chars_id_)
-    );
-
--- 汉字间转移概率矩阵：当前字与前一个字的关联概率
+-- 汉字间转移概率矩阵：当前字与前一个字的关联次数（概率在应用侧计算）
 CREATE TABLE
     IF NOT EXISTS meta_trans_prob (
-        -- 概率值
-        value_ REAL NOT NULL,
-        -- 当前字 id: EOS 用 -1 代替
+        -- 出现次数
+        -- Note：当 word_id_ == -1 且 prev_word_id_ == -2 时，
+        --       其代表训练数据的句子总数，用于计算 句首字出现频率；
+        --       当 word_id_ == -1 且 prev_word_id_ != -1 时，
+        --       其代表末尾字出现次数；
+        --       当 word_id_ != -1 且 prev_word_id_ == -1 时，
+        --       其代表句首字出现次数；
+        --       当 word_id_ != -1 且 prev_word_id_ == -2 时，
+        --       其代表当前拼音字的转移总数；
+        --       当 word_id_ != -1 且 prev_word_id_ != -1 时，
+        --       其代表前序拼音字的出现次数；
+        value_ INTEGER NOT NULL,
+
+        -- 当前拼音字 id: EOS 用 -1 代替（句尾字）
+        -- Note：其为字典库中 字及其拼音表（link_word_with_pinyin）中的 id
         word_id_ INTEGER NOT NULL,
-        -- 前序字 id: BOS 用 -1 代替
+
+        -- 前序拼音字 id: BOS 用 -1 代替（句首字），__total__ 用 -2 代替
+        -- Note：其为字典库中 字及其拼音表（link_word_with_pinyin）中的 id
         prev_word_id_ INTEGER NOT NULL,
+
         PRIMARY KEY (word_id_, prev_word_id_)
     );
     `
@@ -73,21 +70,19 @@ CREATE TABLE
   // =======================================================
   const wordDict = {
     pinyin_chars: {},
-    word: { BOS: -1, EOS: -1 },
-    pinyin_word: {}
+    pinyin_word: { BOS: -1, EOS: -1, __total__: -2 }
   };
   await asyncForEach(
     [
       {
-        table: 'meta_pinyin_chars',
+        table: 'meta_pinyin',
         prop: 'pinyin_chars',
-        fields: 'id_, value_'
+        fields: 'chars_id_ as id_, value_'
       },
-      { table: 'meta_word', prop: 'word', fields: 'id_, value_' },
       {
-        table: 'link_word_with_pinyin',
+        table: 'pinyin_word',
         prop: 'pinyin_word',
-        fields: "id_, (source_id_ || '_' || target_chars_id_) as value_"
+        fields: "id_, (word_ || ':' || spell_) as value_"
       }
     ],
     async ({ table, fields, prop }) => {
@@ -104,91 +99,34 @@ CREATE TABLE
   // =======================================================
   const predDict = {
     word_chars: {},
-    init_prob: {},
-    emiss_prob: {},
     trans_prob: {}
   };
 
-  const pred_dict_words = {};
-  const collect_pred_dict_words = (word_id_) => {
-    pred_dict_words[word_id_] = true;
-  };
-
-  // {'<word>': 0.11, ...}
-  Object.keys(hmmParams.init_prob).forEach((word) => {
-    const word_id_ = wordDict.word[word];
-    const value_ = hmmParams.init_prob[word];
-
-    if (!word_id_) {
-      console.log('初始概率矩阵中的字不存在：', word, value_);
-    } else {
-      predDict.init_prob[word_id_] = {
-        word_id_,
-        value_
-      };
-
-      collect_pred_dict_words(word_id_);
-    }
-  });
-
-  // {'<word>': {'<pinyin chars>': 0.11, ...}, ...}
-  Object.keys(hmmParams.emiss_prob).forEach((word) => {
-    const word_id_ = wordDict.word[word];
-    const data = hmmParams.emiss_prob[word];
-
-    if (!word_id_) {
-      console.log('汉字-拼音发射概率矩阵中的字不存在：', word);
+  const phrase_dict_words = {};
+  const collect_phrase_dict_words = (word_id_, word_pinyin_) => {
+    if ([-1, -2].includes(word_id_)) {
       return;
     }
-
-    collect_pred_dict_words(word_id_);
-
-    Object.keys(data).forEach((chars) => {
-      const value_ = data[chars];
-
-      if (chars.indexOf('v') >= 0) {
-        chars = chars.replaceAll(/v/g, 'ü');
-
-        if (data[chars]) {
-          return;
-        }
-      }
-
-      const chars_id_ = wordDict.pinyin_chars[chars];
-      const code = `${word_id_}_${chars_id_}`;
-
-      if (!chars_id_ || !wordDict.pinyin_word[code]) {
-        console.log(
-          '汉字-拼音发射概率矩阵中的拼音不存在：',
-          word,
-          chars,
-          value_
-        );
-      } else {
-        predDict.emiss_prob[code] = {
-          word_id_,
-          chars_id_,
-          value_
-        };
-      }
-    });
-  });
+    phrase_dict_words[word_id_] = wordDict.pinyin_chars[word_pinyin_];
+  };
 
   // {'<word>': {'<prev word>': 0.11, ...}, ...}
+  // word 为字符串组合 字:拼音
   Object.keys(hmmParams.trans_prob).forEach((word) => {
-    const word_id_ = wordDict.word[word];
-    const data = hmmParams.trans_prob[word];
+    const word_id_ = wordDict.pinyin_word[word];
 
     if (!word_id_) {
       console.log('汉字间转移概率矩阵中的当前字不存在：', word);
       return;
     }
 
-    collect_pred_dict_words(word_id_);
+    const word_pinyin_ = word.split(':')[1];
+    collect_phrase_dict_words(word_id_, word_pinyin_);
 
+    const data = hmmParams.trans_prob[word];
     Object.keys(data).forEach((prev_word) => {
       const value_ = data[prev_word];
-      const prev_word_id_ = wordDict.word[prev_word];
+      const prev_word_id_ = wordDict.pinyin_word[prev_word];
       const code = `${word_id_}_${prev_word_id_}`;
 
       if (!prev_word_id_) {
@@ -205,20 +143,16 @@ CREATE TABLE
           value_
         };
 
-        collect_pred_dict_words(prev_word_id_);
+        const prev_word_pinyin_ = prev_word.split(':')[1];
+        collect_phrase_dict_words(prev_word_id_, prev_word_pinyin_);
       }
     });
   });
 
   // 收集字与其拼音信息
-  Object.keys(wordDict.pinyin_word).forEach((code) => {
-    const splits = code.split(/_/g);
-    const word_id_ = splits[0];
-    const chars_id_ = splits[1];
-
-    if (!pred_dict_words[word_id_]) {
-      return;
-    }
+  Object.keys(phrase_dict_words).forEach((word_id_) => {
+    const chars_id_ = phrase_dict_words[word_id_];
+    const code = `${word_id_}_${chars_id_}`;
 
     predDict.word_chars[code] = {
       word_id_,
@@ -232,16 +166,6 @@ CREATE TABLE
       {
         table: 'meta_word_with_pinyin',
         prop: 'word_chars',
-        primaryKeys: ['word_id_', 'chars_id_']
-      },
-      {
-        table: 'meta_init_prob',
-        prop: 'init_prob',
-        primaryKeys: ['word_id_']
-      },
-      {
-        table: 'meta_emiss_prob',
-        prop: 'emiss_prob',
         primaryKeys: ['word_id_', 'chars_id_']
       },
       {
@@ -278,10 +202,7 @@ CREATE TABLE
   );
 }
 
-/** 词组预测
- *
- * Note：在用户数据中，对首次出现的多音字的概率，按多音字的数量做均分
- */
+/** 词组预测 */
 export async function predict(phraseDictDB, pinyinCharsArray) {
   const pinyin_chars_and_words = {};
   const pinyin_chars = {};
@@ -295,55 +216,27 @@ export async function predict(phraseDictDB, pinyinCharsArray) {
       })`
     )
   ).forEach((row) => {
-    const { word_, word_id_, spell_chars_, spell_chars_id_ } = row;
+    const { id_, word_, spell_, spell_chars_, spell_chars_id_ } = row;
 
     pinyin_chars[spell_chars_] = spell_chars_id_;
-    pinyin_words[word_id_] = word_;
+    pinyin_words[id_] = `${word_}(${spell_})`;
 
     pinyin_chars_and_words[spell_chars_id_] =
       pinyin_chars_and_words[spell_chars_id_] || [];
-    pinyin_chars_and_words[spell_chars_id_].push(word_id_);
+    pinyin_chars_and_words[spell_chars_id_].push(id_);
   });
 
   // =====================================================
   const total = pinyinCharsArray.length;
   const last_index = total - 1;
 
-  const first_pinyin_chars_id = pinyin_chars[pinyinCharsArray[0]];
   const pinyin_chars_ids = pinyinCharsArray.map((ch) => pinyin_chars[ch]);
   const unique_pinyin_chars_ids = Array.from(new Set(pinyin_chars_ids));
-  const joined_pinyin_chars_ids = unique_pinyin_chars_ids.join(', ');
 
-  const init_prob = {};
-  const emiss_prob = {};
   const trans_prob = {};
 
   await asyncForEach(
     [
-      {
-        // Note：只有首拼音的字才需要取初始概率矩阵
-        select: `select distinct s_.*
-        from
-          meta_init_prob s_
-          inner join meta_word_with_pinyin t_
-            on t_.word_id_ = s_.word_id_
-        where
-          t_.chars_id_ = ${first_pinyin_chars_id}`,
-        convert: ({ word_id_, value_ }) => {
-          init_prob[word_id_] = value_;
-        }
-      },
-      {
-        select: `select distinct s_.*
-        from
-          meta_emiss_prob s_
-        where
-          s_.chars_id_ in (${joined_pinyin_chars_ids})`,
-        convert: ({ word_id_, chars_id_, value_ }) => {
-          emiss_prob[word_id_] = emiss_prob[word_id_] || {};
-          emiss_prob[word_id_][chars_id_] = value_;
-        }
-      },
       {
         select:
           // https://www.sqlite.org/lang_with.html
@@ -363,13 +256,13 @@ export async function predict(phraseDictDB, pinyinCharsArray) {
               )
             `
               )
-              .concat('word_ids_0(word_id_) as (values(-1))');
+              .concat('word_ids_01(word_id_) as (values(-1))');
 
             const union_sqls = [];
             // Note：确保前后序准确
             const union_codes = {};
-            // 0 对应表 word_ids_0
-            const chars_ids = [0, ...pinyin_chars_ids, 0];
+            // 01 对应表 word_ids_01
+            const chars_ids = ['01', ...pinyin_chars_ids, '01'];
 
             for (let i = 1; i < chars_ids.length; i++) {
               const prev_chars_id = chars_ids[i - 1];
@@ -405,7 +298,11 @@ export async function predict(phraseDictDB, pinyinCharsArray) {
           , word_ids t_
         where
           s_.word_id_ = t_.curr_word_id_
-          and s_.prev_word_id_ = t_.prev_word_id_
+          and (
+            s_.prev_word_id_ = t_.prev_word_id_
+            -- 当前拼音字都包含 __total__ 列
+            or s_.prev_word_id_ = -2
+          )
         `,
         convert: ({ word_id_, prev_word_id_, value_ }) => {
           trans_prob[word_id_] = trans_prob[word_id_] || {};
@@ -428,12 +325,15 @@ export async function predict(phraseDictDB, pinyinCharsArray) {
   // viterbi[pos][word] = (probability, pre_word)
   const viterbi = [];
 
+  // 训练数据的句子总数: word_id_ == -1 且 prev_word_id_ == -2
+  const base_phrase_size = trans_prob_get(trans_prob, -1, -2, 0);
+
   for (let prev_index = -1; prev_index < last_index; prev_index++) {
     const current_index = prev_index + 1;
     const current_chars_id = pinyin_chars_ids[current_index];
     const current_word_ids = pinyin_chars_and_words[current_chars_id];
 
-    // Note：首拼音的前序字设为 -1
+    // Note：句首字的前序字设为 -1
     const prev_chars_id = pinyin_chars_ids[prev_index];
     const prev_word_ids = pinyin_chars_and_words[prev_chars_id] || [-1];
 
@@ -447,20 +347,33 @@ export async function predict(phraseDictDB, pinyinCharsArray) {
         (acc, prev_word_id) => {
           let probability = 0;
 
-          // 首拼音的初始概率为 单字的使用概率
+          // 句首字的初始概率 = math.log(句首字出现次数 / 训练数据的句子总数)
           if (current_index == 0) {
-            probability += get(init_prob, current_word_id, min_f);
+            probability += calc_prob(
+              // 句首字的出现次数
+              trans_prob_get(trans_prob, current_word_id, -1, 0),
+              base_phrase_size,
+              min_f
+            );
           } else {
             probability += viterbi[prev_index][prev_word_id][0];
           }
 
-          probability +=
-            get(get(emiss_prob, current_word_id, {}), current_chars_id, min_f) +
-            get(get(trans_prob, current_word_id, {}), prev_word_id, min_f);
+          probability += calc_prob(
+            // 前序拼音字的出现次数
+            trans_prob_get(trans_prob, current_word_id, prev_word_id, 0),
+            // 当前拼音字的转移总数
+            trans_prob_get(trans_prob, current_word_id, -2, 0),
+            min_f
+          );
 
           // 加上末尾字的转移概率
           if (current_index == last_index) {
-            probability += get(get(trans_prob, -1, {}), current_word_id, min_f);
+            probability += calc_prob(
+              trans_prob_get(trans_prob, -1, current_word_id, 0),
+              base_phrase_size,
+              min_f
+            );
           }
 
           return !acc || acc[0] < probability
@@ -508,4 +421,12 @@ function get(obj, key, defaultValue) {
     return defaultValue;
   }
   return obj[key];
+}
+
+function trans_prob_get(trans_prob, current_word_id, prev_word_id) {
+  return get(get(trans_prob, current_word_id, {}), prev_word_id, 0);
+}
+
+function calc_prob(count, total, min) {
+  return count == 0 || total == 0 ? min : Math.log(count / total);
 }

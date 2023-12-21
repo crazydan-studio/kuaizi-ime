@@ -44,7 +44,7 @@ async function start(phraseDictDB) {
   const words = await sqlite.predict(phraseDictDB, chars);
 
   words.forEach((w, i) => {
-    console.log(i + 1, w[0], w[1].join(''));
+    console.log(i + 1, w[0], w[1].join('|'));
   });
 
   return true;

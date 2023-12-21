@@ -31,10 +31,20 @@ try {
 
 let hmmParams;
 getAllFiles(phraseSamplesDir).forEach((file) => {
+  const debugSuffix = '.debug';
+  if (file.endsWith(debugSuffix)) {
+    return;
+  }
+
   const sampleText = readFile(file);
   console.log(`- 分析文件: ${file}`);
 
-  hmmParams = hmm.countParams(sampleText, words, hmmParams, `${file}.debug`);
+  hmmParams = hmm.countParams(
+    sampleText,
+    words,
+    hmmParams,
+    `${file}${debugSuffix}`
+  );
 });
 
 Object.keys(hmmParams).forEach((name) => {
