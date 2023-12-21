@@ -39,15 +39,41 @@ npm run generate:sqlite:word
 ```
 
 - 根据 `data/pinyin-word-dict.sqlite`
-  生成`筷字输入法`专用的 SQLite 数据库：
+  生成`筷字输入法`专用的 SQLite 字典库：
 
 ```bash
 npm run generate:sqlite:ime
 ```
 
-> - 以上 SQLite 数据库生成命令将自动对多余数据做删除，对新增数据做插入，
+> - 以上字典库生成命令将自动对多余数据做删除，对新增数据做插入，
 >   对有变化的数据做更新；
-> - 若需要全新建库，则先删除 SQLite 数据库文件，再执行上述命令即可；
+> - 若需要全新建库，则先删除字典库文件，再执行上述命令即可；
+
+## 词组预测
+
+- 生成 HMM 训练数据
+
+```bash
+npm run generate:sqlite:phrase:hmm
+```
+
+> 运行前，需将样本数据文本放到 `data/hmm_params/samples` 目录下，
+> 可以拆分为多个中等文件。
+> 训练完成后的数据将放在 `data/hmm_params/trans_prob.json` 中
+
+- 创建词典库
+
+```bash
+npm run generate:sqlite:phrase
+```
+
+> 生成的 SQLite 词典库放在 `data/pinyin-phrase-dict.sqlite` 中
+
+- 本地验证词组预测能力
+
+```bash
+npm run phrase:shell
+```
 
 ## 数据分析
 

@@ -74,7 +74,37 @@ function split(sampleText, words) {
 
       // 直接按 字:拼音 进行统计，故，无需再计算 拼音-汉字发射概率
       phrases.push(
-        pinyins.map((pinyin, index) => `${phrase.charAt(index)}:${pinyin}`)
+        pinyins.map((pinyin, index) => {
+          let word = phrase.charAt(index);
+
+          if (word == '不' && pinyin == 'bú') {
+            pinyin = 'bù';
+          } else if (word == '么' && pinyin == 'mǒ') {
+            pinyin = 'me';
+          } else if (word == '什' && pinyin == 'shèn') {
+            pinyin = 'shén';
+          } else if (word == '进' && pinyin == 'jǐn') {
+            pinyin = 'jìn';
+          } else if (word == '骨' && pinyin == 'gú') {
+            pinyin = 'gǔ';
+          } else if (word == '喝' && pinyin == 'he') {
+            pinyin = 'hē';
+          } else if (word == '尘' && pinyin == 'chen') {
+            pinyin = 'chén';
+          } else if (word == '乌' && pinyin == 'wù') {
+            pinyin = 'wū';
+          } else if (word == '滂' && pinyin == 'páng') {
+            pinyin = 'pāng';
+          } else if (word == '蒙' && pinyin == 'meng') {
+            pinyin = phrase.charAt(index + 1) == '古' ? 'měng' : 'méng';
+          } else if (word == '一' && ['yí', 'yì'].includes(pinyin)) {
+            pinyin = 'yī';
+          } else if (word == '拉' && ['là', 'la'].includes(pinyin)) {
+            pinyin = 'lā';
+          }
+
+          return `${word}:${pinyin}`;
+        })
       );
     }
     phrase_size = 0;

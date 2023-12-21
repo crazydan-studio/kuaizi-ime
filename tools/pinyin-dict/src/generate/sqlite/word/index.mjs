@@ -31,6 +31,11 @@ await readLineFromFile(wordDataValidFile, (line) => {
       meta.pinyins.filter(({ value }) => value == 'hm').length == 0
     ) {
       meta.pinyins.push({ value: 'hm', chars: 'hm' });
+    } else if (
+      meta.value == '吒' &&
+      meta.pinyins.filter(({ value }) => value == 'zhà').length == 0
+    ) {
+      meta.pinyins.push({ value: 'zhà', chars: 'zha' });
     }
   });
 });
