@@ -42,7 +42,11 @@ export function readFile(filepath) {
 }
 
 export function readAllFiles(dir) {
-  return fs.readdirSync(dir).map((file) => readFile(dir + '/' + file));
+  return getAllFiles(dir).map((file) => readFile(file));
+}
+
+export function getAllFiles(dir) {
+  return fs.readdirSync(dir).map((file) => dir + '/' + file);
 }
 
 export async function readLineFromFile(filepath, consumer) {
