@@ -115,7 +115,7 @@ function split(sampleText, words) {
 
 /** 计算汉字（状态）间转移概率：每个句子中汉字转移概率 */
 function countTrans(phrases, exist_trans_prob) {
-  const trans_prob = {};
+  const trans_prob = exist_trans_prob || {};
 
   phrases.forEach((phrase) => {
     for (let i = 0; i <= phrase.length; i++) {
@@ -123,11 +123,10 @@ function countTrans(phrases, exist_trans_prob) {
       const prev = i == 0 ? 'BOS' : phrase[i - 1];
 
       const trans = (trans_prob[curr] = trans_prob[curr] || {});
-      const exist_trans = exist_trans_prob[curr] || {};
 
-      trans[prev] = (trans[prev] || exist_trans[prev] || 0) + 1;
+      trans[prev] = (trans[prev] || 0) + 1;
       // 转移概率: math.log(前序字出现次数 / total)
-      trans.__total__ = (trans.__total__ || exist_trans.__total__ || 0) + 1;
+      trans.__total__ = (trans.__total__ || 0) + 1;
     }
   });
 

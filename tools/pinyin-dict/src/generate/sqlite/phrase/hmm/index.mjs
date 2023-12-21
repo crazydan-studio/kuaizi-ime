@@ -42,8 +42,8 @@ getAllFiles(phraseSamplesDir).forEach((file) => {
   hmmParams = hmm.countParams(
     sampleText,
     words,
-    hmmParams,
-    `${file}${debugSuffix}`
+    hmmParams
+    // , `${file}${debugSuffix}`
   );
 });
 
