@@ -26,17 +26,19 @@ await readLineFromFile(wordDataValidFile, (line) => {
     wordMetas.push(meta);
 
     // 单独修正输入数据
-    if (
-      meta.value == '噷' &&
-      meta.pinyins.filter(({ value }) => value == 'hm').length == 0
-    ) {
-      meta.pinyins.push({ value: 'hm', chars: 'hm' });
-    } else if (
-      meta.value == '吒' &&
-      meta.pinyins.filter(({ value }) => value == 'zhà').length == 0
-    ) {
-      meta.pinyins.push({ value: 'zhà', chars: 'zha' });
-    }
+    [
+      { value: '噷', pinyin: 'hm', chars: 'hm' },
+      { value: '吒', pinyin: 'zhà', chars: 'zha' },
+      { value: '虎', pinyin: 'hu', chars: 'hu' },
+      { value: '枸', pinyin: 'gōu', chars: 'gou' },
+    ].forEach(({ value, pinyin, chars }) => {
+      if (
+        meta.value == value &&
+        meta.pinyins.filter(({ value }) => value == pinyin).length == 0
+      ) {
+        meta.pinyins.push({ value: pinyin, chars: chars });
+      }
+    });
   });
 });
 console.log('- 有效字信息总数：' + wordMetas.length);

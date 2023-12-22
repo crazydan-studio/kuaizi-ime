@@ -8,13 +8,34 @@ import {
 import { openDB, closeDB } from '../../../../utils/sqlite.mjs';
 import * as hmm from './hmm.mjs';
 
+// 样本文件目录
+// 可以从 https://github.com/Lancer-He/pinyin_IME_HMM 中获取样本
+let phraseSamplesDir = '';
+let appendExistData = false;
+
+const args = process.argv.slice(2);
+for (let i = 0; i < args.length; i++) {
+  const arg = args[i];
+  if (arg == '-f') {
+    phraseSamplesDir = args[++i];
+  } else if (arg == '-a') {
+    appendExistData = true;
+  }
+}
+
+if (!phraseSamplesDir) {
+  console.log(
+    'Usage: npm run generate:sqlite:phrase:hmm -- [-a] -f /path/to/samples/file'
+  );
+  console.log();
+
+  process.exit(1);
+}
+
 // SQLite 字典库
 const wordDictSQLiteFile = fromRootPath('data', 'pinyin-word-dict.sqlite');
 // HMM 参数目录
 const hmmParamsDir = fromRootPath('data', 'hmm_params');
-// 样本文件目录
-// 可以从 https://github.com/Lancer-He/pinyin_IME_HMM 中获取样本
-const phraseSamplesDir = fromRootPath('data', 'hmm_params/samples');
 
 console.log();
 console.log('创建 HMM 计算参数 ...');
@@ -36,8 +57,9 @@ getAllFiles(phraseSamplesDir).forEach((file) => {
     return;
   }
 
+  // console.log(`- 分析文件: ${file} ...`);
+
   const sampleText = readFile(file);
-  console.log(`- 分析文件: ${file}`);
 
   hmmParams = hmm.countParams(
     sampleText,

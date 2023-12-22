@@ -97,6 +97,37 @@ CREATE TABLE
   );
 
   // =======================================================
+  const single_pinyin_words = {};
+  const correct_single_pinyin_word = (word) => {
+    if (wordDict.pinyin_word[word]) {
+      return word;
+    }
+
+    const splits = word.split(':');
+    const w = splits[0];
+
+    if (single_pinyin_words[w] === true || !single_pinyin_words[w]) {
+      return word;
+    } else {
+      return `${w}:${single_pinyin_words[w]}`;
+    }
+  };
+
+  Object.keys(wordDict.pinyin_word).forEach((key) => {
+    const splits = key.split(':');
+    const word = splits[0];
+    const pinyin = splits[1];
+
+    if (word && pinyin) {
+      if (single_pinyin_words[word]) {
+        single_pinyin_words[word] = true; // 多音字
+      } else {
+        single_pinyin_words[word] = pinyin;
+      }
+    }
+  });
+
+  // =======================================================
   const predDict = {
     word_chars: {},
     trans_prob: {}
@@ -113,39 +144,56 @@ CREATE TABLE
   // {'<word>': {'<prev word>': 0.11, ...}, ...}
   // word 为字符串组合 字:拼音
   Object.keys(hmmParams.trans_prob).forEach((word) => {
-    const word_id_ = wordDict.pinyin_word[word];
+    const data = hmmParams.trans_prob[word];
+    const new_word = correct_single_pinyin_word(word);
 
+    const word_id_ = wordDict.pinyin_word[new_word];
     if (!word_id_) {
-      console.log('汉字间转移概率矩阵中的当前字不存在：', word);
+      console.log('汉字间转移概率矩阵中的当前字不存在：', new_word);
       return;
     }
 
-    const word_pinyin_ = word.split(':')[1];
+    // if (new_word != word) {
+    //   console.log('修正汉字间转移概率矩阵中的当前字：', word, ' -> ', new_word);
+    // }
+
+    const word_pinyin_ = new_word.split(':')[1];
     collect_phrase_dict_words(word_id_, word_pinyin_);
 
-    const data = hmmParams.trans_prob[word];
     Object.keys(data).forEach((prev_word) => {
       const value_ = data[prev_word];
-      const prev_word_id_ = wordDict.pinyin_word[prev_word];
+      const new_prev_word = correct_single_pinyin_word(prev_word);
+
+      const prev_word_id_ = wordDict.pinyin_word[new_prev_word];
       const code = `${word_id_}_${prev_word_id_}`;
 
       if (!prev_word_id_) {
         console.log(
           '汉字间转移概率矩阵中的前序字不存在：',
-          word,
-          prev_word,
+          new_word,
+          new_prev_word,
           value_
         );
-      } else {
-        predDict.trans_prob[code] = {
-          word_id_,
-          prev_word_id_,
-          value_
-        };
-
-        const prev_word_pinyin_ = prev_word.split(':')[1];
-        collect_phrase_dict_words(prev_word_id_, prev_word_pinyin_);
+        return;
       }
+
+      // if (new_prev_word != prev_word) {
+      //   console.log(
+      //     '修正汉字间转移概率矩阵中的前序字：',
+      //     prev_word,
+      //     ' -> ',
+      //     new_prev_word
+      //   );
+      // }
+
+      predDict.trans_prob[code] = {
+        word_id_,
+        prev_word_id_,
+        value_
+      };
+
+      const prev_word_pinyin_ = new_prev_word.split(':')[1];
+      collect_phrase_dict_words(prev_word_id_, prev_word_pinyin_);
     });
   });
 

@@ -46,7 +46,22 @@ export function readAllFiles(dir) {
 }
 
 export function getAllFiles(dir) {
-  return fs.readdirSync(dir).map((file) => dir + '/' + file);
+  if (fs.lstatSync(dir).isFile()) {
+    return [dir];
+  }
+
+  let files = [];
+  fs.readdirSync(dir).forEach((file) => {
+    const filepath = path.join(dir, file);
+
+    if (fs.lstatSync(filepath).isDirectory()) {
+      files = files.concat(getAllFiles(filepath));
+    } else {
+      files.push(filepath);
+    }
+  });
+
+  return files;
 }
 
 export async function readLineFromFile(filepath, consumer) {

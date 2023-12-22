@@ -54,12 +54,14 @@ npm run generate:sqlite:ime
 - 生成 HMM 训练数据
 
 ```bash
+NODE_OPTIONS=--max-old-space-size=10240 \
 npm run generate:sqlite:phrase:hmm
 ```
 
 > 运行前，需将样本数据文本放到 `data/hmm_params/samples` 目录下，
 > 可以拆分为多个中等文件。
-> 训练完成后的数据将放在 `data/hmm_params/trans_prob.json` 中
+> 训练完成后的数据将放在 `data/hmm_params/trans_prob.json` 中。
+> 注：设置 `--max-old-space-size` 可避免内存溢出，其单位为 `MB`
 
 - 创建词典库
 
