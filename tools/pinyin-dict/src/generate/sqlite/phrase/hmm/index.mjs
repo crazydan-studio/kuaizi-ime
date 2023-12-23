@@ -8,8 +8,10 @@ import {
 import { openDB, closeDB } from '../../../../utils/sqlite.mjs';
 import * as hmm from './hmm.mjs';
 
-// 样本文件目录
-// 可以从 https://github.com/Lancer-He/pinyin_IME_HMM 中获取样本
+// 样本文件目录。可试用样本如下：
+// - https://raw.githubusercontent.com/InsaneLife/ChineseNLPCorpus/master/NER/MSRA/train1.txt
+// - https://raw.githubusercontent.com/InsaneLife/ChineseNLPCorpus/master/NER/renMinRiBao/renmin.txt
+// - https://pan.baidu.com/s/1LDwQjoj7qc-HT9qwhJ3rcA 提取码: 1fa3
 let phraseSamplesDir = '';
 let appendExistData = false;
 

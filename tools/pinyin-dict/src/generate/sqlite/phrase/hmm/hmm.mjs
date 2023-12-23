@@ -72,16 +72,24 @@ function split(sampleText, words) {
   for (let i = 0; i <= total; i++) {
     const word = sampleText.charAt(i);
 
-    if (word == ' ' || (words[word] && !excludes.includes(word))) {
+    if (
+      word == ' ' ||
+      (sampleText.charAt(i + 1) == 'o' && word == '/') ||
+      (sampleText.charAt(i - 1) == '/' && word == 'o') ||
+      (words[word] && !excludes.includes(word))
+    ) {
       phrase_size += 1;
       continue;
     }
 
-    const phrase = sampleText.substring(i - phrase_size, i).replaceAll(' ', '');
+    const phrase = sampleText
+      .substring(i - phrase_size, i)
+      .replaceAll(' ', '')
+      .replaceAll('/o', '');
     phrase_size = 0;
 
-    // 忽略单字
-    if (phrase.length <= 1) {
+    // 不忽略单字
+    if (phrase.length < 1) {
       continue;
     }
 
@@ -202,6 +210,8 @@ function split(sampleText, words) {
           pinyin = 'bà';
         } else if (word == '羊' && pinyin == 'yán') {
           pinyin = 'yáng';
+        } else if (word == '澄' && pinyin == 'deng') {
+          pinyin = 'chéng';
         } else if (word == '䀏' && pinyin == 'xiàn') {
           word = '旬';
         } else if (word == '乘' && pinyin == 'chèng') {
