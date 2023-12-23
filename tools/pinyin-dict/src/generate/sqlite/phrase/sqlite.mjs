@@ -267,7 +267,12 @@ export async function predict(phraseDictDB, pinyinCharsArray) {
     const { id_, word_, spell_, spell_chars_, spell_chars_id_ } = row;
 
     pinyin_chars[spell_chars_] = spell_chars_id_;
-    pinyin_words[id_] = `${word_}(${spell_})`;
+    pinyin_words[id_] = {
+      id: id_,
+      value: word_,
+      spell: spell_,
+      spell_chars_id: spell_chars_id_
+    };
 
     pinyin_chars_and_words[spell_chars_id_] =
       pinyin_chars_and_words[spell_chars_id_] || [];

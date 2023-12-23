@@ -22,11 +22,11 @@
   "author": "flytreeleft@crazydan.org",
   "license": "Apache-2.0",
   "dependencies": {
+    "@inquirer/prompts": "^3.3.0",
     "fontkit": "^2.0.2",
     "get-system-fonts": "^2.0.2",
     "got": "^13.0.0",
     "grapheme-splitter": "^1.0.4",
-    "inquirer": "^9.2.12",
     "jsdom": "^22.1.0",
     "pinyin": "3.1.0",
     "sqlite": "^5.0.1",

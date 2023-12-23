@@ -1,7 +1,7 @@
 /* SQLite 词典库 */
 import { fromRootPath } from '../../../utils/utils.mjs';
 import * as sqlite from './sqlite.mjs';
-import inquirer from 'inquirer';
+import { input, select } from '@inquirer/prompts';
 
 // SQLite 词典库
 const phraseDictSQLiteFile = fromRootPath('data', 'pinyin-phrase-dict.sqlite');
@@ -27,15 +27,12 @@ try {
 console.log();
 
 async function start(phraseDictDB) {
-  const answer = await inquirer.prompt([
-    {
-      type: 'input',
-      name: 'pinyin',
-      message: '请输入拼音，拼音之间以空格分隔:'
-    }
-  ]);
+  // https://github.com/SBoudrias/Inquirer.js
+  let answer = await input({
+    message: '请输入拼音，拼音之间以空格分隔:'
+  });
 
-  const pinyin = answer.pinyin.trim();
+  const pinyin = answer.trim();
   if (!pinyin) {
     return false;
   }
@@ -43,9 +40,30 @@ async function start(phraseDictDB) {
   const chars = pinyin.split(/\s+/g);
   const words = await sqlite.predict(phraseDictDB, chars);
 
-  words.forEach((w, i) => {
-    console.log(i + 1, w[0], w[1].join('|'));
+  answer = await select({
+    message: '请选择最佳的匹配结果:',
+    choices: [
+      {
+        name: 'npm',
+        value: 'npm',
+        description: 'npm is the most popular package manager'
+      },
+      {
+        name: 'yarn',
+        value: 'yarn',
+        description: 'yarn is an awesome package manager'
+      }
+    ],
+    choices: words.map((w, i) => ({
+      name: w[1].map(({ value }) => value).join(''), // 显示内容
+      value: w[1], // 函数返回内容
+      // 选中时的提示内容
+      description: `${i + 1}: (${w[0]}) ${w[1]
+        .map(({ value, spell }) => `${value} - ${spell}`)
+        .join(', ')}`
+    }))
   });
+  console.log(answer);
 
   return true;
 }
