@@ -4,21 +4,23 @@ import {
   execSQL,
   asyncForEach
 } from '../../../utils/sqlite.mjs';
+import { countTrans } from './hmm/hmm.mjs';
 
 export {
   openDB as open,
   closeDB as close,
-  attachDB as attach
+  attachDB as attach,
+  execSQL as exec
 } from '../../../utils/sqlite.mjs';
 
 // 查看表上的索引: PRAGMA index_list('MyTable');
 // 查看索引的列: PRAGMA index_info('MyIndex');
 // 基于HMM的拼音输入法: https://zhuanlan.zhihu.com/p/508599305
 
-/** 根据 HMM 参数创建词典库 */
-export async function updateData(phraseDictDB, wordDictDB, hmmParams) {
+/** 初始化词典库的表结构 */
+export async function init(db) {
   await execSQL(
-    phraseDictDB,
+    db,
     `
 -- Note：采用联合主键，以降低数据库文件大小
 
@@ -66,6 +68,11 @@ CREATE TABLE
     );
     `
   );
+}
+
+/** 根据 HMM 参数创建词典库 */
+export async function updateData(phraseDictDB, wordDictDB, hmmParams) {
+  await init(phraseDictDB);
 
   // =======================================================
   const wordDict = {
@@ -240,18 +247,86 @@ CREATE TABLE
         }
       });
 
-      if (primaryKeys.length == 0) {
-        return;
-      }
-
       await saveToDB(phraseDictDB, table, data, true, primaryKeys);
       await removeFromDB(phraseDictDB, table, missing, primaryKeys);
     }
   );
 }
 
+/** 保存词组 */
+export async function saveUsedPhrase(userDictDB, phrase) {
+  const trans_prob = countTrans([
+    phrase.map(({ value, spell }) => `${value}:${spell}`)
+  ]);
+
+  const predDict = {
+    words: { BOS: -1, EOS: -1, __total__: -2 },
+    word_chars: {},
+    trans_prob: {}
+  };
+
+  phrase.forEach(({ id, value, spell, spell_chars_id }) => {
+    predDict.word_chars[`${id}_${spell_chars_id}`] = {
+      word_id_: id,
+      chars_id_: spell_chars_id
+    };
+
+    predDict.words[`${value}:${spell}`] = id;
+  });
+
+  Object.keys(trans_prob).forEach((word) => {
+    const data = trans_prob[word];
+    const word_id_ = predDict.words[word];
+
+    Object.keys(data).forEach((prev_word) => {
+      const value_ = data[prev_word];
+      const prev_word_id_ = predDict.words[prev_word];
+      const code = `${word_id_}_${prev_word_id_}`;
+
+      predDict.trans_prob[code] = {
+        word_id_,
+        prev_word_id_,
+        value_
+      };
+    });
+  });
+
+  await asyncForEach(
+    [
+      {
+        table: 'meta_word_with_pinyin',
+        prop: 'word_chars',
+        primaryKeys: ['word_id_', 'chars_id_'],
+        update: () => {}
+      },
+      {
+        table: 'meta_trans_prob',
+        prop: 'trans_prob',
+        primaryKeys: ['word_id_', 'prev_word_id_'],
+        update: (data, row) => {
+          data.value_ += row.value_;
+        }
+      }
+    ],
+    async ({ table, prop, primaryKeys, update }) => {
+      const data = predDict[prop];
+
+      (await userDictDB.all(`select * from ${table}`)).forEach((row) => {
+        const code = primaryKeys.map((k) => row[k]).join('_');
+
+        if (data[code]) {
+          data[code].__exist__ = row;
+          update(data[code], row);
+        }
+      });
+
+      await saveToDB(userDictDB, table, data, true, primaryKeys);
+    }
+  );
+}
+
 /** 词组预测 */
-export async function predict(phraseDictDB, pinyinCharsArray) {
+export async function predict(phraseDictDB, userDictDB, pinyinCharsArray) {
   const pinyin_chars_and_words = {};
   const pinyin_chars = {};
   const pinyin_words = {};
@@ -259,9 +334,11 @@ export async function predict(phraseDictDB, pinyinCharsArray) {
   // ====================================================
   (
     await phraseDictDB.all(
-      `select * from pinyin_word where spell_chars_ in (${
-        "'" + pinyinCharsArray.join("', '") + "'"
-      })`
+      `select
+          distinct id_, word_, spell_, spell_chars_, spell_chars_id_
+       from pinyin_word
+       where spell_chars_ in (${"'" + pinyinCharsArray.join("', '") + "'"})
+       order by weight_ desc, glyph_weight_ desc, spell_id_ asc`
     )
   ).forEach((row) => {
     const { id_, word_, spell_, spell_chars_, spell_chars_id_ } = row;
@@ -271,7 +348,12 @@ export async function predict(phraseDictDB, pinyinCharsArray) {
       id: id_,
       value: word_,
       spell: spell_,
-      spell_chars_id: spell_chars_id_
+      spell_chars_id: spell_chars_id_,
+      get_candidates: () => {
+        return pinyin_chars_and_words[spell_chars_id_].map(
+          (id) => pinyin_words[id]
+        );
+      }
     };
 
     pinyin_chars_and_words[spell_chars_id_] =
@@ -357,15 +439,21 @@ export async function predict(phraseDictDB, pinyinCharsArray) {
             or s_.prev_word_id_ = -2
           )
         `,
-        convert: ({ word_id_, prev_word_id_, value_ }) => {
+        convert: ({ word_id_, prev_word_id_, value_ }, base) => {
           trans_prob[word_id_] = trans_prob[word_id_] || {};
-          trans_prob[word_id_][prev_word_id_] = value_;
+
+          trans_prob[word_id_][prev_word_id_] =
+            (trans_prob[word_id_][prev_word_id_] || 0) + value_ + (base || 0);
         }
       }
     ],
     async ({ select, convert }) => {
       (await phraseDictDB.all(select)).forEach((row) => {
         convert(row);
+      });
+
+      (await userDictDB.all(select)).forEach((row) => {
+        convert(row, 1000);
       });
     }
   );

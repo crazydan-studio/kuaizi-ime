@@ -33,7 +33,7 @@ export function countParams(sampleText, words, exist_params, debugDataFile) {
 }
 
 /** 计算汉字（状态）间转移概率：每个句子中汉字转移概率 */
-function countTrans(phrases, exist_trans_prob) {
+export function countTrans(phrases, exist_trans_prob) {
   const trans_prob = exist_trans_prob || {};
 
   phrases.forEach((phrase) => {
