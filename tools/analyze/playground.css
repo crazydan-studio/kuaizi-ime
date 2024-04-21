@@ -1,0 +1,43 @@
+html,
+body {
+  width: 100%;
+  height: 100%;
+}
+
+#playground {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.input-result {
+  margin: 1rem 0;
+  height: 2rem;
+  font-size: 2rem;
+  line-height: 1;
+  text-align: center;
+}
+
+.graph {
+  flex: 1;
+}
+
+.trigger {
+  fill: #f7f5f7;
+  stroke: #1f1e1e;
+  stroke-width: 1px;
+}
+
+.trigger:hover {
+  fill: #959696;
+}
+
+.sector:hover {
+  fill: #bc1dca;
+}
+
+.label {
+  fill: #000000;
+  pointer-events: none;
+}
