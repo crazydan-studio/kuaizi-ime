@@ -40,4 +40,5 @@ body {
 .label {
   fill: #000000;
   pointer-events: none;
+  font-size: 2rem;
 }

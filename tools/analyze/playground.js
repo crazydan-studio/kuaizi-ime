@@ -56,34 +56,60 @@ pinyinStartChars.forEach((ch) => {
   });
 });
 
-function drawTrigger(graph, center, radius, changeState) {
+graph.onmouseup = function () {
+  nextState('end');
+};
+
+document.addEventListener('touchstart', function (e) {
+  if (e.target.getAttribute('type') === 'trigger') {
+    nextState('start');
+  }
+});
+
+document.addEventListener('touchmove', function (e) {
+  const touch = e.touches[0];
+  const target = document.elementFromPoint(touch.clientX, touch.clientY);
+  if (!target) {
+    return;
+  }
+
+  if (target.getAttribute('type') === 'trigger') {
+    nextState('next');
+  } else if (target.getAttribute('type') === 'sector') {
+    nextState('choose', target.getAttribute('id'));
+  }
+});
+
+document.addEventListener('touchend', function (e) {
+  nextState('end');
+});
+
+function drawTrigger(graph, center, radius) {
   const circle = document.createElementNS(
     'http://www.w3.org/2000/svg',
     'circle'
   );
+  circle.setAttribute('type', 'trigger');
   circle.setAttribute('class', 'trigger');
   circle.setAttribute('r', radius);
   circle.setAttribute('cx', center.x);
   circle.setAttribute('cy', center.y);
 
-  circle.onmouseenter = function () {
-    changeState('end');
+  circle.onmousedown = function () {
+    nextState('start');
+  };
+  circle.onmouseover = function () {
+    nextState('next');
   };
 
   graph.appendChild(circle);
 }
 
 const sectorChars = {};
-const numSectors = 6;
-function drawPinyinSectors(
-  graph,
-  center,
-  innerRadius,
-  outerRadius,
-  changeState
-) {
+const numSectors = 12;
+function drawPinyinSectors(graph, center, innerRadius, outerRadius) {
   const anglePerSector = 360 / numSectors;
-  const startAngle = 45;
+  const startAngle = 135;
   const charSize = Math.round(pinyinStartChars.length / numSectors);
 
   for (let i = 0; i < numSectors; i++) {
@@ -122,6 +148,7 @@ function drawPinyinSectors(
 
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     path.setAttribute('id', sectorId);
+    path.setAttribute('type', 'sector');
     path.setAttribute('class', 'sector');
     // M100,100 表示移动到中心点 (100,100)。
     // L100,20 绘制一条从中心点到圆边缘的线（半径线）。
@@ -163,8 +190,8 @@ function drawPinyinSectors(
 
     graph.appendChild(text);
 
-    path.onmouseenter = function () {
-      changeState('start', text.innerHTML);
+    path.onmouseover = function () {
+      nextState('choose', sectorId);
     };
   }
 }
@@ -191,14 +218,38 @@ function mergeDeep(...objects) {
 }
 
 const state = {
+  started: false,
   paths: [],
-  candidates: [],
+  candidates: {},
   pending: null
 };
-function nextState(event, chars) {
-  if (event === 'start') {
-    state.pending = chars.split(/\s*,\s*/);
-  } else if (event === 'end' && state.pending) {
+function nextState(event, sectorId) {
+  if (event === 'end') {
+    state.started = false;
+    updateSectorChars(pinyinStartChars);
+  } else if (event === 'start') {
+    state.started = true;
+    state.paths = [];
+    state.candidates = {};
+    state.pending = null;
+  } else if (state.started && event === 'choose') {
+    const sectorTextId = `${sectorId}_text`;
+
+    state.pending = document
+      .querySelector(`#${sectorTextId}`)
+      .innerHTML.split(/\s*,\s*/);
+  } else if (state.started && event === 'next' && state.pending) {
+    console.log('pending: ', event, state.pending);
+
+    const firstPending = state.pending[0];
+    if (state.pending.length === 1 && state.candidates[firstPending]) {
+      document.querySelector('.input-result').innerHTML = firstPending;
+
+      updateSectorChars(pinyinStartChars);
+
+      return nextState('start');
+    }
+
     state.paths.push(state.pending);
     state.pending = null;
 
@@ -223,54 +274,66 @@ function nextState(event, chars) {
       nextChars = newNextChars;
     });
 
-    //
-    let results = { '': true };
-    state.paths.forEach((path) => {
-      const prev = Object.keys(results);
-      results = {};
+    const pinyins = showCandidates();
 
-      path.forEach((ch) => {
-        prev.forEach((p) => {
-          results[p + ch] = true;
-        });
-      });
-    });
-
-    Object.keys(results).forEach((p) => {
-      if (pinyinAll[p]) {
-        state.candidates.push(p);
-      }
-    });
-    console.log(state.candidates);
-
-    if (state.candidates.length > 0) {
-      document.querySelector('.input-result').innerHTML =
-        state.candidates.join(', ');
-    }
-    //
-
-    let chars = Object.keys(nextChars);
+    let chars = Object.keys(nextChars).concat(pinyins);
+    // 拼音组合已无后继
     if (chars.length === 0) {
       chars = pinyinStartChars;
       state.paths = [];
-      state.candidates = [];
     }
 
-    const selectorAmount =
-      chars.length > numSectors ? Math.round(chars.length / numSectors) : 1;
-    for (let i = 0; i < numSectors; i++) {
-      const sectorId = `sector_${i}`;
-      const sectorTextId = `${sectorId}_text`;
-      const sectorChars = chars.slice(
-        i * selectorAmount,
-        i == numSectors - 1 ? chars.length : (i + 1) * selectorAmount
-      );
-
-      document.querySelector(`#${sectorTextId}`).innerHTML =
-        sectorChars.join(', ');
-    }
+    updateSectorChars(chars);
   }
 }
 
-drawTrigger(graph, center, 150, nextState);
-drawPinyinSectors(board, center, 150, 300, nextState);
+function updateSectorChars(chars) {
+  const selectorAmount =
+    chars.length > numSectors ? Math.round(chars.length / numSectors) : 1;
+
+  for (let i = 0; i < numSectors; i++) {
+    const sectorId = `sector_${i}`;
+    const sectorTextId = `${sectorId}_text`;
+    const sectorChars = chars.slice(
+      i * selectorAmount,
+      i == numSectors - 1 ? chars.length : (i + 1) * selectorAmount
+    );
+
+    document.querySelector(`#${sectorTextId}`).innerHTML =
+      sectorChars.join(', ');
+  }
+}
+
+function showCandidates() {
+  let results = { '': true };
+
+  state.paths.forEach((path) => {
+    const prev = Object.keys(results);
+    results = {};
+
+    path.forEach((ch) => {
+      if (state.candidates[ch]) {
+        return;
+      }
+
+      prev.forEach((p) => {
+        results[p + ch] = true;
+      });
+    });
+  });
+
+  Object.keys(results).forEach((p) => {
+    if (pinyinAll[p]) {
+      state.candidates[p] = true;
+    }
+  });
+  console.log('candidates: ', state.candidates);
+
+  const pinyins = Object.keys(state.candidates);
+  document.querySelector('.input-result').innerHTML = pinyins.join(', ');
+
+  return pinyins;
+}
+
+drawTrigger(graph, center, 150);
+drawPinyinSectors(board, center, 150, Math.min(center.x, center.y));
