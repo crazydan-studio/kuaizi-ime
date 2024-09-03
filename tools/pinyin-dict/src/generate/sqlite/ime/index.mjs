@@ -3,7 +3,7 @@ import {
   fromRootPath,
   fileSHA256,
   appendLineToFile
-} from '../../../utils/utils.mjs';
+} from '#utils/utils.mjs';
 import * as ime from './ime.mjs';
 
 // SQLite 字典库

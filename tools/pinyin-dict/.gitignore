@@ -2,5 +2,5 @@ node_modules/
 *.log
 data/pinyin-dict.*.txt
 data/pinyin-*.sqlite
-data/hmm_params/
+data/*_params/
 result.txt

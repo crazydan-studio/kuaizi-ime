@@ -1,7 +1,7 @@
 import got from 'got';
 import { JSDOM } from 'jsdom';
 
-import { sleep } from '../../utils/utils.mjs';
+import { sleep } from '#utils/utils.mjs';
 
 const baseUrl = 'https://emojixd.com';
 const gotOptions = { timeout: { connect: 50000 } };

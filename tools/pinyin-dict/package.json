@@ -12,15 +12,24 @@
     "generate:sqlite:word": "node src/generate/sqlite/word/index.mjs",
     "generate:sqlite:word:debug": "node --inspect-brk src/generate/sqlite/word/index.mjs",
     "generate:sqlite:word:diff": "node src/generate/sqlite/word/diff.mjs",
-    "generate:sqlite:phrase": "node src/generate/sqlite/phrase/index.mjs",
-    "generate:sqlite:phrase:debug": "node --inspect-brk src/generate/sqlite/phrase/index.mjs",
     "generate:sqlite:phrase:hmm": "node src/generate/sqlite/phrase/hmm/index.mjs",
     "generate:sqlite:phrase:hmm:debug": "node --inspect-brk src/generate/sqlite/phrase/hmm/index.mjs",
-    "phrase:shell": "node src/generate/sqlite/phrase/shell.mjs",
-    "phrase:shell:debug": "node --inspect-brk src/generate/sqlite/phrase/shell.mjs"
+    "generate:sqlite:phrase:hmm:trans": "node src/generate/sqlite/phrase/hmm/trans/index.mjs",
+    "generate:sqlite:phrase:hmm:trans:debug": "node --inspect-brk src/generate/sqlite/phrase/hmm/trans/index.mjs",
+    "phrase:hmm:shell": "node src/generate/sqlite/phrase/hmm/shell.mjs",
+    "phrase:hmm:shell:debug": "node --inspect-brk src/generate/sqlite/phrase/hmm/shell.mjs",
+    "generate:sqlite:phrase:my": "node src/generate/sqlite/phrase/my/index.mjs",
+    "generate:sqlite:phrase:my:debug": "node --inspect-brk src/generate/sqlite/phrase/my/index.mjs",
+    "generate:sqlite:phrase:my:trans": "node src/generate/sqlite/phrase/my/trans/index.mjs",
+    "generate:sqlite:phrase:my:trans:debug": "node --inspect-brk src/generate/sqlite/phrase/my/trans/index.mjs",
+    "phrase:my:shell": "node src/generate/sqlite/phrase/my/shell.mjs",
+    "phrase:my:shell:debug": "node --inspect-brk src/generate/sqlite/phrase/my/shell.mjs"
   },
   "author": "flytreeleft@crazydan.org",
   "license": "Apache-2.0",
+  "imports": {
+    "#*": "./src/*"
+  },
   "dependencies": {
     "@inquirer/prompts": "^3.3.0",
     "fontkit": "^2.0.2",

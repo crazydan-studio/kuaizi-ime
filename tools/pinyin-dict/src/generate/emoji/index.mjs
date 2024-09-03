@@ -1,4 +1,4 @@
-import { fromRootPath, appendLineToFile } from '../../utils/utils.mjs';
+import { fromRootPath, appendLineToFile } from '#utils/utils.mjs';
 
 import { fetchEmojis } from './emoji.mjs';
 

@@ -1,12 +1,12 @@
-import { splitChars, appendLineToFile } from '../../../utils/utils.mjs';
+import { splitChars, appendLineToFile } from '#utils/utils.mjs';
 import {
   saveToDB,
   removeFromDB,
   execSQL,
   asyncForEach
-} from '../../../utils/sqlite.mjs';
+} from '#utils/sqlite.mjs';
 
-export { openDB as open, closeDB as close } from '../../../utils/sqlite.mjs';
+export { openDB as open, closeDB as close } from '#utils/sqlite.mjs';
 
 /** 保存拼音和注音信息 */
 export async function saveSpells(db, wordMetas) {

@@ -3,15 +3,15 @@ import {
   removeFromDB,
   execSQL,
   asyncForEach
-} from '../../../utils/sqlite.mjs';
-import { countTrans } from './hmm/hmm.mjs';
+} from '#utils/sqlite.mjs';
+import { countTrans } from './trans/hmm.mjs';
 
 export {
   openDB as open,
   closeDB as close,
   attachDB as attach,
   execSQL as exec
-} from '../../../utils/sqlite.mjs';
+} from '#utils/sqlite.mjs';
 
 // 查看表上的索引: PRAGMA index_list('MyTable');
 // 查看索引的列: PRAGMA index_info('MyIndex');

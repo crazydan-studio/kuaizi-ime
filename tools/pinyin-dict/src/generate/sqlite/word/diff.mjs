@@ -1,7 +1,7 @@
 /* 对比不同版本的 SQLite 字典库的数据差异 */
-import { fromRootPath } from '../../../utils/utils.mjs';
+import { fromRootPath } from '#utils/utils.mjs';
 
-import { openDB, closeDB, asyncForEach } from '../../../utils/sqlite.mjs';
+import { openDB, closeDB, asyncForEach } from '#utils/sqlite.mjs';
 
 const oldDictDataSQLiteFile = fromRootPath(
   'data',

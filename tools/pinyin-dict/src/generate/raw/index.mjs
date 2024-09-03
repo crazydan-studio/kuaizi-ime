@@ -1,4 +1,4 @@
-import { fromRootPath } from '../../utils/utils.mjs';
+import { fromRootPath } from '#utils/utils.mjs';
 import {
   readZDicWordsFromPinyinData,
   readTraditionalWordsFromOpenCC,

@@ -3,9 +3,9 @@ import {
   removeFromDB,
   execSQL,
   asyncForEach
-} from '../../../utils/sqlite.mjs';
+} from '#utils/sqlite.mjs';
 
-export { openDB as open, closeDB as close } from '../../../utils/sqlite.mjs';
+export { openDB as open, closeDB as close } from '#utils/sqlite.mjs';
 
 // 查看表上的索引: PRAGMA index_list('MyTable');
 // 查看索引的列: PRAGMA index_info('MyIndex');

@@ -1,5 +1,5 @@
 /* SQLite 词典库 */
-import { fromRootPath } from '../../../utils/utils.mjs';
+import { fromRootPath } from '#utils/utils.mjs';
 import * as sqlite from './sqlite.mjs';
 import { input, select } from '@inquirer/prompts';
 

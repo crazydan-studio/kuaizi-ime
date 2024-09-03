@@ -8,8 +8,8 @@ import {
   correctZhuyin,
   calculateStrokeSimilarity,
   splitChars
-} from '../../utils/utils.mjs';
-import { fetchWordMetas } from '../../utils/zdic.mjs';
+} from '#utils/utils.mjs';
+import { fetchWordMetas } from '#utils/zdic.mjs';
 
 /** 从 https://github.com/mozillazg/pinyin-data 中读取汉典网的数据 */
 export async function readZDicWordsFromPinyinData(file) {

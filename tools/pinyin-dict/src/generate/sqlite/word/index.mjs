@@ -1,5 +1,5 @@
 /* SQLite 字典库 */
-import { fromRootPath, readLineFromFile } from '../../../utils/utils.mjs';
+import { fromRootPath, readLineFromFile } from '#utils/utils.mjs';
 import * as sqlite from './sqlite.mjs';
 
 // 收集数据

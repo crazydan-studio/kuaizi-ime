@@ -51,11 +51,13 @@ npm run generate:sqlite:ime
 
 ## 词组预测
 
+### HMM
+
 - 生成 HMM 训练数据
 
 ```bash
 NODE_OPTIONS=--max-old-space-size=10240 \
-npm run generate:sqlite:phrase:hmm \
+npm run generate:sqlite:phrase:hmm:trans \
   -- -f /path/to/samples/file
 ```
 
@@ -66,7 +68,7 @@ npm run generate:sqlite:phrase:hmm \
 - 创建词典库
 
 ```bash
-npm run generate:sqlite:phrase
+npm run generate:sqlite:phrase:hmm
 ```
 
 > 生成的 SQLite 词典库放在 `data/pinyin-phrase-dict.sqlite` 中
@@ -74,7 +76,7 @@ npm run generate:sqlite:phrase
 - 本地验证词组预测能力
 
 ```bash
-npm run phrase:shell
+npm run phrase:hmm:shell
 ```
 
 ## 数据分析
