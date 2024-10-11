@@ -1,4 +1,4 @@
-import { pinyin as get_pinyin } from 'pinyin';
+import { pinyin as parse_pinyin } from 'pinyin';
 
 // extract_phrases('力争达到１０００万标准箱\n', {
 //   力: true,
@@ -12,8 +12,24 @@ import { pinyin as get_pinyin } from 'pinyin';
 // });
 /** 拆分样本数据，按汉字短句返回 */
 export function extract_phrases(sampleText, words) {
+  const phrases = get_phrases(sampleText, words);
+
+  const result = [];
+  phrases.forEach((phrase) => {
+    let pinyins = get_pinyins(phrase);
+
+    console.log(`  - 获取拼音 for ${phrase} ...`);
+
+    // 直接按 字:拼音 进行统计，故，无需再计算 拼音-汉字发射概率
+    result.push(correct_pinyin(phrase, pinyins));
+  });
+
+  return result;
+}
+
+export function get_phrases(sampleText, words) {
   const phrases = [];
-  const excludes = ['丨'];
+  const excludes = ['丨', '丶', '氵'];
 
   let phrase_size = 0;
   const total = sampleText.length;
@@ -34,38 +50,31 @@ export function extract_phrases(sampleText, words) {
       .substring(i - phrase_size, i)
       .replaceAll(' ', '')
       .replaceAll('/o', '');
-    phrase_size = 0;
 
+    phrase_size = 0;
     // 不忽略单字
     if (phrase.length < 1) {
       continue;
     }
 
-    // https://www.npmjs.com/package/pinyin/v/3.1.0
-    let pinyins_array = get_pinyin(phrase, {
-      // 启用多音字模式：单字不启用
-      heteronym: phrase.length > 1,
-      // 启用分词，以解决多音字问题
-      segment: 'nodejieba',
-      // 输出拼音格式：含声调，如，pīn yīn
-      style: get_pinyin.STYLE_TONE,
-      // 紧凑模式：你好吗 -> [ [nǐ,hǎo,ma], [nǐ,hǎo,má], ... ]
-      compact: true
-    })[0];
-
-    console.log(`  - 获取拼音 for ${phrase} ...`);
-
-    // 直接按 字:拼音 进行统计，故，无需再计算 拼音-汉字发射概率
-    if (!Array.isArray(pinyins_array[0])) {
-      pinyins_array = [pinyins_array];
-    }
-
-    pinyins_array.forEach((pinyins) => {
-      phrases.push(correct_pinyin(phrase, pinyins));
-    });
+    phrases.push(phrase);
   }
 
   return phrases;
+}
+
+export function get_pinyins(phrase) {
+  // https://www.npmjs.com/package/pinyin/v/3.1.0
+  return parse_pinyin(phrase, {
+    // 不启用多音字模式：其多音字针对的是单字，而非词组，会造成交叉组合膨胀
+    heteronym: false,
+    // 启用分词，以解决多音字问题
+    segment: 'nodejieba',
+    // 输出拼音格式：含声调，如，pīn yīn
+    style: parse_pinyin.STYLE_TONE,
+    // 紧凑模式：你好吗 -> [ [nǐ,hǎo,ma], [nǐ,hǎo,má], ... ]
+    compact: true
+  })[0];
 }
 
 function correct_pinyin(phrase, pinyins) {

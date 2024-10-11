@@ -17,13 +17,7 @@
     "generate:sqlite:phrase:hmm:trans": "node src/generate/sqlite/phrase/hmm/trans/index.mjs",
     "generate:sqlite:phrase:hmm:trans:debug": "node --inspect-brk src/generate/sqlite/phrase/hmm/trans/index.mjs",
     "phrase:hmm:shell": "node src/generate/sqlite/phrase/hmm/shell.mjs",
-    "phrase:hmm:shell:debug": "node --inspect-brk src/generate/sqlite/phrase/hmm/shell.mjs",
-    "generate:sqlite:phrase:my": "node src/generate/sqlite/phrase/my/index.mjs",
-    "generate:sqlite:phrase:my:debug": "node --inspect-brk src/generate/sqlite/phrase/my/index.mjs",
-    "generate:sqlite:phrase:my:trans": "node src/generate/sqlite/phrase/my/trans/index.mjs",
-    "generate:sqlite:phrase:my:trans:debug": "node --inspect-brk src/generate/sqlite/phrase/my/trans/index.mjs",
-    "phrase:my:shell": "node src/generate/sqlite/phrase/my/shell.mjs",
-    "phrase:my:shell:debug": "node --inspect-brk src/generate/sqlite/phrase/my/shell.mjs"
+    "phrase:hmm:shell:debug": "node --inspect-brk src/generate/sqlite/phrase/hmm/shell.mjs"
   },
   "author": "flytreeleft@crazydan.org",
   "license": "Apache-2.0",

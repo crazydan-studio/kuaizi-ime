@@ -4,7 +4,7 @@ import {
   execSQL,
   asyncForEach
 } from '#utils/sqlite.mjs';
-import { countTrans } from './trans/hmm.mjs';
+import { countTrans } from './trans/trans.mjs';
 
 export {
   openDB as open,
