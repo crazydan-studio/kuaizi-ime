@@ -27,16 +27,34 @@ await readLineFromFile(wordDataValidFile, (line) => {
 
     // 单独修正输入数据
     [
+      // “一”和“不”变调有规律：https://www.chinanews.com.cn/hwjy/news/2010/04-15/2228742.shtml
+      { value: '不', pinyin: 'bú', chars: 'bu' },
+      { value: '一', pinyin: 'yì', chars: 'yi' },
+      { value: '一', pinyin: 'yí', chars: 'yi' },
+      { value: '子', pinyin: 'zi', chars: 'zi' },
+      // 便宜：pián yi
+      { value: '宜', pinyin: 'yi', chars: 'yi' },
       { value: '噷', pinyin: 'hm', chars: 'hm' },
       { value: '吒', pinyin: 'zhà', chars: 'zha' },
       { value: '虎', pinyin: 'hu', chars: 'hu' },
       { value: '枸', pinyin: 'gōu', chars: 'gou' },
+      { value: '焘', pinyin: 'tāo', chars: 'tao' },
+      { value: '喇', pinyin: 'lā', chars: 'la' },
+      { value: '喇', pinyin: 'lá', chars: 'la' },
+      { value: '蕃', pinyin: 'bō', chars: 'bo' },
+      { value: '蕃', pinyin: 'fān', chars: 'fan' },
+      { value: '脯', pinyin: 'pú', chars: 'pu' },
+      { value: '蕻', pinyin: 'hóng', chars: 'hong' },
+      { value: '朵', pinyin: 'duo', chars: 'duo' },
+      { value: '鏜', pinyin: 'táng', chars: 'tang' },
+      { value: '咔', pinyin: 'kā', chars: 'ka' },
+      { value: '蹬', pinyin: 'dèng', chars: 'deng' }
     ].forEach(({ value, pinyin, chars }) => {
       if (
         meta.value == value &&
         meta.pinyins.filter(({ value }) => value == pinyin).length == 0
       ) {
-        meta.pinyins.push({ value: pinyin, chars: chars });
+        meta.pinyins.push({ value: pinyin, chars });
       }
     });
   });

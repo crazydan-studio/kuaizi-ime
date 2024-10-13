@@ -33,6 +33,14 @@ export function fileSHA256(filepath) {
   return hash.digest('hex');
 }
 
+export function copyFile(source, target, override) {
+  if (fs.existsSync(target) && override !== true) {
+    return;
+  }
+
+  fs.copyFileSync(source, target);
+}
+
 export function readJSONFromFile(filepath) {
   return JSON.parse(readFile(filepath));
 }
@@ -233,6 +241,61 @@ export function extractPinyinChars(pinyin) {
   }
 
   return chars.join('');
+}
+
+export function getPinyinTone(pinyin) {
+  const tones = {
+    ā: 1,
+    á: 2,
+    ǎ: 3,
+    à: 4,
+    //
+    ō: 1,
+    ó: 2,
+    ǒ: 3,
+    ò: 4,
+    //
+    ē: 1,
+    é: 2,
+    ě: 3,
+    è: 4,
+    ê: 0,
+    ê̄: 1,
+    ế: 2,
+    ê̌: 3,
+    ề: 4,
+    //
+    ī: 1,
+    í: 2,
+    ǐ: 3,
+    ì: 4,
+    //
+    ū: 1,
+    ú: 2,
+    ǔ: 3,
+    ù: 4,
+    //
+    ǖ: 1,
+    ǘ: 2,
+    ǚ: 3,
+    ǜ: 4,
+    //
+    ń: 2,
+    ň: 3,
+    ǹ: 4,
+    //
+    m̄: 1,
+    ḿ: 2,
+    m̀: 4
+  };
+
+  for (let ch in tones) {
+    if (pinyin.includes(ch)) {
+      return tones[ch];
+    }
+  }
+
+  return 0;
 }
 
 /** 注音去掉声调后的字符组合 */

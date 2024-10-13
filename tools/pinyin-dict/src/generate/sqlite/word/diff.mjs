@@ -5,7 +5,7 @@ import { openDB, closeDB, asyncForEach } from '#utils/sqlite.mjs';
 
 const oldDictDataSQLiteFile = fromRootPath(
   'data',
-  'pinyin-word-dict.v1.sqlite'
+  'pinyin-word-dict.v2.sqlite'
 );
 const dictDataSQLiteFile = fromRootPath('data', 'pinyin-word-dict.sqlite');
 
@@ -91,13 +91,14 @@ async function diffWordData(oldDb, newDb) {
       });
 
       Object.keys(newData).forEach((id) => {
-        if (!oldData[id]) {
+        const oldRow = oldData[id];
+        const newRow = newData[id];
+
+        if (!oldRow) {
           console.log(`- ${table} => 字数据 ${id} 为新增`);
           return;
         }
 
-        const oldRow = oldData[id];
-        const newRow = newData[id];
         const oldCode = `${oldRow.source_id_}:${oldRow.target_id_}:${oldRow.target_chars_id_}`;
         const newCode = `${newRow.source_id_}:${newRow.target_id_}:${newRow.target_chars_id_}`;
 

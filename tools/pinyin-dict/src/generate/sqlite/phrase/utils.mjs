@@ -1,6 +1,11 @@
-import { pinyin as parse_pinyin } from 'pinyin';
+import { getPinyinTone } from '#utils/utils.mjs';
 
-// extract_phrases('力争达到１０００万标准箱\n', {
+import { pinyin as parsePinyin, addDict } from 'pinyin-pro';
+// https://pinyin-pro.cn/use/addDict.html
+import CompleteDict from '@pinyin-pro/data/complete';
+addDict(CompleteDict);
+
+// extractClauses('迈向/v  充满/v  希望/n  的/u  新/a  世纪/n', {
 //   力: true,
 //   争: true,
 //   达: true,
@@ -11,275 +16,393 @@ import { pinyin as parse_pinyin } from 'pinyin';
 //   箱: true
 // });
 /** 拆分样本数据，按汉字短句返回 */
-export function extract_phrases(sampleText, words) {
-  const phrases = get_phrases(sampleText, words);
+export function extractClauses(sampleText, words) {
+  const clauses = getClauses(sampleText, words);
 
   const result = [];
-  phrases.forEach((phrase) => {
-    let pinyins = get_pinyins(phrase);
+  clauses.forEach((clause) => {
+    const phrase = clause.join('');
+    const pinyins = clause.map(getPinyin).reduce((ret, p) => ret.concat(p), []);
 
-    console.log(`  - 获取拼音 for ${phrase} ...`);
+    // console.log(`  - 获取拼音 for ${phrase} ...`);
 
     // 直接按 字:拼音 进行统计，故，无需再计算 拼音-汉字发射概率
-    result.push(correct_pinyin(phrase, pinyins));
+    const pinyinWords = correctPinyin(phrase, pinyins, words);
+    // 忽略包含无效拼音的短语
+    if (pinyinWords.includes(null)) {
+      console.log(
+        `  - 忽略包含无效拼音的短语 '${phrase}': `,
+        pinyinWords
+          .map((p, i) => (p ? null : `${phrase.charAt(i)}:${pinyins[i]}`))
+          .filter((w) => !!w)
+          .join()
+      );
+      return;
+    }
+
+    result.push(pinyinWords);
   });
 
   return result;
 }
 
-export function get_phrases(sampleText, words) {
-  const phrases = [];
-  const excludes = ['丨', '丶', '氵'];
+/** @return [['迈向', '充满', '的'], [...], ...] */
+export function getClauses(sampleText, words) {
+  const clauses = [];
 
-  let phrase_size = 0;
-  const total = sampleText.length;
-  for (let i = 0; i <= total; i++) {
-    const word = sampleText.charAt(i);
-
-    if (
-      word == ' ' ||
-      (sampleText.charAt(i + 1) == 'o' && word == '/') ||
-      (sampleText.charAt(i - 1) == '/' && word == 'o') ||
-      (words[word] && !excludes.includes(word))
-    ) {
-      phrase_size += 1;
-      continue;
+  let clause = [];
+  const splittedPhrases = sampleText.split(/\/[a-z]+\s+/g);
+  for (let phrase of splittedPhrases) {
+    if (isValidPhrase(phrase, words)) {
+      clause.push(phrase);
+    } else {
+      if (clause.length > 0) {
+        clauses.push(clause);
+      }
+      clause = [];
     }
-
-    const phrase = sampleText
-      .substring(i - phrase_size, i)
-      .replaceAll(' ', '')
-      .replaceAll('/o', '');
-
-    phrase_size = 0;
-    // 不忽略单字
-    if (phrase.length < 1) {
-      continue;
-    }
-
-    phrases.push(phrase);
   }
 
-  return phrases;
+  return clauses;
 }
 
-export function get_pinyins(phrase) {
-  // https://www.npmjs.com/package/pinyin/v/3.1.0
-  return parse_pinyin(phrase, {
-    // 不启用多音字模式：其多音字针对的是单字，而非词组，会造成交叉组合膨胀
-    heteronym: false,
-    // 启用分词，以解决多音字问题
-    segment: 'nodejieba',
-    // 输出拼音格式：含声调，如，pīn yīn
-    style: parse_pinyin.STYLE_TONE,
-    // 紧凑模式：你好吗 -> [ [nǐ,hǎo,ma], [nǐ,hǎo,má], ... ]
-    compact: true
-  })[0];
+/** @return ['nǐ', 'hǎo', 'ma'] */
+export function getPinyin(phrase) {
+  // https://pinyin-pro.cn/use/pinyin.html
+  return parsePinyin(phrase, {
+    // 输出为数组
+    type: 'array',
+    // 作为音调符号带在拼音字母上
+    toneType: 'symbol',
+    // 识别字符串开头的姓氏
+    surname: 'head',
+    // 是否对一和不应用智能变调
+    // 不（bù）在去声字前面读阳平声，如“～会”“～是”，这属于变调读音
+    // http://www.moe.gov.cn/jyb_hygq/hygq_zczx/moe_1346/moe_1364/tnull_42118.html
+    // “一”和“不”变调有规律：https://www.chinanews.com.cn/hwjy/news/2010/04-15/2228742.shtml
+    toneSandhi: true
+  });
 }
 
-function correct_pinyin(phrase, pinyins) {
+function isValidPhrase(phrase, words) {
+  const excludes = ['丨', '丶', '氵'];
+
+  for (let i = 0; i < phrase.length; i++) {
+    const word = phrase.charAt(i);
+
+    if (!words[word] || excludes.includes(word)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/** @return ['迈:mài', ...] */
+function correctPinyin(clause, pinyins, words) {
   return pinyins.map((pinyin, index) => {
-    let word = phrase.charAt(index);
-    const prev_word = phrase.charAt(index - 1);
-    const post_word = phrase.charAt(index + 1);
+    let word = clause.charAt(index);
+    const wordCode = `${word}:${pinyin}`;
+    const prevWord = clause.charAt(index - 1);
+    const postWord = clause.charAt(index + 1);
+    const postPinyin = pinyins[index + 1] || '';
 
-    if (word == '不' && ['bú', 'bū'].includes(pinyin)) {
-      pinyin = 'bù';
-    } else if (word == '么' && pinyin == 'mǒ') {
-      pinyin = 'me';
-    } else if (word == '什' && pinyin == 'shèn') {
-      pinyin = 'shén';
-    } else if (word == '进' && pinyin == 'jǐn') {
-      pinyin = 'jìn';
-    } else if (word == '骨' && pinyin == 'gú') {
-      pinyin = 'gǔ';
-    } else if (word == '喝' && pinyin == 'he') {
-      pinyin = 'hē';
-    } else if (word == '尘' && pinyin == 'chen') {
-      pinyin = 'chén';
-    } else if (word == '乌' && pinyin == 'wù') {
-      pinyin = 'wū';
-    } else if (word == '滂' && pinyin == 'páng') {
-      pinyin = 'pāng';
-    } else if (word == '坊' && pinyin == 'fang') {
-      pinyin = 'fáng';
-    } else if (word == '场' && pinyin == 'chang') {
-      pinyin = 'chǎng';
-    } else if (word == '唔' && pinyin == 'wù') {
-      pinyin = 'wú';
-    } else if (word == '唬' && pinyin == 'hu') {
-      pinyin = 'hǔ';
-    } else if (word == '嚷' && pinyin == 'rang') {
-      pinyin = 'rǎng';
-    } else if (word == '混' && pinyin == 'gǔn') {
-      pinyin = 'hùn';
-    } else if (word == '㩗' && pinyin == 'xí') {
-      pinyin = 'xié';
-    } else if (word == '约' && pinyin == 'yué') {
-      pinyin = 'yuē';
-    } else if (word == '亡' && pinyin == 'bēn') {
-      pinyin = 'wáng';
-    } else if (word == '只' && pinyin == 'yán') {
-      pinyin = 'zhǐ';
-    } else if (word == '节' && pinyin == 'jíe') {
-      pinyin = 'jié';
-    } else if (word == '铛' && pinyin == 'dang') {
-      pinyin = 'dāng';
-    } else if (word == '价' && pinyin == 'wù') {
-      pinyin = 'jià';
-    } else if (word == '打' && pinyin == 'dā') {
-      pinyin = 'dǎ';
-    } else if (word == '傅' && pinyin == 'fū') {
-      pinyin = 'fù';
-    } else if (word == '裳' && pinyin == 'shāng') {
-      pinyin = 'shang';
-    } else if (word == '瘩' && pinyin == 'dā') {
-      pinyin = 'da';
-    } else if (word == '荷' && pinyin == 'he') {
-      pinyin = 'hé';
-    } else if (word == '结' && pinyin == 'jì') {
-      pinyin = 'jié';
-    } else if (word == '叨' && pinyin == 'dáo') {
-      pinyin = 'dāo';
-    } else if (word == '大' && pinyin == 'dǎ') {
-      pinyin = 'dà';
-    } else if (word == '雀' && pinyin == 'qué') {
-      pinyin = 'què';
-    } else if (word == '属' && pinyin == 'shú') {
-      pinyin = 'shǔ';
-    } else if (word == '溜' && pinyin == 'liú') {
-      pinyin = 'liū';
-    } else if (word == '约' && pinyin == 'yuè') {
-      pinyin = 'yuē';
-    } else if (word == '绰' && pinyin == 'chuō') {
-      pinyin = 'chuò';
-    } else if (word == '卒' && pinyin == 'fú') {
-      pinyin = 'zú';
-    } else if (word == '囊' && pinyin == 'nang') {
-      pinyin = 'náng';
-    } else if (word == '趄' && pinyin == 'qie') {
-      pinyin = 'qiè';
-    } else if (word == '挑' && pinyin == 'tāo') {
-      pinyin = 'tiāo';
-    } else if (word == '了' && pinyin == 'liào') {
-      pinyin = 'le';
-    } else if (word == '绰' && pinyin == 'chuo') {
-      pinyin = 'chuò';
-    } else if (word == '其' && pinyin == 'qì') {
-      pinyin = 'qí';
-    } else if (word == '吾' && ['wū', 'wǔ'].includes(pinyin)) {
-      pinyin = 'wú';
-    } else if (word == '蛾' && pinyin == 'ér') {
-      pinyin = 'é';
-    } else if (word == '沙' && pinyin == 'sha') {
-      pinyin = 'shā';
-    } else if (word == '沓' && pinyin == 'ta') {
-      pinyin = 'tà';
-    } else if (word == '血' && pinyin == 'xuě') {
-      pinyin = 'xuè';
-    } else if (word == '罢' && pinyin == 'bā') {
-      pinyin = 'bà';
-    } else if (word == '羊' && pinyin == 'yán') {
-      pinyin = 'yáng';
-    } else if (word == '澄' && pinyin == 'deng') {
-      pinyin = 'chéng';
-    } else if (word == '䀏' && pinyin == 'xiàn') {
-      word = '旬';
-    } else if (word == '乘' && pinyin == 'chèng') {
-      pinyin = 'chéng';
-    } else if (word == '当' && pinyin == 'dang') {
-      pinyin = 'dāng';
-    } else if (word == '责' && pinyin == 'zè') {
-      pinyin = 'zé';
-    } else if (word == '钉' && pinyin == 'ding') {
-      pinyin = 'dīng';
-    } else if (word == '罗' && pinyin == 'luò') {
-      pinyin = 'luó';
-    } else if (word == '㘝' && pinyin == 'niǎn') {
-      pinyin = 'lǎn';
-    } else if (word == '僝' && pinyin == 'zhàn') {
-      pinyin = 'chán';
-    } else if (word == '焸' && pinyin == 'xiǒng' && !post_word) {
-      pinyin = 'gǔ';
-    } else if (word == '炰' && pinyin == 'fèng' && post_word == '鳖') {
-      pinyin = 'fǒu';
-    } else if (word == '条' && pinyin == 'dí') {
-      pinyin = 'tiáo';
-    } else if (word == '分' && pinyin == 'fān') {
-      pinyin = 'fēn';
-    } else if (word == '虾' && pinyin == 'há') {
-      word = '蛤';
-    } else if (word == '屛' && pinyin == 'pǐng') {
-      word = '屏';
-      pinyin = ['住'].includes(post_word) ? 'bǐng' : 'píng';
-    } else if (word == '不' && pinyin == 'bǔ') {
-      pinyin = 'bù';
-    } else if (word == '泥' && pinyin == 'niè') {
-      pinyin = 'ní';
-    } else if (word == '难' && pinyin == 'nan') {
-      pinyin = ['发', '逃', '灾', '空'].includes() ? 'nàn' : 'nán';
-    } else if (word == '大' && pinyin == 'dā') {
-      pinyin = 'dà';
-    } else if (word == '同' && pinyin == 'rú') {
-      word = '如';
-    } else if (word == '着' && pinyin == 'zhaō') {
-      pinyin = ['胶'].includes(prev_word) ? 'zhuó' : 'zhe';
-    } else if (word == '宜' && pinyin == 'yì') {
-      pinyin = 'yí';
-    } else if (word == '摩' && post_word == '挲') {
-      pinyin = 'mó';
-    } else if (word == '挲' && pinyin == 'sā') {
-      pinyin = prev_word == '摩' ? 'suō' : 'shā';
-    } else if (word == '薄' && pinyin == 'bù') {
-      if (prev_word == '对' && post_word == '公') {
-        word = '簿';
-      } else {
-        pinyin = 'bó';
+    // 唯一拼音
+    const uniques = {
+      '上:shang': 'shàng',
+      '生:sheng': 'shēng',
+      '娘:niang': 'niáng',
+      '袱:fu': 'fú',
+      '伍:wu': 'wǔ',
+      '事:shi': 'shì',
+      '情:qing': 'qíng',
+      '下:xia': 'xià',
+      '同:tong': 'tóng',
+      '个:ge': 'gè',
+      '喇:lā': 'lǎ',
+      '姑:gu': 'gū',
+      '闹:nao': 'nào',
+      '实:shi': 'shí',
+      '人:ren': 'rén',
+      '萄:tao': 'táo',
+      '究:jiu': 'jiū',
+      '太:tai': 'tài',
+      '芦:lu': 'lú',
+      '嚣:áo': 'xiāo',
+      '篷:peng': 'péng',
+      '哈:ha': 'hā',
+      '亮:liang': 'liàng',
+      '栏:lan': 'lán',
+      '悉:xi': 'xī',
+      '桃:tao': 'táo',
+      '气:qi': 'qì',
+      '户:hu': 'hù',
+      '脯:pú': 'fǔ',
+      '敞:chang': 'chǎng',
+      '复:fu': 'fù',
+      '务:wu': 'wù',
+      '歌:ge': 'gē',
+      '欢:huan': 'huān',
+      '氛:fen': 'fēn',
+      '宝:bao': 'bǎo',
+      '蟆:ma': 'má',
+      '利:li': 'lì',
+      '成:cheng': 'chéng',
+      '婆:po': 'pó',
+      '甲:jia': 'jiǎ',
+      '腐:fu': 'fǔ',
+      '摸:mo': 'mō',
+      '郗:chī': 'xī',
+      '女:nü': 'nǚ',
+      '才:cai': 'cái',
+      '蛐:qu': 'qū',
+      '呼:hu': 'hū',
+      '话:hua': 'huà',
+      '嫂:sao': 'sǎo',
+      '辑:ji': 'jí',
+      '算:suan': 'suàn',
+      '烦:fan': 'fán',
+      '屉:ti': 'tì',
+      '方:fang': 'fāng',
+      '叔:shu': 'shū',
+      '应:ying': 'yìng',
+      '戚:qi': 'qī',
+      '麻:ma': 'má',
+      '拉:la': 'lā',
+      '司:si': 'sī',
+      '瑰:gui': 'guī',
+      '牌:pai': 'pái',
+      '疾:ji': 'jí',
+      '误:wu': 'wù',
+      '叭:ba': 'bā',
+      '付:fu': 'fù',
+      '蠡:lí': 'lǐ',
+      '镗:táng': 'tāng',
+      '毛:mao': 'máo',
+      '荡:dang': 'dàng',
+      '拾:shi': 'shí',
+      '系:xi': 'xì',
+      '妇:fu': 'fù',
+      '仗:zhang': 'zhàng',
+      '面:mian': 'miàn',
+      '甥:sheng': 'shēng',
+      '快:kuai': 'kuài',
+      '婿:xu': 'xù',
+      '计:ji': 'jì',
+      '明:ming': 'míng',
+      '琶:pa': 'pá',
+      '遛:liú': 'liù',
+      '兄:xiong': 'xiōng',
+      '搁:ge': 'gē',
+      '们:men': 'mén',
+      '友:you': 'yǒu',
+      '生:sheng': 'shēng',
+      '难:nan': 'nán',
+      '分:fen': 'fēn',
+      '识:shi': 'shí',
+      '食:shi': 'shí',
+      '下:xia': 'xià',
+      '氛:fen': 'fēn',
+      '得:de': 'dé',
+      '星:xing': 'xīng',
+      '笼:long': 'lóng',
+      '爷:ye': 'yé',
+      '奶:nai': 'nǎi',
+      '爸:ba': 'bà',
+      '妈:ma': 'mā',
+      '儿:er': 'ér',
+      '哥:ge': 'gē',
+      '服:fu': 'fú',
+      '睛:jing': 'jīng',
+      '弟:di': 'dì',
+      '妹:mei': 'mèi',
+      '司:si': 'sī',
+      '候:hou': 'hòu',
+      '腾:teng': 'téng',
+      '璃:li': 'lí',
+      '息:xi': 'xī',
+      '傅:fu': 'fù',
+      '娃:wa': 'wá',
+      '卖:mai': 'mài',
+      '屈:qu': 'qū',
+      '思:si': 'sī',
+      '活:huo': 'huó',
+      '量:liang': 'liáng',
+      '伯:bo': 'bó',
+      '丧:sang': 'sàng',
+      '嗦:suo': 'suō',
+      '当:dang': 'dāng',
+      '咕:gu': 'gū',
+      '巴:ba': 'bā',
+      '粑:ba': 'bā',
+      '矩:ju': 'jǔ',
+      '发:fa': 'fà',
+      '合:he': 'hé',
+      '帚:zhou': 'zhǒu',
+      '蛋:dan': 'dàn',
+      '枉:wang': 'wǎng',
+      '泡:pao': 'pào',
+      '酬:chou': 'chóu',
+      '股:gu': 'gǔ',
+      '剔:ti': 'tī',
+      '西:xi': 'xī',
+      '糊:hu': 'hú',
+      '元:yuan': 'yuán',
+      '杠:gang': 'gàng',
+      '乎:hu': 'hū',
+      '猬:wei': 'wèi',
+      '指:zhi': 'zhǐ',
+      '撒:sa': 'sā',
+      '瞧:qiao': 'qiáo',
+      '磨:mo': 'mó',
+      '坊:fang': 'fáng',
+      '叨:dao': 'dāo',
+      '蹭:ceng': 'cèng',
+      '姐:jie': 'jiě',
+      '狸:li': 'lí',
+      '楼:lou': 'lóu',
+      '膊:bo': 'bó',
+      '堂:tang': 'táng',
+      '涂:tu': 'tú',
+      '负:fu': 'fù',
+      '灵:ling': 'líng',
+      '菇:gu': 'gū',
+      '舅:jiu': 'jiù',
+      '饼:bing': 'bǐng',
+      '罕:han': 'hǎn',
+      '药:yao': 'yào',
+      '筝:zheng': 'zhēng',
+      '框:kuang': 'kuàng',
+      '转:zhuan': 'zhuàn',
+      '壳:ke': 'ké',
+      '忽:hu': 'hū',
+      '荒:huang': 'huāng',
+      '莉:li': 'lì',
+      '悠:you': 'yōu',
+      '士:shi': 'shì',
+      '嚷:rang': 'rāng',
+      '笆:ba': 'bā',
+      '窿:long': 'lóng',
+      '缝:feng': 'féng',
+      '口:kou': 'kǒu',
+      '末:mo': 'mò',
+      '里:li': 'lǐ',
+      '叽:ji': 'jī',
+      '心:xin': 'xīn',
+      '宗:zong': 'zōng',
+      '姥:lao': 'lǎo',
+      '喝:he': 'hē',
+      '伙:huo': 'huǒ',
+      '囊:nang': 'nāng',
+      '物:wu': 'wù',
+      '嗽:sou': 'sòu',
+      '咙:long': 'lóng',
+      '': '',
+      // 占位用
+      _: ''
+    };
+
+    // 在 四声字 前念 二声：不要、不错、不是、不再、不认识
+    if (word == '不' && ['bu'].includes(pinyin)) {
+      const tone = getPinyinTone(postPinyin);
+      if (tone == 4) {
+        pinyin = 'bú';
+      } else if (tone != 0 || ['得'].includes(postWord)) {
+        pinyin = 'bù';
       }
-    } else if (word == '家' && ['jiān', 'ji'].includes(pinyin)) {
-      // console.log('读音修正: ', phrase, pinyins);
-      pinyin = 'jiā';
-    } else if (word == '难' && pinyin == 'cái') {
-      // console.log('读音修正: ', phrase, pinyins);
-      pinyin = 'nán';
-    } else if (word == '读' && pinyin == 'shū') {
-      // console.log('读音修正: ', phrase, pinyins);
-      pinyin = 'dú';
-    } else if (word == '教' && pinyin == 'jiàn') {
-      // console.log('读音修正: ', phrase, pinyins);
-      pinyin = prev_word == '屡' ? 'jiào' : 'jiāo';
-    } else if (word == '唠') {
-      pinyin = 'láo';
-    } else if (word == '干' && pinyin == 'qián') {
-      pinyin = ['晒', '物'].includes(prev_word) ? 'gān' : 'gàn';
-    } else if (word == '长' && pinyin == 'chéng') {
-      pinyin = [
-        '增',
-        '院',
-        '成',
-        '书',
-        '事',
-        '彼',
-        '家',
-        '会',
-        '处',
-        '学',
-        '局',
-        '市',
-        '组'
-      ].includes(prev_word)
-        ? 'zhǎng'
-        : 'cháng';
-    } else if (word == '行' && pinyin == 'héng') {
-      pinyin = ['银', '央', '工', '农', '该', '逐', '排'].includes(prev_word)
-        ? 'háng'
-        : 'xíng';
-    } else if (word == '蒙' && pinyin == 'meng') {
-      pinyin = post_word == '古' ? 'měng' : 'méng';
-    } else if (word == '一' && ['yí', 'yì'].includes(pinyin)) {
-      pinyin = 'yī';
-    } else if (word == '拉' && ['là', 'la'].includes(pinyin)) {
+    }
+    // 在 四声 前念 二声：一样，一下子、一座、一位、一次、一块儿
+    // 在 一声、二声、三声字 前念 四声：大吃一惊、一般、一年、一门、一口、一起、一种
+    else if (word == '一' && ['yi'].includes(pinyin)) {
+      const tone = getPinyinTone(postPinyin);
+      if (tone == 4) {
+        pinyin = 'yí';
+      } else if (tone != 0) {
+        pinyin = 'yì';
+      }
+    } else if (word == '同' && ['胡'].includes(prevWord)) {
+      pinyin = 'tòng';
+    } else if (word == '蕃' && ['茄'].includes(postWord)) {
+      word = '番';
+      pinyin = 'fān';
+    } else if (word == '蕃' && ['吐'].includes(prevWord)) {
+      pinyin = 'bō';
+    } else if (word == '朵' && ['耳'].includes(prevWord)) {
+      pinyin = 'duo';
+      return `${word}:${pinyin}`;
+    } else if (
+      word == '脯' &&
+      (['胸'].includes(prevWord) || ['子'].includes(postWord))
+    ) {
+      pinyin = 'pú';
+    } else if (
+      word == '夫' &&
+      ['丈', '工', '功', '姐', '大', '妹'].includes(prevWord)
+    ) {
+      pinyin = 'fū';
+    } else if (word == '喇' && ['喇', '哗', '呼', '喀'].includes(prevWord)) {
       pinyin = 'lā';
+    }
+    // 姓氏：https://baike.baidu.com/item/%E5%96%87%E5%A7%93/9730899
+    else if (
+      word == '喇' &&
+      (['哈', '半'].includes(prevWord) || ['进', '敏', '秉'].includes(postWord))
+    ) {
+      pinyin = 'lá';
+    } else if (
+      word == '大' &&
+      ['士'].includes(prevWord) &&
+      ['夫'].includes(postWord)
+    ) {
+      pinyin = 'dà';
+    } else if (word == '大' && ['夫'].includes(postWord)) {
+      pinyin = 'dài';
+    } else if (
+      word == '个' &&
+      ['自'].includes(prevWord) &&
+      ['儿'].includes(postWord)
+    ) {
+      pinyin = 'gě';
+    }
+    //
+    else if (uniques[wordCode]) {
+      pinyin = uniques[wordCode];
+    }
+
+    if (!words[word].includes(pinyin)) {
+      return null;
+    }
+
+    if (
+      words[word].length > 1 &&
+      getPinyinTone(pinyin) == 0 &&
+      ![
+        '的',
+        '不',
+        '一',
+        '着',
+        '么',
+        '了',
+        '子',
+        '啊',
+        '呢',
+        '吧',
+        '宜',
+        '吗',
+        '家',
+        '头',
+        '呀',
+        '卜',
+        '和',
+        '嘛',
+        '地',
+        '匙',
+        '啦',
+        '裳',
+        '瘩',
+        '喽'
+      ].includes(word)
+    ) {
+      return null;
     }
 
     return `${word}:${pinyin}`;

@@ -26,12 +26,13 @@
   },
   "dependencies": {
     "@inquirer/prompts": "^3.3.0",
+    "@pinyin-pro/data": "^1.2.0",
     "fontkit": "^2.0.2",
     "get-system-fonts": "^2.0.2",
     "got": "^13.0.0",
     "grapheme-splitter": "^1.0.4",
     "jsdom": "^22.1.0",
-    "pinyin": "3.1.0",
+    "pinyin-pro": "^3.25.0",
     "sqlite": "^5.0.1",
     "sqlite3": "^5.1.6"
   }

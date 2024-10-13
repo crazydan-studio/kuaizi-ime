@@ -1,54 +1,53 @@
 /* SQLite 词典库 */
-import { fromRootPath } from '#utils/utils.mjs';
+import { fromRootPath, copyFile } from '#utils/utils.mjs';
 import * as sqlite from './sqlite.mjs';
 import { input, select } from '@inquirer/prompts';
 
 // SQLite 词典库
 const phraseDictSQLiteFile = fromRootPath('data', 'pinyin-phrase-dict.sqlite');
 // 用户数据库
-const userDictSQLiteFile = fromRootPath('data', 'pinyin-user-dict.sqlite');
+const userDictSQLiteFile = fromRootPath(
+  'data',
+  'pinyin-phrase-dict.user.sqlite'
+);
+copyFile(phraseDictSQLiteFile, userDictSQLiteFile);
 
 console.log();
 let userDictDB = await sqlite.open(userDictSQLiteFile);
-let phraseDictDB = await sqlite.open(phraseDictSQLiteFile, true);
 
-await sqlite.attach(phraseDictDB, {
+await sqlite.attach(userDictDB, {
   // SQLite 字典库：通过 attach database 连接字典库，
   // 两个库中的非同名表可以直接使用，无需通过连接名称区分
   // Note：性能不太好
   word: fromRootPath('data', 'pinyin-word-dict.sqlite')
 });
 
-await sqlite.init(userDictDB);
-await sqlite.attach(userDictDB, {
-  word: fromRootPath('data', 'pinyin-word-dict.sqlite')
-});
-
 try {
-  while ((await start(phraseDictDB, userDictDB)) !== false) {}
+  while ((await start(userDictDB)) !== false) {}
 } catch (e) {
   throw e;
 } finally {
-  await sqlite.close(phraseDictDB);
   await sqlite.close(userDictDB);
 }
 
 console.log();
 
-async function start(phraseDictDB, userDictDB) {
+async function start(userDictDB) {
   // https://github.com/SBoudrias/Inquirer.js
   const pinyin = (
     await input({
-      message: '请输入拼音，拼音之间以空格分隔:'
+      message: '请输入拼音，拼音之间以空格分隔（输入 exit 退出）:'
     })
   ).trim();
 
   if (!pinyin) {
+    return true;
+  } else if (pinyin === 'exit') {
     return false;
   }
 
   const chars = pinyin.split(/\s+/g);
-  const words = await sqlite.predict(phraseDictDB, userDictDB, chars);
+  const words = await sqlite.predict(userDictDB, chars);
 
   const selectedPhrase = await select({
     message: '请选择最佳的匹配结果:',

@@ -16,6 +16,7 @@ let phraseDictDB = await sqlite.open(phraseDictSQLiteFile);
 
 try {
   await sqlite.updateData(phraseDictDB, wordDictDB, {
+    word_prob: readJSONFromFile(transParamsDir + '/word_prob.json'),
     // 汉字间转移概率矩阵：当前字与前一个字的关联概率
     trans_prob: readJSONFromFile(transParamsDir + '/trans_prob.json')
   });
