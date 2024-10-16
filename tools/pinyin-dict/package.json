@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "description": "Pinyin dictionary maker",
   "scripts": {
-    "web": "node src/web.mjs",
+    "app:shell": "node src/app/shell.mjs",
+    "app:shell:debug": "node --inspect-brk src/app/shell.mjs",
     "generate:test": "node src/generate/test.mjs",
     "generate:raw": "node src/generate/raw/index.mjs",
     "generate:raw:debug": "node --inspect-brk src/generate/raw/index.mjs",
@@ -15,9 +16,7 @@
     "generate:sqlite:phrase:hmm": "node src/generate/sqlite/phrase/hmm/index.mjs",
     "generate:sqlite:phrase:hmm:debug": "node --inspect-brk src/generate/sqlite/phrase/hmm/index.mjs",
     "generate:sqlite:phrase:hmm:trans": "node src/generate/sqlite/phrase/hmm/trans/index.mjs",
-    "generate:sqlite:phrase:hmm:trans:debug": "node --inspect-brk src/generate/sqlite/phrase/hmm/trans/index.mjs",
-    "phrase:hmm:shell": "node src/generate/sqlite/phrase/hmm/shell.mjs",
-    "phrase:hmm:shell:debug": "node --inspect-brk src/generate/sqlite/phrase/hmm/shell.mjs"
+    "generate:sqlite:phrase:hmm:trans:debug": "node --inspect-brk src/generate/sqlite/phrase/hmm/trans/index.mjs"
   },
   "author": "flytreeleft@crazydan.org",
   "license": "Apache-2.0",

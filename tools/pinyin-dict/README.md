@@ -73,10 +73,10 @@ npm run generate:sqlite:phrase:hmm
 
 > 生成的 SQLite 词典库放在 `data/pinyin-phrase-dict.sqlite` 中
 
-- 本地验证词组预测能力
+## 输入法功能验证
 
 ```bash
-npm run phrase:hmm:shell
+npm run app:shell
 ```
 
 ## 数据分析

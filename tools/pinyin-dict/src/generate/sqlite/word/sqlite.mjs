@@ -284,9 +284,9 @@ CREATE TABLE
 CREATE VIEW
     IF NOT EXISTS link_word_with_pinyin (
         id_,
-        source_id_,
-        target_id_,
-        target_chars_id_,
+        word_id_,
+        spell_id_,
+        spell_chars_id_,
         glyph_weight_,
         weight_
     ) AS
@@ -304,9 +304,9 @@ FROM
 CREATE VIEW
     IF NOT EXISTS link_word_with_zhuyin (
         id_,
-        source_id_,
-        target_id_,
-        target_chars_id_,
+        word_id_,
+        spell_id_,
+        spell_chars_id_,
         glyph_weight_,
         weight_
     ) AS

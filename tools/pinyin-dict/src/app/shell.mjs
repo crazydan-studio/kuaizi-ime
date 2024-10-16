@@ -1,28 +1,30 @@
 /* SQLite 词典库 */
-import { fromRootPath, copyFile } from '#utils/utils.mjs';
-import * as sqlite from './sqlite.mjs';
+import { fromRootPath } from '#utils/utils.mjs';
 import { input, select } from '@inquirer/prompts';
 
-// SQLite 词典库
-const phraseDictSQLiteFile = fromRootPath('data', 'pinyin-phrase-dict.sqlite');
-// 用户数据库
-const userDictSQLiteFile = fromRootPath(
-  'data',
-  'pinyin-phrase-dict.user.sqlite'
-);
-copyFile(phraseDictSQLiteFile, userDictSQLiteFile);
+import * as sqlite from './sqlite.mjs';
+
+// 用户字典库
+const userDictSQLiteFile = fromRootPath('data', 'pinyin-user-dict.sqlite');
 
 console.log();
+console.log("初始化用户字典 ...");
 let userDictDB = await sqlite.open(userDictSQLiteFile);
 
+// 通过 attach database 连接字典、词典库，
+// 库中的非同名表可以直接使用，无需通过连接名称区分
+// Note：性能不太好
 await sqlite.attach(userDictDB, {
-  // SQLite 字典库：通过 attach database 连接字典库，
-  // 两个库中的非同名表可以直接使用，无需通过连接名称区分
-  // Note：性能不太好
-  word: fromRootPath('data', 'pinyin-word-dict.sqlite')
+  // 应用字典库
+  word: fromRootPath('data', 'pinyin-word-dict.sqlite'),
+  // 应用词典库
+  phrase: fromRootPath('data', 'pinyin-phrase-dict.sqlite')
 });
 
 try {
+  await sqlite.init(userDictDB);
+  console.log();
+
   while ((await start(userDictDB)) !== false) {}
 } catch (e) {
   throw e;
