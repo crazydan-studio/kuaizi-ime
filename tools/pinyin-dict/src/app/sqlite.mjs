@@ -1,6 +1,5 @@
 import {
   saveToDB,
-  removeFromDB,
   execSQL,
   asyncForEach
 } from '#utils/sqlite.mjs';
@@ -80,7 +79,7 @@ export async function init(userDictDB) {
       primary key (word_id_, prev_word_id_)
     );
 
-  -- 创建临时表，以用于合并应用字/词点的数据
+  -- 创建临时表，以用于合并应用词典数据
   create table tmp_phrase_word (
     word_id_ integer not null,
     spell_chars_id_ integer not null,
@@ -98,6 +97,7 @@ export async function init(userDictDB) {
     primary key (word_id_, prev_word_id_)
   );
 
+  -- 合并应用和用户词典数据
   insert into tmp_phrase_word as tmp_
     (word_id_, spell_chars_id_, weight_, weight_app_, weight_user_)
   select
@@ -109,7 +109,6 @@ export async function init(userDictDB) {
     full join phrase_word as user_
       using(word_id_, spell_chars_id_)
   ;
-
   insert into tmp_phrase_trans_prob as tmp_
     (word_id_, prev_word_id_, value_, value_app_, value_user_)
   select
@@ -127,6 +126,9 @@ export async function init(userDictDB) {
   alter table tmp_phrase_word rename to phrase_word;
   drop table phrase_trans_prob;
   alter table tmp_phrase_trans_prob rename to phrase_trans_prob;
+
+  -- 空间回收
+  VACUUM;
 `
   );
 }
@@ -138,41 +140,74 @@ export async function saveUsedPhrase(userDictDB, phrase) {
   ]);
 
   const pred_dict = {
-    words: { BOS: -1, EOS: -1, __total__: -2 },
+    word_chars: {},
+    pinyin_word: { BOS: -1, EOS: -1, __total__: -2 },
     trans_prob: {}
   };
 
-  phrase.forEach(({ id, value, spell }) => {
-    pred_dict.words[`${value}:${spell}`] = id;
+  phrase.forEach(({ id, value, spell, spell_chars_id }) => {
+    const word_code = `${value}:${spell}`;
+    pred_dict.pinyin_word[word_code] = id;
+
+    const word_chars_code = `${id}:${spell_chars_id}`;
+    if (!pred_dict.word_chars[word_chars_code]) {
+      pred_dict.word_chars[word_chars_code] = {
+        word_id_: id,
+        spell_chars_id_: spell_chars_id,
+        weight_user_: 0
+      };
+    }
+    pred_dict.word_chars[word_chars_code].weight_user_ += 1;
   });
 
-  Object.keys(trans_prob).forEach((word) => {
-    const data = trans_prob[word];
-    const word_id = pred_dict.words[word];
+  Object.keys(trans_prob).forEach((word_code) => {
+    const probs = trans_prob[word_code];
+    const word_id = pred_dict.pinyin_word[word_code];
 
-    Object.keys(data).forEach((prev_word) => {
-      const value = data[prev_word];
-      const prev_word_id = pred_dict.words[prev_word];
-      const code = `${word_id}_${prev_word_id}`;
+    Object.keys(probs).forEach((prev_word_code) => {
+      const prob_value = probs[prev_word_code];
+      const prev_word_id = pred_dict.pinyin_word[prev_word_code];
 
-      pred_dict.trans_prob[code] = {
+      const prob_code = `${word_id}:${prev_word_id}`;
+
+      pred_dict.trans_prob[prob_code] = {
         word_id_: word_id,
         prev_word_id_: prev_word_id,
-        value_user_: value
+        value_user_: prob_value
       };
     });
   });
 
+  // 用户数据首次引用需加上基础权重
+  const base_weight = 500;
   await asyncForEach(
     [
+      {
+        table: 'phrase_word',
+        prop: 'word_chars',
+        primaryKeys: ['word_id_', 'spell_chars_id_'],
+        create: (data) => {
+          data.weight_app_ = 0;
+          data.weight_user_ += base_weight;
+
+          data.weight_ = data.weight_app_ + data.weight_user_;
+        },
+        update: (data, row) => {
+          // 应用数据不变
+          data.weight_app_ = row.weight_app_;
+          // 用户数据累加
+          data.weight_user_ += row.weight_user_ || base_weight;
+
+          data.weight_ = data.weight_app_ + data.weight_user_;
+        }
+      },
       {
         table: 'phrase_trans_prob',
         prop: 'trans_prob',
         primaryKeys: ['word_id_', 'prev_word_id_'],
         create: (data) => {
           data.value_app_ = 0;
-          // 用户数据需提升一定的优先级
-          data.value_user_ += 100;
+          data.value_user_ += base_weight;
 
           data.value_ = data.value_app_ + data.value_user_;
         },
@@ -180,7 +215,7 @@ export async function saveUsedPhrase(userDictDB, phrase) {
           // 应用数据不变
           data.value_app_ = row.value_app_;
           // 用户数据累加
-          data.value_user_ += row.value_user_;
+          data.value_user_ += row.value_user_ || base_weight;
 
           data.value_ = data.value_app_ + data.value_user_;
         }
@@ -190,7 +225,7 @@ export async function saveUsedPhrase(userDictDB, phrase) {
       const data = pred_dict[prop];
 
       (await userDictDB.all(`select * from ${table}`)).forEach((row) => {
-        const code = primaryKeys.map((k) => row[k]).join('_');
+        const code = primaryKeys.map((k) => row[k]).join(':');
 
         if (data[code]) {
           data[code].__exist__ = row;
@@ -217,14 +252,18 @@ export async function predict(userDictDB, pinyinCharsArray) {
 
   // ====================================================
   (
-    await userDictDB.all(
-      `select
-          distinct id_, word_, spell_, spell_chars_, spell_chars_id_
-       from pinyin_word
-       where spell_chars_ in (${"'" + pinyinCharsArray.join("', '") + "'"})
-       order by weight_ desc, glyph_weight_ desc, spell_id_ asc
-      `
-    )
+    await userDictDB.all(`
+      select distinct
+        py_.id_, py_.word_, py_.spell_, py_.spell_chars_, py_.spell_chars_id_
+      from pinyin_word py_
+        left join phrase_word ph_
+          on ph_.word_id_ = py_.id_
+      where
+        py_.spell_chars_ in (${"'" + pinyinCharsArray.join("', '") + "'"})
+      order by
+        ph_.weight_ desc, py_.weight_ desc,
+        py_.glyph_weight_ desc, py_.spell_id_ asc
+      `)
   ).forEach((row) => {
     const { id_, word_, spell_, spell_chars_, spell_chars_id_ } = row;
 
@@ -410,7 +449,7 @@ export async function predict(userDictDB, pinyinCharsArray) {
   // 对串进行回溯即可得对应拼音的汉字
   const words = [];
   words[last_index] = Object.keys(viterbi[last_index])
-    // Note：取概率最大前 N 各末尾汉字
+    // Note：取概率最大前 N 个末尾汉字
     .map((word_id) => {
       const probability = viterbi[last_index][word_id][0];
       return [probability, word_id];

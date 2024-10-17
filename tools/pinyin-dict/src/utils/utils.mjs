@@ -33,8 +33,12 @@ export function fileSHA256(filepath) {
   return hash.digest('hex');
 }
 
+export function existFile(filepath) {
+  return fs.existsSync(filepath);
+}
+
 export function copyFile(source, target, override) {
-  if (fs.existsSync(target) && override !== true) {
+  if (existFile(target) && override !== true) {
     return;
   }
 
@@ -73,7 +77,7 @@ export function getAllFiles(dir) {
 }
 
 export async function readLineFromFile(filepath, consumer) {
-  if (!fs.existsSync(filepath)) {
+  if (!existFile(filepath)) {
     return [];
   }
 

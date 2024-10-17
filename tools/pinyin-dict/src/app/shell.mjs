@@ -1,5 +1,5 @@
 /* SQLite 词典库 */
-import { fromRootPath } from '#utils/utils.mjs';
+import { fromRootPath, existFile } from '#utils/utils.mjs';
 import { input, select } from '@inquirer/prompts';
 
 import * as sqlite from './sqlite.mjs';
@@ -8,8 +8,9 @@ import * as sqlite from './sqlite.mjs';
 const userDictSQLiteFile = fromRootPath('data', 'pinyin-user-dict.sqlite');
 
 console.log();
-console.log("初始化用户字典 ...");
-let userDictDB = await sqlite.open(userDictSQLiteFile);
+console.log('初始化用户字典 ...');
+const needToInitUserDict = !existFile(userDictSQLiteFile);
+const userDictDB = await sqlite.open(userDictSQLiteFile);
 
 // 通过 attach database 连接字典、词典库，
 // 库中的非同名表可以直接使用，无需通过连接名称区分
@@ -22,7 +23,9 @@ await sqlite.attach(userDictDB, {
 });
 
 try {
-  await sqlite.init(userDictDB);
+  if (needToInitUserDict) {
+    await sqlite.init(userDictDB);
+  }
   console.log();
 
   while ((await start(userDictDB)) !== false) {}

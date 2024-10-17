@@ -137,6 +137,7 @@ export async function updateData(phraseDictDB, wordDictDB, hmmParams) {
       return;
     }
 
+    // 在转移矩阵中，同一个字会同时成为前序和后序，故而，仅收集当前字即可
     const word_pinyin = word_code.split(':')[1];
     collect_phrase_words(word_id, word_pinyin);
 
@@ -161,9 +162,6 @@ export async function updateData(phraseDictDB, wordDictDB, hmmParams) {
         prev_word_id_: prev_word_id,
         value_: prob_value
       };
-
-      const prev_word_pinyin = prev_word_code.split(':')[1];
-      collect_phrase_words(prev_word_id, prev_word_pinyin);
     });
   });
 
