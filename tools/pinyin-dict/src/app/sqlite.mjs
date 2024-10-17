@@ -1,8 +1,4 @@
-import {
-  saveToDB,
-  execSQL,
-  asyncForEach
-} from '#utils/sqlite.mjs';
+import { saveToDB, execSQL, asyncForEach } from '#utils/sqlite.mjs';
 import { countTrans } from '#generate/sqlite/phrase/hmm/trans/trans.mjs';
 
 export {
@@ -286,9 +282,6 @@ export async function predict(userDictDB, pinyinCharsArray) {
   });
 
   // =====================================================
-  const total = pinyinCharsArray.length;
-  const last_index = total - 1;
-
   const pinyin_chars_ids = pinyinCharsArray.map((ch) => pinyin_chars[ch]);
   const unique_pinyin_chars_ids = Array.from(new Set(pinyin_chars_ids));
 
@@ -364,10 +357,10 @@ export async function predict(userDictDB, pinyinCharsArray) {
           )
         `,
         convert: ({ word_id_, prev_word_id_, value_ }) => {
-          trans_prob[word_id_] = trans_prob[word_id_] || {};
+          trans_prob[word_id_] ||= {};
 
-          trans_prob[word_id_][prev_word_id_] =
-            (trans_prob[word_id_][prev_word_id_] || 0) + (value_ || 0);
+          trans_prob[word_id_][prev_word_id_] ||= 0;
+          trans_prob[word_id_][prev_word_id_] += value_ || 0;
         }
       }
     ],
@@ -379,6 +372,7 @@ export async function predict(userDictDB, pinyinCharsArray) {
   );
 
   // =====================================================
+  const total = pinyinCharsArray.length;
   // 用于log平滑时所取的最小值，用于代替0
   const min_f = -3.14e100;
   // pos 是目前节点的位置，word 为当前汉字即当前状态，
@@ -387,59 +381,57 @@ export async function predict(userDictDB, pinyinCharsArray) {
   const viterbi = [];
 
   // 训练数据的句子总数: word_id_ == -1 且 prev_word_id_ == -2
-  const base_phrase_size = trans_prob_get(trans_prob, -1, -2, 0);
+  const base_phrase_size = trans_prob_get(trans_prob, -1, -2);
 
+  const last_index = total - 1;
   for (let prev_index = -1; prev_index < last_index; prev_index++) {
     const current_index = prev_index + 1;
-    const current_chars_id = pinyin_chars_ids[current_index];
-    const current_word_ids = pinyin_chars_and_words[current_chars_id];
+    const current_pinyin_chars_id = pinyin_chars_ids[current_index];
+    const current_word_ids = pinyin_chars_and_words[current_pinyin_chars_id];
 
     // Note：句首字的前序字设为 -1
-    const prev_chars_id = pinyin_chars_ids[prev_index];
-    const prev_word_ids = pinyin_chars_and_words[prev_chars_id] || [-1];
+    const prev_pinyin_chars_id = pinyin_chars_ids[prev_index];
+    const prev_word_ids = pinyin_chars_and_words[prev_pinyin_chars_id] || [-1];
 
-    const current_word_viterbi = (viterbi[current_index] =
-      viterbi[current_index] || {});
+    const current_word_viterbi = (viterbi[current_index] ||= {});
 
     // 遍历 pinyin_char_and_words，找出所有可能与当前拼音相符的汉字 s，
     // 利用动态规划算法从前往后，推出每个拼音汉字状态的概率 viterbi[i+1][s]
     current_word_ids.forEach((current_word_id) => {
       current_word_viterbi[current_word_id] = prev_word_ids.reduce(
         (acc, prev_word_id) => {
-          let probability = 0;
+          let prob = 0;
 
           // 句首字的初始概率 = math.log(句首字出现次数 / 训练数据的句子总数)
           if (current_index == 0) {
-            probability += calc_prob(
+            prob += calc_prob(
               // 句首字的出现次数
-              trans_prob_get(trans_prob, current_word_id, -1, 0),
+              trans_prob_get(trans_prob, current_word_id, -1),
               base_phrase_size,
               min_f
             );
           } else {
-            probability += viterbi[prev_index][prev_word_id][0];
+            prob += viterbi[prev_index][prev_word_id][0];
           }
 
-          probability += calc_prob(
+          prob += calc_prob(
             // 前序拼音字的出现次数
-            trans_prob_get(trans_prob, current_word_id, prev_word_id, 0),
+            trans_prob_get(trans_prob, current_word_id, prev_word_id),
             // 当前拼音字的转移总数
-            trans_prob_get(trans_prob, current_word_id, -2, 0),
+            trans_prob_get(trans_prob, current_word_id, -2),
             min_f
           );
 
           // 加上末尾字的转移概率
           if (current_index == last_index) {
-            probability += calc_prob(
-              trans_prob_get(trans_prob, -1, current_word_id, 0),
+            prob += calc_prob(
+              trans_prob_get(trans_prob, -1, current_word_id),
               base_phrase_size,
               min_f
             );
           }
 
-          return !acc || acc[0] < probability
-            ? [probability, prev_word_id]
-            : acc;
+          return !acc || acc[0] < prob ? [prob, prev_word_id] : acc;
         },
         null
       );
@@ -451,8 +443,8 @@ export async function predict(userDictDB, pinyinCharsArray) {
   words[last_index] = Object.keys(viterbi[last_index])
     // Note：取概率最大前 N 个末尾汉字
     .map((word_id) => {
-      const probability = viterbi[last_index][word_id][0];
-      return [probability, word_id];
+      const prob = viterbi[last_index][word_id][0];
+      return [prob, word_id];
     })
     .sort((a, b) => b[0] - a[0])
     .slice(0, 5);

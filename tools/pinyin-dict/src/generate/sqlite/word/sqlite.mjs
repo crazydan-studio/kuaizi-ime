@@ -883,7 +883,7 @@ CREATE VIEW
           word_spell_,
           word_spell_chars_,
           word_spell_chars_id_
-      ) AS
+      ) AS《冲锋
 SELECT
     phrase_.id_,
     phrase_.value_,
