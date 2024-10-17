@@ -40,13 +40,13 @@ async function diffMetaData(oldDb, newDb) {
       const oldData = {};
       const newData = {};
 
-      (await oldDb.all(`SELECT * FROM ${table}`)).forEach((row) => {
+      (await oldDb.all(`select * from ${table}`)).forEach((row) => {
         const value = row.value_;
         const id_ = row.id_;
 
         oldData[value] = { id_ };
       });
-      (await newDb.all(`SELECT * FROM ${table}`)).forEach((row) => {
+      (await newDb.all(`select * from ${table}`)).forEach((row) => {
         const value = row.value_;
         const id_ = row.id_;
 
@@ -79,12 +79,12 @@ async function diffWordData(oldDb, newDb) {
       const oldData = {};
       const newData = {};
 
-      (await oldDb.all(`SELECT * FROM ${table}`)).forEach((row) => {
+      (await oldDb.all(`select * from ${table}`)).forEach((row) => {
         const id = row.id_;
 
         oldData[id] = row;
       });
-      (await newDb.all(`SELECT * FROM ${table}`)).forEach((row) => {
+      (await newDb.all(`select * from ${table}`)).forEach((row) => {
         const id = row.id_;
 
         newData[id] = row;

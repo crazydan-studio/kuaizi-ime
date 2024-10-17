@@ -124,7 +124,7 @@ export async function init(userDictDB) {
   alter table tmp_phrase_trans_prob rename to phrase_trans_prob;
 
   -- 空间回收
-  VACUUM;
+  vacuum;
 `
   );
 }

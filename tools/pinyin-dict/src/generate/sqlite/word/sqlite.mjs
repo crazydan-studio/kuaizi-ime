@@ -13,43 +13,43 @@ export async function saveSpells(db, wordMetas) {
   await execSQL(
     db,
     `
--- 不含声调的拼音字母组合
-CREATE TABLE
-    IF NOT EXISTS meta_pinyin_chars (
-        id_ INTEGER NOT NULL PRIMARY KEY,
-        value_ TEXT NOT NULL,
-        UNIQUE (value_)
+  -- 不含声调的拼音字母组合
+  create table
+    if not exists meta_pinyin_chars (
+      id_ integer not null primary key,
+      value_ text not null,
+      unique (value_)
     );
--- 含声调的拼音：可根据 id_ 大小排序
-CREATE TABLE
-    IF NOT EXISTS meta_pinyin (
-        id_ INTEGER NOT NULL PRIMARY KEY,
-        value_ TEXT NOT NULL,
-        -- 拼音字母组合 id
-        chars_id_ INTEGER NOT NULL,
-        UNIQUE (value_),
-        FOREIGN KEY (chars_id_) REFERENCES meta_pinyin_chars (id_)
+  -- 含声调的拼音：可根据 id_ 大小排序
+  create table
+    if not exists meta_pinyin (
+      id_ integer not null primary key,
+      value_ text not null,
+      -- 拼音字母组合 id
+      chars_id_ integer not null,
+      unique (value_),
+      foreign key (chars_id_) references meta_pinyin_chars (id_)
     );
 
--- --------------------------------------------------------------
--- 不含声调的注音字符组合
-CREATE TABLE
-    IF NOT EXISTS meta_zhuyin_chars (
-        id_ INTEGER NOT NULL PRIMARY KEY,
-        value_ TEXT NOT NULL,
-        UNIQUE (value_)
+  -- --------------------------------------------------------------
+  -- 不含声调的注音字符组合
+  create table
+    if not exists meta_zhuyin_chars (
+      id_ integer not null primary key,
+      value_ text not null,
+      unique (value_)
     );
--- 含声调的注音：可根据 id_ 大小排序
-CREATE TABLE
-    IF NOT EXISTS meta_zhuyin (
-        id_ INTEGER NOT NULL PRIMARY KEY,
-        value_ TEXT NOT NULL,
-        -- 注音字符组合 id
-        chars_id_ INTEGER NOT NULL,
-        UNIQUE (value_),
-        FOREIGN KEY (chars_id_) REFERENCES meta_zhuyin_chars (id_)
+  -- 含声调的注音：可根据 id_ 大小排序
+  create table
+    if not exists meta_zhuyin (
+      id_ integer not null primary key,
+      value_ text not null,
+      -- 注音字符组合 id
+      chars_id_ integer not null,
+      unique (value_),
+      foreign key (chars_id_) references meta_zhuyin_chars (id_)
     );
-  `
+`
   );
 
   await asyncForEach(
@@ -88,7 +88,7 @@ CREATE TABLE
 
       // ================================================================
       const missingCharsMetas = [];
-      (await db.all(`SELECT * FROM ${chars_table}`)).forEach((row) => {
+      (await db.all(`select * from ${chars_table}`)).forEach((row) => {
         const value = row.value_;
         const id = row.id_;
 
@@ -104,7 +104,7 @@ CREATE TABLE
       await removeFromDB(db, chars_table, missingCharsMetas);
 
       // 获取新增字符组合 id
-      (await db.all(`SELECT id_, value_ FROM ${chars_table}`)).forEach(
+      (await db.all(`select id_, value_ from ${chars_table}`)).forEach(
         (row) => {
           const value = row.value_;
           charsMetaData[value].id_ = row.id_;
@@ -125,7 +125,7 @@ CREATE TABLE
       });
 
       const missingSpellMetas = [];
-      (await db.all(`SELECT * FROM ${table}`)).forEach((row) => {
+      (await db.all(`select * from ${table}`)).forEach((row) => {
         const value = row.value_;
         const id = row.id_;
 
@@ -149,204 +149,204 @@ export async function saveWords(db, wordMetas) {
   await execSQL(
     db,
     `
-CREATE TABLE
-    IF NOT EXISTS meta_word_radical (
-        id_ INTEGER NOT NULL PRIMARY KEY,
-        value_ TEXT NOT NULL,
-        -- 笔画数
-        stroke_count_ INTEGER DEFAULT 0,
-        UNIQUE (value_)
+  create table
+    if not exists meta_word_radical (
+      id_ integer not null primary key,
+      value_ text not null,
+      -- 笔画数
+      stroke_count_ integer default 0,
+      unique (value_)
     );
 
-CREATE TABLE
-    IF NOT EXISTS meta_word (
-        id_ INTEGER NOT NULL PRIMARY KEY,
-        value_ TEXT NOT NULL,
-        unicode_ TEXT NOT NULL,
-        -- 部首 id
-        radical_id_ INTEGER DEFAULT NULL,
-        -- 字形结构
-        glyph_struct_ TEXT DEFAULT '',
-        -- 笔画顺序：1 - 横，2 - 竖，3 - 撇，4 - 捺，5 - 折
-        stroke_order_ TEXT DEFAULT '',
-        -- 总笔画数
-        total_stroke_count_ INTEGER DEFAULT 0,
-        -- 是否为繁体字
-        traditional_ INTEGER DEFAULT 0,
-        -- 按字形排序的权重
-        weight_ INTEGER DEFAULT 0,
-        UNIQUE (value_),
-        FOREIGN KEY (radical_id_) REFERENCES meta_word_radical (id_)
+  create table
+    if not exists meta_word (
+      id_ integer not null primary key,
+      value_ text not null,
+      unicode_ text not null,
+      -- 部首 id
+      radical_id_ integer default null,
+      -- 字形结构
+      glyph_struct_ text default '',
+      -- 笔画顺序：1 - 横，2 - 竖，3 - 撇，4 - 捺，5 - 折
+      stroke_order_ text default '',
+      -- 总笔画数
+      total_stroke_count_ integer default 0,
+      -- 是否为繁体字
+      traditional_ integer default 0,
+      -- 按字形排序的权重
+      weight_ integer default 0,
+      unique (value_),
+      foreign key (radical_id_) references meta_word_radical (id_)
     );
 
--- --------------------------------------------------------------
-CREATE TABLE
-    IF NOT EXISTS meta_word_with_pinyin (
-        id_ INTEGER NOT NULL PRIMARY KEY,
-        -- 字 id
-        word_id_ INTEGER NOT NULL,
-        -- 拼音 id
-        spell_id_ INTEGER NOT NULL,
-        -- 字形权重：用于对相同拼音字母组合的字按字形相似性排序
-        glyph_weight_ INTEGER DEFAULT 0,
-        -- 按使用频率等排序的权重
-        weight_ INTEGER DEFAULT 0,
-        UNIQUE (word_id_, spell_id_),
-        FOREIGN KEY (word_id_) REFERENCES meta_word (id_),
-        FOREIGN KEY (spell_id_) REFERENCES meta_pinyin (id_)
+  -- --------------------------------------------------------------
+  create table
+    if not exists meta_word_with_pinyin (
+      id_ integer not null primary key,
+      -- 字 id
+      word_id_ integer not null,
+      -- 拼音 id
+      spell_id_ integer not null,
+      -- 字形权重：用于对相同拼音字母组合的字按字形相似性排序
+      glyph_weight_ integer default 0,
+      -- 按使用频率等排序的权重
+      weight_ integer default 0,
+      unique (word_id_, spell_id_),
+      foreign key (word_id_) references meta_word (id_),
+      foreign key (spell_id_) references meta_pinyin (id_)
     );
-CREATE TABLE
-    IF NOT EXISTS meta_word_with_zhuyin (
-        id_ INTEGER NOT NULL PRIMARY KEY,
-        -- 字 id
-        word_id_ INTEGER NOT NULL,
-        -- 注音 id
-        spell_id_ INTEGER NOT NULL,
-        -- 字形权重：用于对相同拼音字母组合的字按字形相似性排序
-        glyph_weight_ INTEGER DEFAULT 0,
-        -- 按使用频率等排序的权重
-        weight_ INTEGER DEFAULT 0,
-        UNIQUE (word_id_, spell_id_),
-        FOREIGN KEY (word_id_) REFERENCES meta_word (id_),
-        FOREIGN KEY (spell_id_) REFERENCES meta_zhuyin (id_)
-    );
-
--- --------------------------------------------------------------
-CREATE TABLE
-    IF NOT EXISTS link_word_with_simple_word (
-        id_ INTEGER NOT NULL PRIMARY KEY,
-        -- 源字 id
-        source_id_ INTEGER NOT NULL,
-        -- 简体字 id
-        target_id_ INTEGER NOT NULL,
-        UNIQUE (source_id_, target_id_),
-        FOREIGN KEY (source_id_) REFERENCES meta_word (id_),
-        FOREIGN KEY (target_id_) REFERENCES meta_word (id_)
-    );
-CREATE TABLE
-    IF NOT EXISTS link_word_with_traditional_word (
-        id_ INTEGER NOT NULL PRIMARY KEY,
-        -- 源字 id
-        source_id_ INTEGER NOT NULL,
-        -- 繁体字 id
-        target_id_ INTEGER NOT NULL,
-        UNIQUE (source_id_, target_id_),
-        FOREIGN KEY (source_id_) REFERENCES meta_word (id_),
-        FOREIGN KEY (target_id_) REFERENCES meta_word (id_)
-    );
-CREATE TABLE
-    IF NOT EXISTS link_word_with_variant_word (
-        id_ INTEGER NOT NULL PRIMARY KEY,
-        -- 源字 id
-        source_id_ INTEGER NOT NULL,
-        -- 变体字 id
-        target_id_ INTEGER NOT NULL,
-        UNIQUE (source_id_, target_id_),
-        FOREIGN KEY (source_id_) REFERENCES meta_word (id_),
-        FOREIGN KEY (target_id_) REFERENCES meta_word (id_)
+  create table
+    if not exists meta_word_with_zhuyin (
+      id_ integer not null primary key,
+      -- 字 id
+      word_id_ integer not null,
+      -- 注音 id
+      spell_id_ integer not null,
+      -- 字形权重：用于对相同拼音字母组合的字按字形相似性排序
+      glyph_weight_ integer default 0,
+      -- 按使用频率等排序的权重
+      weight_ integer default 0,
+      unique (word_id_, spell_id_),
+      foreign key (word_id_) references meta_word (id_),
+      foreign key (spell_id_) references meta_zhuyin (id_)
     );
 
--- --------------------------------------------------------------
-CREATE TABLE
-    IF NOT EXISTS meta_word_wubi_code (
-        id_ INTEGER NOT NULL PRIMARY KEY,
-        value_ TEXT NOT NULL,
-        word_id_ INTEGER NOT NULL,
-        UNIQUE (value_, word_id_),
-        FOREIGN KEY (word_id_) REFERENCES meta_word (id_)
+  -- --------------------------------------------------------------
+  create table
+    if not exists link_word_with_simple_word (
+      id_ integer not null primary key,
+      -- 源字 id
+      source_id_ integer not null,
+      -- 简体字 id
+      target_id_ integer not null,
+      unique (source_id_, target_id_),
+      foreign key (source_id_) references meta_word (id_),
+      foreign key (target_id_) references meta_word (id_)
     );
-CREATE TABLE
-    IF NOT EXISTS meta_word_cangjie_code (
-        id_ INTEGER NOT NULL PRIMARY KEY,
-        value_ TEXT NOT NULL,
-        word_id_ INTEGER NOT NULL,
-        UNIQUE (value_, word_id_),
-        FOREIGN KEY (word_id_) REFERENCES meta_word (id_)
+  create table
+    if not exists link_word_with_traditional_word (
+      id_ integer not null primary key,
+      -- 源字 id
+      source_id_ integer not null,
+      -- 繁体字 id
+      target_id_ integer not null,
+      unique (source_id_, target_id_),
+      foreign key (source_id_) references meta_word (id_),
+      foreign key (target_id_) references meta_word (id_)
     );
-CREATE TABLE
-    IF NOT EXISTS meta_word_zhengma_code (
-        id_ INTEGER NOT NULL PRIMARY KEY,
-        value_ TEXT NOT NULL,
-        word_id_ INTEGER NOT NULL,
-        UNIQUE (value_, word_id_),
-        FOREIGN KEY (word_id_) REFERENCES meta_word (id_)
-    );
-CREATE TABLE
-    IF NOT EXISTS meta_word_sijiao_code (
-        id_ INTEGER NOT NULL PRIMARY KEY,
-        value_ TEXT NOT NULL,
-        word_id_ INTEGER NOT NULL,
-        UNIQUE (value_, word_id_),
-        FOREIGN KEY (word_id_) REFERENCES meta_word (id_)
+  create table
+    if not exists link_word_with_variant_word (
+      id_ integer not null primary key,
+      -- 源字 id
+      source_id_ integer not null,
+      -- 变体字 id
+      target_id_ integer not null,
+      unique (source_id_, target_id_),
+      foreign key (source_id_) references meta_word (id_),
+      foreign key (target_id_) references meta_word (id_)
     );
 
--- --------------------------------------------------------------
-CREATE VIEW
-    IF NOT EXISTS link_word_with_pinyin (
-        id_,
-        word_id_,
-        spell_id_,
-        spell_chars_id_,
-        glyph_weight_,
-        weight_
-    ) AS
-SELECT
+  -- --------------------------------------------------------------
+  create table
+    if not exists meta_word_wubi_code (
+      id_ integer not null primary key,
+      value_ text not null,
+      word_id_ integer not null,
+      unique (value_, word_id_),
+      foreign key (word_id_) references meta_word (id_)
+    );
+  create table
+    if not exists meta_word_cangjie_code (
+      id_ integer not null primary key,
+      value_ text not null,
+      word_id_ integer not null,
+      unique (value_, word_id_),
+      foreign key (word_id_) references meta_word (id_)
+    );
+  create table
+    if not exists meta_word_zhengma_code (
+      id_ integer not null primary key,
+      value_ text not null,
+      word_id_ integer not null,
+      unique (value_, word_id_),
+      foreign key (word_id_) references meta_word (id_)
+    );
+  create table
+    if not exists meta_word_sijiao_code (
+      id_ integer not null primary key,
+      value_ text not null,
+      word_id_ integer not null,
+      unique (value_, word_id_),
+      foreign key (word_id_) references meta_word (id_)
+    );
+
+  -- --------------------------------------------------------------
+  create view
+    if not exists link_word_with_pinyin (
+      id_,
+      word_id_,
+      spell_id_,
+      spell_chars_id_,
+      glyph_weight_,
+      weight_
+    ) as
+  select
     meta_.id_,
     meta_.word_id_,
     meta_.spell_id_,
     spell_.chars_id_,
     meta_.glyph_weight_,
     meta_.weight_
-FROM
+  from
     meta_word_with_pinyin meta_
-    LEFT JOIN meta_pinyin spell_ on spell_.id_ = meta_.spell_id_;
+    left join meta_pinyin spell_ on spell_.id_ = meta_.spell_id_;
 
-CREATE VIEW
-    IF NOT EXISTS link_word_with_zhuyin (
-        id_,
-        word_id_,
-        spell_id_,
-        spell_chars_id_,
-        glyph_weight_,
-        weight_
-    ) AS
-SELECT
+  create view
+    if not exists link_word_with_zhuyin (
+      id_,
+      word_id_,
+      spell_id_,
+      spell_chars_id_,
+      glyph_weight_,
+      weight_
+    ) as
+  select
     meta_.id_,
     meta_.word_id_,
     meta_.spell_id_,
     spell_.chars_id_,
     meta_.glyph_weight_,
     meta_.weight_
-FROM
+  from
     meta_word_with_zhuyin meta_
-    LEFT JOIN meta_zhuyin spell_ on spell_.id_ = meta_.spell_id_;
+    left join meta_zhuyin spell_ on spell_.id_ = meta_.spell_id_;
 
--- --------------------------------------------------------------
--- 字及其拼音
-CREATE VIEW
-    IF NOT EXISTS pinyin_word (
-        id_,
-        word_,
-        word_id_,
-        unicode_,
-        weight_,
-        spell_,
-        spell_id_,
-        spell_weight_,
-        spell_chars_,
-        spell_chars_id_,
-        glyph_weight_,
-        glyph_struct_,
-        radical_,
-        radical_stroke_count_,
-        stroke_order_,
-        total_stroke_count_,
-        traditional_,
-        simple_word_,
-        traditional_word_,
-        variant_word_
-    ) AS
-SELECT
+  -- --------------------------------------------------------------
+  -- 字及其拼音
+  create view
+    if not exists pinyin_word (
+      id_,
+      word_,
+      word_id_,
+      unicode_,
+      weight_,
+      spell_,
+      spell_id_,
+      spell_weight_,
+      spell_chars_,
+      spell_chars_id_,
+      glyph_weight_,
+      glyph_struct_,
+      radical_,
+      radical_stroke_count_,
+      stroke_order_,
+      total_stroke_count_,
+      traditional_,
+      simple_word_,
+      traditional_word_,
+      variant_word_
+    ) as
+  select
     word_lnk_.id_,
     word_.value_,
     word_.id_,
@@ -367,47 +367,47 @@ SELECT
     sw_.value_,
     tw_.value_,
     vw_.value_
-FROM
+  from
     meta_word word_
     --
-    LEFT JOIN meta_word_with_pinyin word_lnk_ on word_lnk_.word_id_ = word_.id_
+    left join meta_word_with_pinyin word_lnk_ on word_lnk_.word_id_ = word_.id_
     --
-    LEFT JOIN meta_word_radical radical_ on radical_.id_ = word_.radical_id_
-    LEFT JOIN meta_pinyin spell_ on spell_.id_ = word_lnk_.spell_id_
-    LEFT JOIN meta_pinyin_chars spell_ch_ on spell_ch_.id_ = spell_.chars_id_
+    left join meta_word_radical radical_ on radical_.id_ = word_.radical_id_
+    left join meta_pinyin spell_ on spell_.id_ = word_lnk_.spell_id_
+    left join meta_pinyin_chars spell_ch_ on spell_ch_.id_ = spell_.chars_id_
     --
-    LEFT JOIN link_word_with_simple_word sw_lnk_ on sw_lnk_.source_id_ = word_.id_
-    LEFT JOIN meta_word sw_ on sw_.id_ = sw_lnk_.target_id_
-    LEFT JOIN link_word_with_traditional_word tw_lnk_ on tw_lnk_.source_id_ = word_.id_
-    LEFT JOIN meta_word tw_ on tw_.id_ = tw_lnk_.target_id_
-    LEFT JOIN link_word_with_variant_word vw_lnk_ on vw_lnk_.source_id_ = word_.id_
-    LEFT JOIN meta_word vw_ on vw_.id_ = vw_lnk_.target_id_;
+    left join link_word_with_simple_word sw_lnk_ on sw_lnk_.source_id_ = word_.id_
+    left join meta_word sw_ on sw_.id_ = sw_lnk_.target_id_
+    left join link_word_with_traditional_word tw_lnk_ on tw_lnk_.source_id_ = word_.id_
+    left join meta_word tw_ on tw_.id_ = tw_lnk_.target_id_
+    left join link_word_with_variant_word vw_lnk_ on vw_lnk_.source_id_ = word_.id_
+    left join meta_word vw_ on vw_.id_ = vw_lnk_.target_id_;
 
--- 字及其注音
-CREATE VIEW
-    IF NOT EXISTS zhuyin_word (
-        id_,
-        word_,
-        word_id_,
-        unicode_,
-        weight_,
-        spell_,
-        spell_id_,
-        spell_weight_,
-        spell_chars_,
-        spell_chars_id_,
-        glyph_weight_,
-        glyph_struct_,
-        radical_,
-        radical_stroke_count_,
-        stroke_order_,
-        total_stroke_count_,
-        traditional_,
-        simple_word_,
-        traditional_word_,
-        variant_word_
-    ) AS
-SELECT
+  -- 字及其注音
+  create view
+    if not exists zhuyin_word (
+      id_,
+      word_,
+      word_id_,
+      unicode_,
+      weight_,
+      spell_,
+      spell_id_,
+      spell_weight_,
+      spell_chars_,
+      spell_chars_id_,
+      glyph_weight_,
+      glyph_struct_,
+      radical_,
+      radical_stroke_count_,
+      stroke_order_,
+      total_stroke_count_,
+      traditional_,
+      simple_word_,
+      traditional_word_,
+      variant_word_
+    ) as
+  select
     word_lnk_.id_,
     word_.value_,
     word_.id_,
@@ -428,73 +428,73 @@ SELECT
     sw_.value_,
     tw_.value_,
     vw_.value_
-FROM
+  from
     meta_word word_
     --
-    LEFT JOIN meta_word_with_zhuyin word_lnk_ on word_lnk_.word_id_ = word_.id_
+    left join meta_word_with_zhuyin word_lnk_ on word_lnk_.word_id_ = word_.id_
     --
-    LEFT JOIN meta_word_radical radical_ on radical_.id_ = word_.radical_id_
-    LEFT JOIN meta_zhuyin spell_ on spell_.id_ = word_lnk_.spell_id_
-    LEFT JOIN meta_zhuyin_chars spell_ch_ on spell_ch_.id_ = spell_.chars_id_
+    left join meta_word_radical radical_ on radical_.id_ = word_.radical_id_
+    left join meta_zhuyin spell_ on spell_.id_ = word_lnk_.spell_id_
+    left join meta_zhuyin_chars spell_ch_ on spell_ch_.id_ = spell_.chars_id_
     --
-    LEFT JOIN link_word_with_simple_word sw_lnk_ on sw_lnk_.source_id_ = word_.id_
-    LEFT JOIN meta_word sw_ on sw_.id_ = sw_lnk_.target_id_
-    LEFT JOIN link_word_with_traditional_word tw_lnk_ on tw_lnk_.source_id_ = word_.id_
-    LEFT JOIN meta_word tw_ on tw_.id_ = tw_lnk_.target_id_
-    LEFT JOIN link_word_with_variant_word vw_lnk_ on vw_lnk_.source_id_ = word_.id_
-    LEFT JOIN meta_word vw_ on vw_.id_ = vw_lnk_.target_id_;
+    left join link_word_with_simple_word sw_lnk_ on sw_lnk_.source_id_ = word_.id_
+    left join meta_word sw_ on sw_.id_ = sw_lnk_.target_id_
+    left join link_word_with_traditional_word tw_lnk_ on tw_lnk_.source_id_ = word_.id_
+    left join meta_word tw_ on tw_.id_ = tw_lnk_.target_id_
+    left join link_word_with_variant_word vw_lnk_ on vw_lnk_.source_id_ = word_.id_
+    left join meta_word vw_ on vw_.id_ = vw_lnk_.target_id_;
 
--- --------------------------------------------------------------
--- 繁体 -> 简体
-CREATE VIEW
-    IF NOT EXISTS simple_word (
-        -- 繁体字 id
-        id_,
-        -- 繁体字
-        value_,
-        -- 简体字 id
-        target_id_,
-        -- 简体字
-        target_value_
-    ) AS
-SELECT
+  -- --------------------------------------------------------------
+  -- 繁体 -> 简体
+  create view
+    if not exists simple_word (
+      -- 繁体字 id
+      id_,
+      -- 繁体字
+      value_,
+      -- 简体字 id
+      target_id_,
+      -- 简体字
+      target_value_
+    ) as
+  select
     word_.id_,
     word_.value_,
     sw_.id_,
     sw_.value_
-FROM
+  from
     meta_word word_
     --
-    LEFT JOIN link_word_with_simple_word sw_lnk_ on sw_lnk_.source_id_ = word_.id_
-    LEFT JOIN meta_word sw_ on sw_.id_ = sw_lnk_.target_id_
-WHERE
-    sw_.id_ IS NOT NULL;
+    left join link_word_with_simple_word sw_lnk_ on sw_lnk_.source_id_ = word_.id_
+    left join meta_word sw_ on sw_.id_ = sw_lnk_.target_id_
+  where
+    sw_.id_ is not null;
 
--- 简体 -> 繁体
-CREATE VIEW
-    IF NOT EXISTS traditional_word (
-        -- 简体字 id
-        id_,
-        -- 简体字
-        value_,
-        -- 繁体字 id
-        target_id_,
-        -- 繁体字
-        target_value_
-    ) AS
-SELECT
+  -- 简体 -> 繁体
+  create view
+    if not exists traditional_word (
+      -- 简体字 id
+      id_,
+      -- 简体字
+      value_,
+      -- 繁体字 id
+      target_id_,
+      -- 繁体字
+      target_value_
+    ) as
+  select
     word_.id_,
     word_.value_,
     tw_.id_,
     tw_.value_
-FROM
+  from
     meta_word word_
     --
-    LEFT JOIN link_word_with_traditional_word tw_lnk_ on tw_lnk_.source_id_ = word_.id_
-    LEFT JOIN meta_word tw_ on tw_.id_ = tw_lnk_.target_id_
-WHERE
-    tw_.id_ IS NOT NULL;
-    `
+    left join link_word_with_traditional_word tw_lnk_ on tw_lnk_.source_id_ = word_.id_
+    left join meta_word tw_ on tw_.id_ = tw_lnk_.target_id_
+  where
+    tw_.id_ is not null;
+`
   );
 
   // ================================================================
@@ -524,7 +524,7 @@ WHERE
   // ================================================================
   // 保存字部首信息
   const missingWordRadicals = [];
-  (await db.all('SELECT * FROM meta_word_radical')).forEach((row) => {
+  (await db.all('select * from meta_word_radical')).forEach((row) => {
     const id = row.id_;
     const value = row.value_;
 
@@ -540,7 +540,7 @@ WHERE
   await removeFromDB(db, 'meta_word_radical', missingWordRadicals);
 
   // 获取新增字部首 id
-  (await db.all('SELECT id_, value_ FROM meta_word_radical')).forEach((row) => {
+  (await db.all('select id_, value_ from meta_word_radical')).forEach((row) => {
     const value = row.value_;
     wordRadicalMetaData[value].id_ = row.id_;
   });
@@ -561,7 +561,7 @@ WHERE
 
   // 保存字信息
   const missingWords = [];
-  (await db.all('SELECT * FROM meta_word')).forEach((row) => {
+  (await db.all('select * from meta_word')).forEach((row) => {
     const id = row.id_;
     const value = row.value_;
 
@@ -577,7 +577,7 @@ WHERE
   await removeFromDB(db, 'meta_word', missingWords);
 
   // 获取新增字 id
-  (await db.all('SELECT id_, value_ FROM meta_word')).forEach((row) => {
+  (await db.all('select id_, value_ from meta_word')).forEach((row) => {
     const value = row.value_;
     wordMetaData[value].id_ = row.id_;
   });
@@ -599,7 +599,7 @@ WHERE
     ],
     async ({ prop, table, target_meta_table }) => {
       const targetMetaMap = {};
-      (await db.all(`SELECT id_, value_ FROM ${target_meta_table}`)).forEach(
+      (await db.all(`select id_, value_ from ${target_meta_table}`)).forEach(
         (row) => {
           targetMetaMap[row.value_] = row.id_;
         }
@@ -624,7 +624,7 @@ WHERE
       });
 
       const missingLinks = [];
-      (await db.all(`SELECT * FROM ${table}`)).forEach((row) => {
+      (await db.all(`select * from ${table}`)).forEach((row) => {
         const id = row.id_;
         const code = row.word_id_ + ':' + row.spell_id_;
 
@@ -661,7 +661,7 @@ WHERE
     ],
     async ({ prop, table }) => {
       const linkData = {};
-      (await db.all(`SELECT * FROM ${table}`)).forEach((row) => {
+      (await db.all(`select * from ${table}`)).forEach((row) => {
         const code = row.source_id_ + ':' + row.target_id_;
         linkData[code] = {
           ...row,
@@ -731,7 +731,7 @@ WHERE
     ],
     async ({ prop, table }) => {
       const linkData = {};
-      (await db.all(`SELECT * FROM ${table}`)).forEach((row) => {
+      (await db.all(`select * from ${table}`)).forEach((row) => {
         const code = row.value_ + ':' + row.word_id_;
         linkData[code] = {
           ...row,
@@ -781,110 +781,110 @@ export async function savePhrases(db, wordMetas) {
   await execSQL(
     db,
     `
-CREATE TABLE
-    IF NOT EXISTS meta_phrase (
-        id_ INTEGER NOT NULL PRIMARY KEY,
-        -- 短语文本内容
-        value_ TEXT NOT NULL,
-        -- 短语序号：针对排序后的多音词的词序号
-        index_ INTEGER NOT NULL,
-        -- 按使用频率等排序的权重
-        weight_ INTEGER DEFAULT 0,
-        UNIQUE (value_, index_)
+  create table
+    if not exists meta_phrase (
+      id_ integer not null primary key,
+      -- 短语文本内容
+      value_ text not null,
+      -- 短语序号：针对排序后的多音词的词序号
+      index_ integer not null,
+      -- 按使用频率等排序的权重
+      weight_ integer default 0,
+      unique (value_, index_)
     );
 
--- --------------------------------------------------------------
-CREATE TABLE
-    IF NOT EXISTS meta_phrase_with_pinyin_word (
-        id_ INTEGER NOT NULL PRIMARY KEY,
-        -- 短语 id
-        phrase_id_ INTEGER NOT NULL,
-        -- 字及其拼音关联表 meta_word_with_pinyin 的 id
-        word_id_ INTEGER NOT NULL,
-        -- 字在短语中的序号
-        word_index_ INTEGER NOT NULL,
-        UNIQUE (
-            phrase_id_,
-            word_id_,
-            word_index_
-        ),
-        FOREIGN KEY (phrase_id_) REFERENCES meta_phrase (id_),
-        FOREIGN KEY (word_id_) REFERENCES meta_word_with_pinyin (id_)
+  -- --------------------------------------------------------------
+  create table
+    if not exists meta_phrase_with_pinyin_word (
+      id_ integer not null primary key,
+      -- 短语 id
+      phrase_id_ integer not null,
+      -- 字及其拼音关联表 meta_word_with_pinyin 的 id
+      word_id_ integer not null,
+      -- 字在短语中的序号
+      word_index_ integer not null,
+      unique (
+        phrase_id_,
+        word_id_,
+        word_index_
+      ),
+      foreign key (phrase_id_) references meta_phrase (id_),
+      foreign key (word_id_) references meta_word_with_pinyin (id_)
     );
-CREATE TABLE
-    IF NOT EXISTS meta_phrase_with_zhuyin_word (
-        id_ INTEGER NOT NULL PRIMARY KEY,
-        -- 短语 id
-        phrase_id_ INTEGER NOT NULL,
-        -- 字及其注音关联表 meta_word_with_zhuyin 的 id
-        word_id_ INTEGER NOT NULL,
-        -- 字在短语中的序号
-        word_index_ INTEGER NOT NULL,
-        UNIQUE (
-            phrase_id_,
-            word_id_,
-            word_index_
-        ),
-        FOREIGN KEY (phrase_id_) REFERENCES meta_phrase (id_),
-        FOREIGN KEY (word_id_) REFERENCES meta_word_with_zhuyin (id_)
+  create table
+    if not exists meta_phrase_with_zhuyin_word (
+      id_ integer not null primary key,
+      -- 短语 id
+      phrase_id_ integer not null,
+      -- 字及其注音关联表 meta_word_with_zhuyin 的 id
+      word_id_ integer not null,
+      -- 字在短语中的序号
+      word_index_ integer not null,
+      unique (
+        phrase_id_,
+        word_id_,
+        word_index_
+      ),
+      foreign key (phrase_id_) references meta_phrase (id_),
+      foreign key (word_id_) references meta_word_with_zhuyin (id_)
     );
 
--- --------------------------------------------------------------
-CREATE VIEW
-    IF NOT EXISTS link_phrase_with_pinyin_word (
-        id_,
-        source_id_,
-        target_id_,
-        target_spell_chars_id_,
-        target_index_
-    ) AS
-SELECT
+  -- --------------------------------------------------------------
+  create view
+    if not exists link_phrase_with_pinyin_word (
+      id_,
+      source_id_,
+      target_id_,
+      target_spell_chars_id_,
+      target_index_
+    ) as
+  select
     meta_.id_,
     meta_.phrase_id_,
     meta_.word_id_,
     spell_.chars_id_,
     meta_.word_index_
-FROM
+  from
     meta_phrase_with_pinyin_word meta_
     --
-    LEFT JOIN meta_word_with_pinyin word_ on word_.id_ = meta_.word_id_
-    LEFT JOIN meta_pinyin spell_ on spell_.id_ = word_.spell_id_;
+    left join meta_word_with_pinyin word_ on word_.id_ = meta_.word_id_
+    left join meta_pinyin spell_ on spell_.id_ = word_.spell_id_;
 
-CREATE VIEW
-    IF NOT EXISTS link_phrase_with_zhuyin_word (
-        id_,
-        source_id_,
-        target_id_,
-        target_spell_chars_id_,
-        target_index_
-    ) AS
-SELECT
+  create view
+    if not exists link_phrase_with_zhuyin_word (
+      id_,
+      source_id_,
+      target_id_,
+      target_spell_chars_id_,
+      target_index_
+    ) as
+  select
     meta_.id_,
     meta_.phrase_id_,
     meta_.word_id_,
     spell_.chars_id_,
     meta_.word_index_
-FROM
+  from
     meta_phrase_with_zhuyin_word meta_
     --
-    LEFT JOIN meta_word_with_zhuyin word_ on word_.id_ = meta_.word_id_
-    LEFT JOIN meta_zhuyin spell_ on spell_.id_ = word_.spell_id_;
+    left join meta_word_with_zhuyin word_ on word_.id_ = meta_.word_id_
+    left join meta_zhuyin spell_ on spell_.id_ = word_.spell_id_;
 
--- --------------------------------------------------------------
--- 短语及其拼音
-CREATE VIEW
-    IF NOT EXISTS pinyin_phrase (
-          id_,
-          value_,
-          index_,
-          weight_,
-          word_,
-          word_index_,
-          word_spell_,
-          word_spell_chars_,
-          word_spell_chars_id_
-      ) AS《冲锋
-SELECT
+  -- --------------------------------------------------------------
+  -- 短语及其拼音
+  create view
+    if not exists pinyin_phrase (
+      id_,
+      value_,
+      index_,
+      weight_,
+      word_,
+      word_index_,
+      word_spell_,
+      word_spell_chars_,
+      word_spell_chars_id_
+    ) as
+  select
     phrase_.id_,
     phrase_.value_,
     phrase_.index_,
@@ -894,34 +894,34 @@ SELECT
     spell_.value_,
     spell_ch_.value_,
     spell_.chars_id_
-FROM
+  from
     meta_phrase phrase_
     --
-    LEFT JOIN meta_phrase_with_pinyin_word lnk_ on lnk_.phrase_id_ = phrase_.id_
+    left join meta_phrase_with_pinyin_word lnk_ on lnk_.phrase_id_ = phrase_.id_
     --
-    LEFT JOIN meta_word_with_pinyin word_lnk_ on word_lnk_.id_ = lnk_.word_id_
-    LEFT JOIN meta_word word_ on word_.id_ = word_lnk_.word_id_
-    LEFT JOIN meta_pinyin spell_ on spell_.id_ = word_lnk_.spell_id_
-    LEFT JOIN meta_pinyin_chars spell_ch_ on spell_ch_.id_ = spell_.chars_id_
--- Note: group by 不能对组内元素排序，故，只能在视图内先排序
-ORDER BY
+    left join meta_word_with_pinyin word_lnk_ on word_lnk_.id_ = lnk_.word_id_
+    left join meta_word word_ on word_.id_ = word_lnk_.word_id_
+    left join meta_pinyin spell_ on spell_.id_ = word_lnk_.spell_id_
+    left join meta_pinyin_chars spell_ch_ on spell_ch_.id_ = spell_.chars_id_
+  -- Note: group by 不能对组内元素排序，故，只能在视图内先排序
+  order by
     phrase_.index_ asc,
     lnk_.word_index_ asc;
 
   -- 短语及其注音
-CREATE VIEW
-    IF NOT EXISTS zhuyin_phrase (
-          id_,
-          value_,
-          index_,
-          weight_,
-          word_,
-          word_index_,
-          word_spell_,
-          word_spell_chars_,
-          word_spell_chars_id_
-      ) AS
-SELECT
+  create view
+    if not exists zhuyin_phrase (
+      id_,
+      value_,
+      index_,
+      weight_,
+      word_,
+      word_index_,
+      word_spell_,
+      word_spell_chars_,
+      word_spell_chars_id_
+    ) as
+  select
     phrase_.id_,
     phrase_.value_,
     phrase_.index_,
@@ -931,20 +931,20 @@ SELECT
     spell_.value_,
     spell_ch_.value_,
     spell_ch_.id_
-FROM
+  from
     meta_phrase phrase_
     --
-    LEFT JOIN meta_phrase_with_zhuyin_word lnk_ on lnk_.phrase_id_ = phrase_.id_
+    left join meta_phrase_with_zhuyin_word lnk_ on lnk_.phrase_id_ = phrase_.id_
     --
-    LEFT JOIN meta_word_with_zhuyin word_lnk_ on word_lnk_.id_ = lnk_.word_id_
-    LEFT JOIN meta_word word_ on word_.id_ = word_lnk_.word_id_
-    LEFT JOIN meta_zhuyin spell_ on spell_.id_ = word_lnk_.spell_id_
-    LEFT JOIN meta_zhuyin_chars spell_ch_ on spell_ch_.id_ = spell_.chars_id_
--- Note: group by 不能对组内元素排序，故，只能在视图内先排序
-ORDER BY
+    left join meta_word_with_zhuyin word_lnk_ on word_lnk_.id_ = lnk_.word_id_
+    left join meta_word word_ on word_.id_ = word_lnk_.word_id_
+    left join meta_zhuyin spell_ on spell_.id_ = word_lnk_.spell_id_
+    left join meta_zhuyin_chars spell_ch_ on spell_ch_.id_ = spell_.chars_id_
+  -- Note: group by 不能对组内元素排序，故，只能在视图内先排序
+  order by
     phrase_.index_ asc,
     lnk_.word_index_ asc;
-    `
+`
   );
 
   // ================================================================
@@ -980,7 +980,7 @@ ORDER BY
   // ================================================================
   // 保存短语信息
   const missingPhrases = [];
-  (await db.all('SELECT * FROM meta_phrase')).forEach((row) => {
+  (await db.all('select * from meta_phrase')).forEach((row) => {
     const value = row.value_;
     const id = row.id_;
     const code = `${value}:${row.index_}`;
@@ -996,7 +996,7 @@ ORDER BY
   await removeFromDB(db, 'meta_phrase', missingPhrases);
 
   // 获取新增短语 id
-  (await db.all('SELECT id_, value_, index_ FROM meta_phrase')).forEach(
+  (await db.all('select id_, value_, index_ from meta_phrase')).forEach(
     (row) => {
       const value = row.value_;
       const code = `${value}:${row.index_}`;
@@ -1035,13 +1035,13 @@ ORDER BY
       const wordData = {};
       (
         await db.all(
-          `SELECT
-              ws_lnk_.id_ as id_,
-              w_.value_ as value_,
-              ws_.value_ as spell_value_
-          FROM ${word_spell_link_table} ws_lnk_
-          INNER JOIN ${word_table} w_ on w_.id_ = ws_lnk_.word_id_
-          INNER JOIN ${word_spell_table} ws_ on ws_.id_ = ws_lnk_.spell_id_
+          `select
+            ws_lnk_.id_ as id_,
+            w_.value_ as value_,
+            ws_.value_ as spell_value_
+          from ${word_spell_link_table} ws_lnk_
+          inner join ${word_table} w_ on w_.id_ = ws_lnk_.word_id_
+          inner join ${word_spell_table} ws_ on ws_.id_ = ws_lnk_.spell_id_
           `
         )
       ).forEach((row) => {
@@ -1053,7 +1053,7 @@ ORDER BY
       });
 
       const linkData = {};
-      (await db.all(`SELECT * FROM ${table}`)).forEach((row) => {
+      (await db.all(`select * from ${table}`)).forEach((row) => {
         const code = `${row.phrase_id_}:${row.word_id_}:${row.word_index_}`;
 
         linkData[code] = {
@@ -1155,60 +1155,60 @@ export async function saveEmojis(db, groupEmojiMetas) {
   await execSQL(
     db,
     `
-CREATE TABLE
-    IF NOT EXISTS meta_emoji_group (
-        id_ INTEGER NOT NULL PRIMARY KEY,
-        value_ TEXT NOT NULL,
-        UNIQUE (value_)
+  create table
+    if not exists meta_emoji_group (
+      id_ integer not null primary key,
+      value_ text not null,
+      unique (value_)
     );
-CREATE TABLE
-    IF NOT EXISTS meta_emoji (
-        id_ INTEGER NOT NULL PRIMARY KEY,
-        -- 表情符号
-        value_ TEXT NOT NULL,
-        unicode_ TEXT NOT NULL,
-        unicode_version_ REAL NOT NULL,
-        group_id_ INTERGET NOT NULL,
-        UNIQUE (value_),
-        FOREIGN KEY (group_id_) REFERENCES meta_emoji_group (id_)
+  create table
+    if not exists meta_emoji (
+      id_ integer not null primary key,
+      -- 表情符号
+      value_ text not null,
+      unicode_ text not null,
+      unicode_version_ real not null,
+      group_id_ interget not null,
+      unique (value_),
+      foreign key (group_id_) references meta_emoji_group (id_)
     );
 
-CREATE TABLE
-    IF NOT EXISTS link_emoji_with_keyword (
-        id_ INTEGER NOT NULL PRIMARY KEY,
-        -- 表情 id
-        source_id_ INTEGER NOT NULL,
-        -- 排序后的表情关键字序号
-        target_index_ INTEGER NOT NULL,
-        -- 表情关键字中的字 id
-        target_word_id_ INTEGER NOT NULL,
-        -- 字在表情关键字中的序号
-        target_word_index_ INTEGER NOT NULL,
-        UNIQUE (
-            source_id_,
-            target_index_,
-            target_word_id_,
-            target_word_index_
-        ),
-        FOREIGN KEY (source_id_) REFERENCES meta_emoji (id_),
-        FOREIGN KEY (target_word_id_) REFERENCES meta_word (id_)
+  create table
+    if not exists link_emoji_with_keyword (
+      id_ integer not null primary key,
+      -- 表情 id
+      source_id_ integer not null,
+      -- 排序后的表情关键字序号
+      target_index_ integer not null,
+      -- 表情关键字中的字 id
+      target_word_id_ integer not null,
+      -- 字在表情关键字中的序号
+      target_word_index_ integer not null,
+      unique (
+        source_id_,
+        target_index_,
+        target_word_id_,
+        target_word_index_
+      ),
+      foreign key (source_id_) references meta_emoji (id_),
+      foreign key (target_word_id_) references meta_word (id_)
     );
-CREATE INDEX IF NOT EXISTS idx_lnk_emo_kwd_wrd ON link_emoji_with_keyword (target_word_id_);
+  create index if not exists idx_lnk_emo_kwd_wrd on link_emoji_with_keyword (target_word_id_);
 
--- 表情及其关键字
-CREATE VIEW
-    IF NOT EXISTS emoji (
-        id_,
-        value_,
-        unicode_,
-        unicode_version_,
-        group_,
-        keyword_index_,
-        keyword_word_,
-        keyword_word_id_,
-        keyword_word_index_
-    ) AS
-SELECT
+  -- 表情及其关键字
+  create view
+    if not exists emoji (
+      id_,
+      value_,
+      unicode_,
+      unicode_version_,
+      group_,
+      keyword_index_,
+      keyword_word_,
+      keyword_word_id_,
+      keyword_word_index_
+    ) as
+  select
     emo_.id_,
     emo_.value_,
     emo_.unicode_,
@@ -1218,17 +1218,17 @@ SELECT
     word_.value_,
     word_.id_,
     lnk_.target_word_index_
-FROM
+  from
     meta_emoji emo_
     --
-    LEFT JOIN link_emoji_with_keyword lnk_ on lnk_.source_id_ = emo_.id_
-    LEFT JOIN meta_word word_ on word_.id_ = lnk_.target_word_id_
-    LEFT JOIN meta_emoji_group grp_ on grp_.id_ = emo_.group_id_
--- Note: group by 不能对组内元素排序，故，只能在视图内先排序
-ORDER BY
+    left join link_emoji_with_keyword lnk_ on lnk_.source_id_ = emo_.id_
+    left join meta_word word_ on word_.id_ = lnk_.target_word_id_
+    left join meta_emoji_group grp_ on grp_.id_ = emo_.group_id_
+  -- Note: group by 不能对组内元素排序，故，只能在视图内先排序
+  order by
     lnk_.target_index_ asc,
     lnk_.target_word_index_ asc;
-    `
+`
   );
 
   const emojiGroupMap = Object.keys(groupEmojiMetas).reduce((map, group) => {
@@ -1239,7 +1239,7 @@ ORDER BY
 
   // 保存表情分组信息
   const missingEmojiGroups = [];
-  (await db.all('SELECT * FROM meta_emoji_group')).forEach((row) => {
+  (await db.all('select * from meta_emoji_group')).forEach((row) => {
     const id = row.id_;
     const code = row.value_;
 
@@ -1254,7 +1254,7 @@ ORDER BY
   await removeFromDB(db, 'meta_emoji_group', missingEmojiGroups);
 
   // 获取新增表情分组 id
-  (await db.all('SELECT * FROM meta_emoji_group')).forEach((row) => {
+  (await db.all('select * from meta_emoji_group')).forEach((row) => {
     const code = row.value_;
 
     emojiGroupMap[code].id_ = row.id_;
@@ -1278,7 +1278,7 @@ ORDER BY
 
   // 保存表情信息
   const missingEmojis = [];
-  (await db.all('SELECT * FROM meta_emoji')).forEach((row) => {
+  (await db.all('select * from meta_emoji')).forEach((row) => {
     const id = row.id_;
     const code = row.value_;
 
@@ -1293,7 +1293,7 @@ ORDER BY
   await removeFromDB(db, 'meta_emoji', missingEmojis);
 
   // 获取新增表情 id
-  (await db.all('SELECT * FROM meta_emoji')).forEach((row) => {
+  (await db.all('select * from meta_emoji')).forEach((row) => {
     const code = row.value_;
 
     emojiMetaMap[code].id_ = row.id_;
@@ -1309,7 +1309,7 @@ ORDER BY
     ],
     async ({ table, target_word_table }) => {
       const targetWordData = {};
-      (await db.all(`SELECT id_, value_ FROM ${target_word_table}`)).forEach(
+      (await db.all(`select id_, value_ from ${target_word_table}`)).forEach(
         (row) => {
           const code = row.value_;
 
@@ -1321,7 +1321,7 @@ ORDER BY
       );
 
       const linkData = {};
-      (await db.all(`SELECT * FROM ${table}`)).forEach((row) => {
+      (await db.all(`select * from ${table}`)).forEach((row) => {
         const code = `${row.source_id_}:${row.target_index_}:${row.target_word_id_}:${row.target_word_index_}`;
 
         linkData[code] = {
@@ -1388,7 +1388,7 @@ export async function generatePinyinChars(db, file) {
   const values = [];
   const nextCharsMap = {};
   (
-    await db.all('SELECT value_ FROM meta_pinyin_chars ORDER BY value_')
+    await db.all('select value_ from meta_pinyin_chars order by value_')
   ).forEach((row) => {
     const value = row.value_;
     values.push(value);
@@ -1410,7 +1410,7 @@ export async function generatePinyinChars(db, file) {
 export async function generatePinyinCharLinks(db, file) {
   const links = {};
   (
-    await db.all('SELECT value_ FROM meta_pinyin_chars ORDER BY value_')
+    await db.all('select value_ from meta_pinyin_chars order by value_')
   ).forEach((row) => {
     const value = row.value_;
     const chars = splitChars(value);
@@ -1439,7 +1439,7 @@ export async function generatePinyinCharLinks(db, file) {
 export async function generatePinyinCharTree(db, file) {
   const tree = {};
   (
-    await db.all('SELECT value_ FROM meta_pinyin_chars ORDER BY value_')
+    await db.all('select value_ from meta_pinyin_chars order by value_')
   ).forEach((row) => {
     const value = row.value_;
     const chars = splitChars(value);
