@@ -9,6 +9,12 @@ import * as fontkit from 'fontkit';
 import getSystemFonts from 'get-system-fonts';
 import GraphemeSplitter from 'grapheme-splitter';
 
+import { pinyin as parsePinyin, addDict } from 'pinyin-pro';
+// https://pinyin-pro.cn/use/addDict.html
+import CompleteDict from '@pinyin-pro/data/complete';
+
+addDict(CompleteDict);
+
 const systemFonts = await prepareSystemFonts();
 const graphemeSplitter = new GraphemeSplitter();
 
@@ -154,6 +160,24 @@ export function hasGlyphFontForCodePoint(unicode) {
 export function splitChars(str) {
   // https://github.com/orling/grapheme-splitter
   return graphemeSplitter.splitGraphemes(str);
+}
+
+/** @return ['nǐ', 'hǎo', 'ma'] */
+export function getPinyin(str) {
+  // https://pinyin-pro.cn/use/pinyin.html
+  return parsePinyin(str, {
+    // 输出为数组
+    type: 'array',
+    // 作为音调符号带在拼音字母上
+    toneType: 'symbol',
+    // 识别字符串开头的姓氏
+    surname: 'head',
+    // 是否对一和不应用智能变调
+    // 不（bù）在去声字前面读阳平声，如“～会”“～是”，这属于变调读音
+    // http://www.moe.gov.cn/jyb_hygq/hygq_zczx/moe_1346/moe_1364/tnull_42118.html
+    // “一”和“不”变调有规律：https://www.chinanews.com.cn/hwjy/news/2010/04-15/2228742.shtml
+    toneSandhi: true
+  });
 }
 
 /** 修正拼音 */

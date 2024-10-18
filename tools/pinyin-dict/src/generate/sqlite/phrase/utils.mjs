@@ -1,9 +1,4 @@
-import { getPinyinTone } from '#utils/utils.mjs';
-
-import { pinyin as parsePinyin, addDict } from 'pinyin-pro';
-// https://pinyin-pro.cn/use/addDict.html
-import CompleteDict from '@pinyin-pro/data/complete';
-addDict(CompleteDict);
+import { getPinyinTone, getPinyin } from '#utils/utils.mjs';
 
 // extractClauses('迈向/v  充满/v  希望/n  的/u  新/a  世纪/n', {
 //   力: true,
@@ -64,24 +59,6 @@ export function getClauses(sampleText, words) {
   }
 
   return clauses;
-}
-
-/** @return ['nǐ', 'hǎo', 'ma'] */
-export function getPinyin(phrase) {
-  // https://pinyin-pro.cn/use/pinyin.html
-  return parsePinyin(phrase, {
-    // 输出为数组
-    type: 'array',
-    // 作为音调符号带在拼音字母上
-    toneType: 'symbol',
-    // 识别字符串开头的姓氏
-    surname: 'head',
-    // 是否对一和不应用智能变调
-    // 不（bù）在去声字前面读阳平声，如“～会”“～是”，这属于变调读音
-    // http://www.moe.gov.cn/jyb_hygq/hygq_zczx/moe_1346/moe_1364/tnull_42118.html
-    // “一”和“不”变调有规律：https://www.chinanews.com.cn/hwjy/news/2010/04-15/2228742.shtml
-    toneSandhi: true
-  });
 }
 
 function isValidPhrase(phrase, words) {

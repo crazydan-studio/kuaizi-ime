@@ -282,6 +282,26 @@ group by
   id_;
 ```
 
+- 查询某拼音的候选字
+
+```sql
+select distinct
+  id_, word_, word_id_, unicode_,
+  spell_, spell_id_,
+  spell_chars_, spell_chars_id_,
+  glyph_struct_, traditional_,
+  radical_, radical_stroke_count_,
+  stroke_order_, total_stroke_count_,
+  weight_, spell_weight_, glyph_weight_
+from
+  pinyin_word where spell_chars_ = 'wo'
+order by
+  traditional_ asc,
+  spell_weight_ desc, spell_id_ asc,
+  radical_ asc, radical_stroke_count_ asc,
+  glyph_weight_ desc;
+```
+
 - 拼音的字母组成
 
 ```sql
@@ -532,67 +552,67 @@ Note：核心元数据（拼音、字、字读音）的 `id_` 和 `value_`
 > 操作之前务必先备份旧版本的数据库文件。
 
 ```sql
-PRAGMA foreign_keys = 0;
-PRAGMA ignore_check_constraints = 1;
+pragma foreign_keys = 0;
+pragma ignore_check_constraints = 1;
 
 -- 直接删除不紧要或变更元数据不会影响输入法用户数据的表
-DROP TABLE meta_word_cangjie_code;
-DROP TABLE meta_word_sijiao_code;
-DROP TABLE meta_word_wubi_code;
-DROP TABLE meta_word_zhengma_code;
-DROP TABLE meta_zhuyin;
-DROP TABLE meta_zhuyin_chars;
-DROP TABLE meta_phrase;
-DROP TABLE link_phrase_with_pinyin_word;
-DROP TABLE link_phrase_with_zhuyin_word;
-DROP TABLE link_word_with_simple_word;
-DROP TABLE link_word_with_traditional_word ;
-DROP TABLE link_word_with_variant_word;
-DROP TABLE link_word_with_zhuyin;
-DROP VIEW pinyin_phrase;
-DROP VIEW pinyin_word;
-DROP VIEW simple_word;
-DROP VIEW traditional_word;
-DROP VIEW zhuyin_phrase;
-DROP VIEW zhuyin_word;
+drop table meta_word_cangjie_code;
+drop table meta_word_sijiao_code;
+drop table meta_word_wubi_code;
+drop table meta_word_zhengma_code;
+drop table meta_zhuyin;
+drop table meta_zhuyin_chars;
+drop table meta_phrase;
+drop table link_phrase_with_pinyin_word;
+drop table link_phrase_with_zhuyin_word;
+drop table link_word_with_simple_word;
+drop table link_word_with_traditional_word ;
+drop table link_word_with_variant_word;
+drop table link_word_with_zhuyin;
+drop view pinyin_phrase;
+drop view pinyin_word;
+drop view simple_word;
+drop view traditional_word;
+drop view zhuyin_phrase;
+drop view zhuyin_word;
 
 -- 对核心的元数据表进行结构变更，直接变更为新版本的表结构
--- Note：新增的非空列，只能设置为 DEFAULT NULL，完整性由代码检查
-ALTER TABLE meta_pinyin ADD COLUMN chars_id_ INTEGER DEFAULT NULL REFERENCES meta_pinyin_chars (id_);
-ALTER TABLE meta_word DROP COLUMN radical_;
-ALTER TABLE meta_word DROP COLUMN radical_stroke_count_;
-ALTER TABLE meta_word ADD COLUMN radical_id_ INTEGER DEFAULT NULL REFERENCES meta_word_radical (id_);
+-- Note：新增的非空列，只能设置为 default null，完整性由代码检查
+alter table meta_pinyin add column chars_id_ integer default null references meta_pinyin_chars (id_);
+alter table meta_word drop column radical_;
+alter table meta_word drop column radical_stroke_count_;
+alter table meta_word add column radical_id_ integer default null references meta_word_radical (id_);
 
 -- 添加新表，并从原始表中迁移元数据，以确核型元数据的 id 和相互间的关联不变
-CREATE TABLE meta_word_with_pinyin (
-        id_ INTEGER NOT NULL PRIMARY KEY,
-        -- 字 id
-        word_id_ INTEGER NOT NULL,
-        -- 拼音 id
-        spell_id_ INTEGER NOT NULL,
-        -- 字形权重：用于对相同拼音字母组合的字按字形相似性排序
-        glyph_weight_ INTEGER DEFAULT 0,
-        -- 按使用频率等排序的权重
-        weight_ INTEGER DEFAULT 0,
-        UNIQUE (word_id_, spell_id_),
-        FOREIGN KEY (word_id_) REFERENCES meta_word (id_),
-        FOREIGN KEY (spell_id_) REFERENCES meta_pinyin (id_)
-    );
+create table meta_word_with_pinyin (
+  id_ integer not null primary key,
+  -- 字 id
+  word_id_ integer not null,
+  -- 拼音 id
+  spell_id_ integer not null,
+  -- 字形权重：用于对相同拼音字母组合的字按字形相似性排序
+  glyph_weight_ integer default 0,
+  -- 按使用频率等排序的权重
+  weight_ integer default 0,
+  unique (word_id_, spell_id_),
+  foreign key (word_id_) references meta_word (id_),
+  foreign key (spell_id_) references meta_pinyin (id_)
+);
 
-INSERT INTO
-    meta_word_with_pinyin (id_, word_id_, spell_id_, glyph_weight_, weight_)
-SELECT
-    id_, source_id_, target_id_, glyph_weight_, weight_
-FROM link_word_with_pinyin;
+insert into
+  meta_word_with_pinyin (id_, word_id_, spell_id_, glyph_weight_, weight_)
+select
+  id_, source_id_, target_id_, glyph_weight_, weight_
+from link_word_with_pinyin;
 
 -- 删除旧表
-DROP TABLE link_word_with_pinyin;
+drop table link_word_with_pinyin;
 
-PRAGMA foreign_keys = 1;
-PRAGMA ignore_check_constraints = 1;
+pragma foreign_keys = 1;
+pragma ignore_check_constraints = 1;
 
 -- 数据库无用空间回收
-VACUUM;
+vacuum;
 
 -- 执行数据更新/升级脚本: npm run generate:sqlite:word
 -- 检查新旧版本数据是否存在差异（注意修改新旧数据库文件名）: npm run generate:sqlite:word:diff

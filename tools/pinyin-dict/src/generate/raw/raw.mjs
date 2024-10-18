@@ -210,7 +210,13 @@ export function saveWordMetasToFile(file, wordMetas) {
 /** 增加字使用权重 */
 export function plusWordUsageWeight(wordMetas, usages) {
   wordMetas.forEach((meta) => {
-    let weight = usages[meta.value] || 0;
+    const word = meta.value;
+    // 确保字的初始权重为 null
+    [...meta.pinyins, ...meta.zhuyins].forEach((spell) => {
+      delete spell.weight;
+    });
+
+    let weight = usages[word] || 0;
     if (weight <= 0) {
       return;
     }
@@ -218,8 +224,10 @@ export function plusWordUsageWeight(wordMetas, usages) {
     // 以拼音内最大字数为基数，在使用权重上加上该基数，
     // 以确保处于最后位置的常用字能够靠前排列
     weight += 1000;
-    [].concat(meta.pinyins, meta.zhuyins).forEach((spell) => {
-      spell.weight = (spell.weight || 0) + weight;
+
+    // 权重以字优先，不管读音
+    [...meta.pinyins, ...meta.zhuyins].forEach((spell) => {
+      spell.weight = weight;
     });
   });
 }
@@ -228,12 +236,14 @@ export function plusWordUsageWeight(wordMetas, usages) {
 export function plusPhraseUsageWeight(wordMetas, usages) {
   wordMetas.forEach((meta) => {
     meta.phrases.forEach((phrase) => {
-      let weight = usages[phrase.value.join('')] || 0;
+      const weight = usages[phrase.value.join('')] || 0;
       if (weight <= 0) {
+        delete phrase.weight;
         return;
       }
 
-      phrase.weight = (phrase.weight || 0) + weight + 1000;
+      phrase.weight ||= 0;
+      phrase.weight += weight + 1000;
     });
   });
 }
@@ -252,6 +262,7 @@ export function calculateWordWeightByGlyph(wordMetas) {
   let radicalBaseWeight = 0;
   Object.keys(radicalGroups)
     .sort((r1, r2) => {
+      // 从部首分组中的第一个字中得到部首的笔画数
       const r1_count = radicalGroups[r1][0].radical_stroke_count;
       const r2_count = radicalGroups[r2][0].radical_stroke_count;
 
