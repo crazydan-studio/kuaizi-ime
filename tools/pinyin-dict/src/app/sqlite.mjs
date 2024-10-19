@@ -95,23 +95,23 @@ export async function init(userDictDB) {
 
   -- 合并应用和用户词典数据
   insert into tmp_phrase_word as tmp_
-    (word_id_, spell_chars_id_, weight_, weight_app_, weight_user_)
+    (word_id_, spell_chars_id_, weight_app_, weight_user_, weight_)
   select
     word_id_, spell_chars_id_,
-    (ifnull(app_.weight_, 0) + ifnull(user_.weight_, 0)) as weight_,
     ifnull(app_.weight_, 0) as weight_app_,
-    ifnull(user_.weight_, 0) as weight_user_
+    ifnull(user_.weight_user_, 0) as weight_user_,
+    (weight_app_ + weight_user_) as weight_
   from phrase.phrase_word as app_
     full join phrase_word as user_
       using(word_id_, spell_chars_id_)
   ;
   insert into tmp_phrase_trans_prob as tmp_
-    (word_id_, prev_word_id_, value_, value_app_, value_user_)
+    (word_id_, prev_word_id_, value_app_, value_user_, value_)
   select
     word_id_, prev_word_id_,
-    (ifnull(app_.value_, 0) + ifnull(user_.value_, 0)) as value_,
     ifnull(app_.value_, 0) as value_app_,
-    ifnull(user_.value_, 0) as value_user_
+    ifnull(user_.value_user_, 0) as value_user_,
+    (value_app_ + value_user_) as value_,
   from phrase.phrase_trans_prob as app_
     full join phrase_trans_prob as user_
       using(word_id_, prev_word_id_)
