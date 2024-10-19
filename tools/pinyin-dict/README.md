@@ -38,17 +38,6 @@ npm run generate:emotion
 npm run generate:sqlite:word
 ```
 
-- 根据 `data/pinyin-word-dict.sqlite`
-  生成`筷字输入法`专用的 SQLite 字典库：
-
-```bash
-npm run generate:sqlite:ime
-```
-
-> - 以上字典库生成命令将自动对多余数据做删除，对新增数据做插入，
->   对有变化的数据做更新；
-> - 若需要全新建库，则先删除字典库文件，再执行上述命令即可；
-
 ## 词组预测
 
 ### HMM
@@ -73,11 +62,27 @@ npm run generate:sqlite:phrase:hmm
 
 > 生成的 SQLite 词典库放在 `data/pinyin-phrase-dict.sqlite` 中
 
-## 输入法功能验证
+## 输入法
+
+### 词组输入功能验证
 
 ```bash
 npm run app:shell
 ```
+
+### 生成 Android 字/词典库
+
+- 根据 `data/pinyin-word-dict.sqlite`
+  和 `data/pinyin-phrase-dict.sqlite`
+  向 Android 客户端生成`筷字输入法`专用的 SQLite 字典和词典库：
+
+```bash
+npm run generate:sqlite:ime
+```
+
+> - 以上字典库生成命令将自动对多余数据做删除，对新增数据做插入，
+>   对有变化的数据做更新；
+> - 若需要全新建库，则先删除字典库文件，再执行上述命令即可；
 
 ## 数据分析
 
@@ -535,13 +540,12 @@ order by
 select
   id_,
   value_,
-  keyword_index_,
-  group_concat(keyword_word_, '')
+  group_,
+  group_concat(keyword_words_, ', ')
 from
   emoji
 group by
-  id_,
-  keyword_index_;
+  id_;
 ```
 
 ## 新旧版本数据迁移

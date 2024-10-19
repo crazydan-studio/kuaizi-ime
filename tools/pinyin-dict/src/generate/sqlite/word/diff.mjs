@@ -90,6 +90,12 @@ async function diffWordData(oldDb, newDb) {
         newData[id] = row;
       });
 
+      const genCode = (row) => {
+        return `${row.word_id_ || row.source_id_}:${
+          row.spell_id_ || row.target_id_
+        }:${row.spell_chars_id_ || row.target_chars_id_}`;
+      };
+
       Object.keys(newData).forEach((id) => {
         const oldRow = oldData[id];
         const newRow = newData[id];
@@ -99,8 +105,8 @@ async function diffWordData(oldDb, newDb) {
           return;
         }
 
-        const oldCode = `${oldRow.source_id_}:${oldRow.target_id_}:${oldRow.target_chars_id_}`;
-        const newCode = `${newRow.source_id_}:${newRow.target_id_}:${newRow.target_chars_id_}`;
+        const oldCode = genCode(oldRow);
+        const newCode = genCode(newRow);
 
         if (oldCode != newCode) {
           console.log(
