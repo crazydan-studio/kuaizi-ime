@@ -19,11 +19,11 @@ export async function openDB(file, readonly) {
   await execSQL(
     db,
     `
-PRAGMA journal_mode = OFF;
-PRAGMA synchronous = 0;
-PRAGMA cache_size = 1000000;
-PRAGMA locking_mode = EXCLUSIVE;
-PRAGMA temp_store = MEMORY;
+pragma journal_mode = off;
+pragma synchronous = 0;
+pragma cache_size = 1000000;
+pragma locking_mode = exclusive;
+pragma temp_store = memory;
   `
   );
 
@@ -46,7 +46,7 @@ export async function closeDB(db, skipClean) {
   try {
     if (db.config.mode != sqlite3.OPEN_READONLY && !skipClean) {
       // 数据库无用空间回收
-      await execSQL(db, 'VACUUM');
+      await execSQL(db, 'vacuum');
     }
 
     await db.close();
@@ -159,7 +159,7 @@ export async function removeFromDB(db, table, ids, primaryKeys) {
 
 export async function hasTable(db, table) {
   const result = await db.get(
-    `SELECT count(*) as total FROM sqlite_master WHERE type='table' AND name='${table}'`
+    `select count(*) as total from sqlite_master where type='table' and name='${table}'`
   );
   return result.total == 1;
 }

@@ -24,7 +24,7 @@ export async function init(userDictDB) {
   create table
     if not exists phrase_word (
       -- 具体读音的字 id
-      -- Note：其为字典库中 字及其拼音表（link_word_with_pinyin）中的 id
+      -- Note：其为字典库中 字及其拼音表（link_word_with_pinyin）中的 id_
       word_id_ integer not null,
       -- 拼音字母组合 id: 方便按拼音字母搜索
       -- Note：其为字典库中 字及其拼音表（link_word_with_pinyin）中的 spell_chars_id_
@@ -44,11 +44,11 @@ export async function init(userDictDB) {
   create table
     if not exists phrase_trans_prob (
       -- 当前拼音字 id: EOS 用 -1 代替（句尾字）
-      -- Note：其为字典库中 字及其拼音表（link_word_with_pinyin）中的 id
+      -- Note：其为字典库中 字及其拼音表（link_word_with_pinyin）中的 id_
       word_id_ integer not null,
 
       -- 前序拼音字 id: BOS 用 -1 代替（句首字），__total__ 用 -2 代替
-      -- Note：其为字典库中 字及其拼音表（link_word_with_pinyin）中的 id
+      -- Note：其为字典库中 字及其拼音表（link_word_with_pinyin）中的 id_
       prev_word_id_ integer not null,
 
       -- 字出现的次数：实际为 value_app_ + value_user_ 之和
@@ -94,7 +94,7 @@ export async function init(userDictDB) {
   );
 
   -- 合并应用和用户词典数据
-  insert into tmp_phrase_word as tmp_
+  insert into tmp_phrase_word
     (word_id_, spell_chars_id_, weight_app_, weight_user_, weight_)
   select
     word_id_, spell_chars_id_,
@@ -105,13 +105,13 @@ export async function init(userDictDB) {
     full join phrase_word as user_
       using(word_id_, spell_chars_id_)
   ;
-  insert into tmp_phrase_trans_prob as tmp_
+  insert into tmp_phrase_trans_prob
     (word_id_, prev_word_id_, value_app_, value_user_, value_)
   select
     word_id_, prev_word_id_,
     ifnull(app_.value_, 0) as value_app_,
     ifnull(user_.value_user_, 0) as value_user_,
-    (value_app_ + value_user_) as value_,
+    (value_app_ + value_user_) as value_
   from phrase.phrase_trans_prob as app_
     full join phrase_trans_prob as user_
       using(word_id_, prev_word_id_)

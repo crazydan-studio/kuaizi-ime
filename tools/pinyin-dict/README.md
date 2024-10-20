@@ -50,9 +50,12 @@ npm run generate:sqlite:phrase:hmm:trans \
   -- -f /path/to/samples/file
 ```
 
-> `-f` 指定用于训练的样本文件或目录位置，在目录内可分为多个文件和子目录。
-> 训练完成后的数据将放在 `data/hmm_params/trans_prob.json` 中。
-> 注：设置 `--max-old-space-size` 可避免内存溢出，其单位为 `MB`
+> - `-f` 指定用于训练的样本文件或目录位置，在目录内可分为多个文件和子目录。
+>   训练完成后的数据将放在 `data/hmm_params/trans_prob.json` 中。
+>   注：设置 `--max-old-space-size` 可避免内存溢出，其单位为 `MB`
+> - 训练采用以下预分词样本：
+>   - [NER/MSRA/train1.txt](https://raw.githubusercontent.com/InsaneLife/ChineseNLPCorpus/master/NER/MSRA/train1.txt)
+>   - [NER/renMinRiBao/renmin.txt](https://raw.githubusercontent.com/InsaneLife/ChineseNLPCorpus/master/NER/renMinRiBao/renmin.txt)
 
 - 创建词典库
 

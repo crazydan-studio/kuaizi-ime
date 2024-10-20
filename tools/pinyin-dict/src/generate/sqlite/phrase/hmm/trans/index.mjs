@@ -9,9 +9,8 @@ import { openDB, closeDB } from '#utils/sqlite.mjs';
 import * as trans from './trans.mjs';
 
 // 样本文件目录。可试用样本如下：
-// - https://raw.githubusercontent.com/InsaneLife/ChineseNLPCorpus/master/NER/MSRA/train1.txt
-// - https://raw.githubusercontent.com/InsaneLife/ChineseNLPCorpus/master/NER/renMinRiBao/renmin.txt
-// - https://pan.baidu.com/s/1LDwQjoj7qc-HT9qwhJ3rcA 提取码: 1fa3
+// - [已分词] https://raw.githubusercontent.com/InsaneLife/ChineseNLPCorpus/master/NER/MSRA/train1.txt
+// - [已分词] https://raw.githubusercontent.com/InsaneLife/ChineseNLPCorpus/master/NER/renMinRiBao/renmin.txt
 let phraseSamplesDir = '';
 let appendExistData = false;
 
