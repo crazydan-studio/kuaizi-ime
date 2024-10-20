@@ -86,9 +86,9 @@ export async function syncWords(imeDB, rawDB) {
   create view
     if not exists link_word_with_pinyin (
       id_,
-      source_id_,
-      target_id_,
-      target_chars_id_,
+      word_id_,
+      spell_id_,
+      spell_chars_id_,
       glyph_weight_,
       weight_
     ) as
@@ -227,7 +227,9 @@ export async function syncWords(imeDB, rawDB) {
   ]);
 }
 
-/** 同步词组信息 */
+/** 同步词组信息
+ *  @deprecated 使用单独的词典库
+ */
 export async function syncPhrases(imeDB, rawDB) {
   await execSQL(
     imeDB,
@@ -349,29 +351,15 @@ export async function syncEmojis(imeDB, rawDB) {
       foreign key (group_id_) references meta_emoji_group (id_)
     );
 
-  -- Note：表情的关键字唯一标识由 表情 id 和 关键字的序号 组合而成
   create table
     if not exists link_emoji_with_keyword (
       id_ integer not null primary key,
       -- 表情 id
       source_id_ integer not null,
-      -- 排序后的表情关键字序号
-      target_index_ integer not null,
-      -- 表情关键字中的字 id
-      target_word_id_ integer not null,
-      -- 字在表情关键字中的序号
-      target_word_index_ integer not null,
-      unique (
-        source_id_,
-        target_index_,
-        target_word_id_,
-        target_word_index_
-      ),
-      foreign key (source_id_) references meta_emoji (id_),
-      foreign key (target_word_id_) references meta_word (id_)
+      -- 表情关键字中的字 id（meta_word 中的 id）列表：json 数组形式
+      target_word_ids_ text not null,
+      foreign key (source_id_) references meta_emoji (id_)
     );
-  -- 索引放在输入法初始化时创建，以降低索引造成的字典文件过大
-  -- create index if not exists idx_lnk_emo_kwd_wrd on link_emoji_with_keyword (target_word_id_);
 
   -- 分组表情
   create view
@@ -395,26 +383,21 @@ export async function syncEmojis(imeDB, rawDB) {
       id_,
       value_,
       group_,
-      keyword_index_,
-      keyword_word_id_,
-      keyword_word_index_,
-      keyword_word_spell_chars_id_,
-      keyword_word_spell_link_id_
+      keyword_words_
     ) as
   select
     emo_.id_,
     emo_.value_,
     grp_.value_,
-    lnk_.target_index_,
-    lnk_.target_word_id_,
-    lnk_.target_word_index_,
-    pw_lnk_.target_chars_id_,
-    pw_lnk_.id_
+    (select group_concat(word_.value_, '')
+      from json_each(lnk_.target_word_ids_) word_id_
+        inner join meta_word word_
+          on word_.id_ = word_id_.value
+    )
   from
     meta_emoji emo_
     --
     inner join link_emoji_with_keyword lnk_ on lnk_.source_id_ = emo_.id_
-    inner join link_word_with_pinyin pw_lnk_ on pw_lnk_.source_id_ = lnk_.target_word_id_
     inner join meta_emoji_group grp_ on grp_.id_ = emo_.group_id_;
 `
   );
