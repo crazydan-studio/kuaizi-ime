@@ -8,6 +8,9 @@ export {
   execSQL as exec
 } from '#utils/sqlite.mjs';
 
+// 用户词组数据需加上基础权重
+const user_phrase_base_weight = 500;
+
 // 查看表上的索引：PRAGMA index_list('MyTable');
 // 查看索引的列：PRAGMA index_info('MyIndex');
 // 《基于HMM的拼音输入法》：https://zhuanlan.zhihu.com/p/508599305
@@ -30,8 +33,6 @@ export async function init(userDictDB) {
       -- Note：其为字典库中 字及其拼音表（link_word_with_pinyin）中的 spell_chars_id_
       spell_chars_id_ integer not null,
 
-      -- 短语中的字权重：实际为 weight_app_ + weight_user_ 之和
-      weight_ integer not null,
       -- 应用字典中短语内的字权重：出现次数
       weight_app_ integer not null,
       -- 用户字典中短语内的字权重：出现次数
@@ -51,7 +52,6 @@ export async function init(userDictDB) {
       -- Note：其为字典库中 字及其拼音表（link_word_with_pinyin）中的 id_
       prev_word_id_ integer not null,
 
-      -- 字出现的次数：实际为 value_app_ + value_user_ 之和
       -- Note：当 word_id_ == -1 且 prev_word_id_ == -2 时，
       --       其代表训练数据的句子总数，用于计算 句首字出现频率；
       --
@@ -66,7 +66,6 @@ export async function init(userDictDB) {
       --
       --       当 word_id_ != -1 且 prev_word_id_ != -1 时，
       --       其代表前序拼音字的出现次数；
-      value_ integer not null,
       -- 应用字典中字出现的次数
       value_app_ integer not null,
       -- 用户字典中字出现的次数
@@ -79,7 +78,6 @@ export async function init(userDictDB) {
   create table tmp_phrase_word (
     word_id_ integer not null,
     spell_chars_id_ integer not null,
-    weight_ integer not null,
     weight_app_ integer not null,
     weight_user_ integer not null,
     primary key (word_id_, spell_chars_id_)
@@ -87,7 +85,6 @@ export async function init(userDictDB) {
   create table tmp_phrase_trans_prob (
     word_id_ integer not null,
     prev_word_id_ integer not null,
-    value_ integer not null,
     value_app_ integer not null,
     value_user_ integer not null,
     primary key (word_id_, prev_word_id_)
@@ -95,23 +92,21 @@ export async function init(userDictDB) {
 
   -- 合并应用和用户词典数据
   insert into tmp_phrase_word
-    (word_id_, spell_chars_id_, weight_app_, weight_user_, weight_)
+    (word_id_, spell_chars_id_, weight_app_, weight_user_)
   select
     word_id_, spell_chars_id_,
     ifnull(app_.weight_, 0) as weight_app_,
-    ifnull(user_.weight_user_, 0) as weight_user_,
-    (weight_app_ + weight_user_) as weight_
+    ifnull(user_.weight_user_, 0) as weight_user_
   from phrase.phrase_word as app_
     full join phrase_word as user_
       using(word_id_, spell_chars_id_)
   ;
   insert into tmp_phrase_trans_prob
-    (word_id_, prev_word_id_, value_app_, value_user_, value_)
+    (word_id_, prev_word_id_, value_app_, value_user_)
   select
     word_id_, prev_word_id_,
     ifnull(app_.value_, 0) as value_app_,
-    ifnull(user_.value_user_, 0) as value_user_,
-    (value_app_ + value_user_) as value_
+    ifnull(user_.value_user_, 0) as value_user_
   from phrase.phrase_trans_prob as app_
     full join phrase_trans_prob as user_
       using(word_id_, prev_word_id_)
@@ -174,8 +169,6 @@ export async function saveUsedPhrase(userDictDB, phrase) {
     });
   });
 
-  // 用户数据首次引用需加上基础权重
-  const base_weight = 500;
   await asyncForEach(
     [
       {
@@ -184,17 +177,12 @@ export async function saveUsedPhrase(userDictDB, phrase) {
         primaryKeys: ['word_id_', 'spell_chars_id_'],
         create: (data) => {
           data.weight_app_ = 0;
-          data.weight_user_ += base_weight;
-
-          data.weight_ = data.weight_app_ + data.weight_user_;
         },
         update: (data, row) => {
           // 应用数据不变
           data.weight_app_ = row.weight_app_;
           // 用户数据累加
-          data.weight_user_ += row.weight_user_ || base_weight;
-
-          data.weight_ = data.weight_app_ + data.weight_user_;
+          data.weight_user_ += row.weight_user_ || 0;
         }
       },
       {
@@ -203,17 +191,12 @@ export async function saveUsedPhrase(userDictDB, phrase) {
         primaryKeys: ['word_id_', 'prev_word_id_'],
         create: (data) => {
           data.value_app_ = 0;
-          data.value_user_ += base_weight;
-
-          data.value_ = data.value_app_ + data.value_user_;
         },
         update: (data, row) => {
           // 应用数据不变
           data.value_app_ = row.value_app_;
           // 用户数据累加
-          data.value_user_ += row.value_user_ || base_weight;
-
-          data.value_ = data.value_app_ + data.value_user_;
+          data.value_user_ += row.value_user_ || 0;
         }
       }
     ],
@@ -257,8 +240,11 @@ export async function predict(userDictDB, pinyinCharsArray) {
       where
         py_.spell_chars_ in (${"'" + pinyinCharsArray.join("', '") + "'"})
       order by
-        ph_.weight_ desc, py_.weight_ desc,
-        py_.glyph_weight_ desc, py_.spell_id_ asc
+        (ph_.weight_app_ +
+          ph_.weight_user_ +
+          iif(ph_.weight_user_ > 0, ${user_phrase_base_weight}, 0)
+        ) desc,
+        py_.weight_ desc, py_.glyph_weight_ desc, py_.spell_id_ asc
       `)
   ).forEach((row) => {
     const { id_, word_, spell_, spell_chars_, spell_chars_id_ } = row;
@@ -356,11 +342,14 @@ export async function predict(userDictDB, pinyinCharsArray) {
             or s_.prev_word_id_ = -2
           )
         `,
-        convert: ({ word_id_, prev_word_id_, value_ }) => {
+        convert: ({ word_id_, prev_word_id_, value_app_, value_user_ }) => {
           trans_prob[word_id_] ||= {};
 
           trans_prob[word_id_][prev_word_id_] ||= 0;
-          trans_prob[word_id_][prev_word_id_] += value_ || 0;
+          trans_prob[word_id_][prev_word_id_] +=
+            value_app_ +
+            value_user_ +
+            (value_user_ > 0 ? user_phrase_base_weight : 0);
         }
       }
     ],
