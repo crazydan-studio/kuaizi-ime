@@ -75,8 +75,6 @@ export async function syncWords(imeDB, rawDB) {
       spell_id_ integer not null,
       -- 字形权重：用于对相同拼音字母组合的字按字形相似性排序
       glyph_weight_ integer default 0,
-      -- 按使用频率等排序的权重
-      weight_ integer default 0,
       unique (word_id_, spell_id_),
       foreign key (word_id_) references meta_word (id_),
       foreign key (spell_id_) references meta_pinyin (id_)
@@ -89,16 +87,14 @@ export async function syncWords(imeDB, rawDB) {
       word_id_,
       spell_id_,
       spell_chars_id_,
-      glyph_weight_,
-      weight_
+      glyph_weight_
     ) as
   select
     meta_.id_,
     meta_.word_id_,
     meta_.spell_id_,
     spell_.chars_id_,
-    meta_.glyph_weight_,
-    meta_.weight_
+    meta_.glyph_weight_
   from
     meta_word_with_pinyin meta_
     left join meta_pinyin spell_ on spell_.id_ = meta_.spell_id_;
@@ -137,7 +133,6 @@ export async function syncWords(imeDB, rawDB) {
       spell_,
       spell_id_,
       spell_chars_id_,
-      weight_,
       glyph_weight_,
       stroke_order_,
       traditional_,
@@ -151,7 +146,6 @@ export async function syncWords(imeDB, rawDB) {
     spell_.value_,
     spell_.id_,
     spell_.chars_id_,
-    lnk_.weight_,
     lnk_.glyph_weight_,
     word_.stroke_order_,
     word_.traditional_,
@@ -342,71 +336,21 @@ export async function syncEmojis(imeDB, rawDB) {
       value_ text not null,
       unique (value_)
     );
+
   create table
     if not exists meta_emoji (
       id_ integer not null primary key,
       value_ text not null,
       group_id_ interget not null,
+      -- 表情关键字中的字 id（meta_word 中的 id）数组列表：二维 json 数组形式
+      keyword_ids_list_ text not null,
       unique (value_),
       foreign key (group_id_) references meta_emoji_group (id_)
     );
-
-  create table
-    if not exists link_emoji_with_keyword (
-      id_ integer not null primary key,
-      -- 表情 id
-      source_id_ integer not null,
-      -- 表情关键字中的字 id（meta_word 中的 id）列表：json 数组形式
-      target_word_ids_ text not null,
-      foreign key (source_id_) references meta_emoji (id_)
-    );
-
-  -- 分组表情
-  create view
-    if not exists group_emoji (
-      id_,
-      value_,
-      group_
-    ) as
-  select
-    emo_.id_,
-    emo_.value_,
-    grp_.value_
-  from
-    meta_emoji emo_
-    --
-    inner join meta_emoji_group grp_ on grp_.id_ = emo_.group_id_;
-
-  -- 表情及其关键字
-  create view
-    if not exists emoji (
-      id_,
-      value_,
-      group_,
-      keyword_words_
-    ) as
-  select
-    emo_.id_,
-    emo_.value_,
-    grp_.value_,
-    (select group_concat(word_.value_, '')
-      from json_each(lnk_.target_word_ids_) word_id_
-        inner join meta_word word_
-          on word_.id_ = word_id_.value
-    )
-  from
-    meta_emoji emo_
-    --
-    inner join link_emoji_with_keyword lnk_ on lnk_.source_id_ = emo_.id_
-    inner join meta_emoji_group grp_ on grp_.id_ = emo_.group_id_;
 `
   );
 
-  await syncTableData(imeDB, rawDB, [
-    'meta_emoji_group',
-    'meta_emoji',
-    'link_emoji_with_keyword'
-  ]);
+  await syncTableData(imeDB, rawDB, ['meta_emoji_group', 'meta_emoji']);
 }
 
 async function syncTableData(imeDB, rawDB, tables) {

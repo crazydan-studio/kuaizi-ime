@@ -1161,6 +1161,7 @@ export async function saveEmojis(db, groupEmojiMetas) {
       value_ text not null,
       unique (value_)
     );
+
   create table
     if not exists meta_emoji (
       id_ integer not null primary key,
@@ -1169,18 +1170,10 @@ export async function saveEmojis(db, groupEmojiMetas) {
       unicode_ text not null,
       unicode_version_ real not null,
       group_id_ interget not null,
+      -- 表情关键字中的字 id（meta_word 中的 id）数组列表：二维 json 数组形式
+      keyword_ids_list_ text not null,
       unique (value_),
       foreign key (group_id_) references meta_emoji_group (id_)
-    );
-
-  create table
-    if not exists link_emoji_with_keyword (
-      id_ integer not null primary key,
-      -- 表情 id
-      source_id_ integer not null,
-      -- 表情关键字中的字 id（meta_word 中的 id）列表：json 数组形式
-      target_word_ids_ text not null,
-      foreign key (source_id_) references meta_emoji (id_)
     );
 
   -- 表情及其关键字
@@ -1191,28 +1184,46 @@ export async function saveEmojis(db, groupEmojiMetas) {
       unicode_,
       unicode_version_,
       group_,
-      keyword_words_
+      keyword_
     ) as
-  select
-    emo_.id_,
-    emo_.value_,
-    emo_.unicode_,
-    emo_.unicode_version_,
-    grp_.value_,
-    (select group_concat(word_.value_, '')
-      from json_each(lnk_.target_word_ids_) word_id_
-        inner join meta_word word_
-          on word_.id_ = word_id_.value
-    )
-  from
-    meta_emoji emo_
-    --
-    left join link_emoji_with_keyword lnk_ on lnk_.source_id_ = emo_.id_
-    left join meta_emoji_group grp_ on grp_.id_ = emo_.group_id_
+    select
+      emo_.id_,
+      emo_.value_,
+      emo_.unicode_,
+      emo_.unicode_version_,
+      grp_.value_,
+      (select group_concat(word_.value_, '')
+        from json_each(emo_.keyword_ids_) word_id_
+          inner join meta_word word_
+            on word_.id_ = word_id_.value
+      )
+    from
+      (select
+          emo_.id_,
+          emo_.value_,
+          emo_.unicode_,
+          emo_.unicode_version_,
+          emo_.group_id_,
+          json_each.value as keyword_ids_
+        from
+          meta_emoji emo_,
+          json_each(emo_.keyword_ids_list_)
+      ) emo_
+      left join meta_emoji_group grp_ on grp_.id_ = emo_.group_id_
   order by
-    lnk_.source_id_ asc;
+    emo_.id_ asc;
 `
   );
+
+  const keywordWordData = {};
+  (await db.all(`select id_, value_ from meta_word`)).forEach((row) => {
+    const code = row.value_;
+
+    keywordWordData[code] = {
+      id_: row.id_,
+      value_: row.value_
+    };
+  });
 
   const emojiGroupMap = Object.keys(groupEmojiMetas).reduce((map, group) => {
     map[group] = { value_: group };
@@ -1248,13 +1259,38 @@ export async function saveEmojis(db, groupEmojiMetas) {
     groupEmojiMetas[group].forEach((meta) => {
       meta.keywords = meta.keywords.sort();
 
+      const keyword_ids_list = [];
+      meta.keywords.forEach((keyword_value) => {
+        const keywords = splitChars(keyword_value);
+        const keyword_ids = [];
+
+        keywords.forEach((keyword) => {
+          const keyword_id = (keywordWordData[keyword] || {}).id_;
+
+          if (keyword_id) {
+            keyword_ids.push(keyword_id);
+          } else {
+            console.log(
+              `表情 '${meta.value}' 的关键字 '${keyword_value}' 不存在字 '${keyword}'`
+            );
+          }
+        });
+
+        if (keyword_ids.length === 0) {
+          return;
+        }
+
+        keyword_ids_list.push(keyword_ids);
+      });
+
       const code = meta.value;
       emojiMetaMap[code] = {
         __meta__: meta,
         value_: meta.value,
         unicode_: meta.unicode,
         unicode_version_: meta.unicode_version,
-        group_id_: emojiGroupMap[group].id_
+        group_id_: emojiGroupMap[group].id_,
+        keyword_ids_list_: JSON.stringify(keyword_ids_list)
       };
     });
   });
@@ -1281,97 +1317,6 @@ export async function saveEmojis(db, groupEmojiMetas) {
 
     emojiMetaMap[code].id_ = row.id_;
   });
-
-  // 绑定关键字关联
-  await asyncForEach(
-    [
-      {
-        table: 'link_emoji_with_keyword',
-        target_word_table: 'meta_word'
-      }
-    ],
-    async ({ table, target_word_table }) => {
-      const targetWordData = {};
-      (await db.all(`select id_, value_ from ${target_word_table}`)).forEach(
-        (row) => {
-          const code = row.value_;
-
-          targetWordData[code] = {
-            id_: row.id_,
-            value_: row.value_
-          };
-        }
-      );
-
-      const linkData = {};
-      (await db.all(`select * from ${table}`)).forEach((row) => {
-        const code = `${row.source_id_}:${
-          //
-          JSON.parse(row.target_word_ids_).join(':')
-        }`;
-
-        linkData[code] = {
-          ...row,
-          __exist__: row
-        };
-      });
-
-      Object.values(emojiMetaMap).forEach((source) => {
-        const source_value = source.value_;
-        const target_values = source.__meta__.keywords;
-
-        target_values.forEach((target_value) => {
-          const target_words = splitChars(target_value);
-          const target_word_ids = [];
-
-          target_words.forEach((target_word) => {
-            const target_word_id = (targetWordData[target_word] || {}).id_;
-
-            if (!target_word_id) {
-              console.log(
-                `表情 '${source_value}' 的关键字 '${target_word}' 不存在字 '${target_word}'`
-              );
-              return;
-            }
-
-            target_word_ids.push(target_word_id);
-          });
-
-          if (target_word_ids.length !== target_words.length) {
-            return;
-          }
-
-          const source_id = source.id_;
-          const link_code = `${source_id}:${target_word_ids.join(':')}`;
-          if (!linkData[link_code]) {
-            // 新增关联
-            linkData[link_code] = {
-              source_id_: source_id,
-              target_word_ids_: JSON.stringify(target_word_ids)
-            };
-          } else {
-            // 关联无需更新
-            delete linkData[link_code];
-          }
-        });
-      });
-
-      const missingLinks = [];
-      Object.keys(linkData).forEach((code) => {
-        const id = linkData[code].id_;
-
-        if (id) {
-          // 关联在库中已存在，但未变更
-          missingLinks.push(id);
-
-          delete linkData[code];
-        }
-      });
-
-      await saveToDB(db, table, linkData);
-      await removeFromDB(db, table, missingLinks);
-    }
-  );
 }
 
 /** 生成拼音字母组合数据 */
