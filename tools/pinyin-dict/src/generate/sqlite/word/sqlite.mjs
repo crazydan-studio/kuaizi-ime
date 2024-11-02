@@ -214,36 +214,27 @@ export async function saveWords(db, wordMetas) {
   -- --------------------------------------------------------------
   create table
     if not exists link_word_with_simple_word (
-      id_ integer not null primary key,
       -- 源字 id
       source_id_ integer not null,
       -- 简体字 id
       target_id_ integer not null,
-      unique (source_id_, target_id_),
-      foreign key (source_id_) references meta_word (id_),
-      foreign key (target_id_) references meta_word (id_)
+      primary key (source_id_, target_id_)
     );
   create table
     if not exists link_word_with_traditional_word (
-      id_ integer not null primary key,
       -- 源字 id
       source_id_ integer not null,
       -- 繁体字 id
       target_id_ integer not null,
-      unique (source_id_, target_id_),
-      foreign key (source_id_) references meta_word (id_),
-      foreign key (target_id_) references meta_word (id_)
+      primary key (source_id_, target_id_)
     );
   create table
     if not exists link_word_with_variant_word (
-      id_ integer not null primary key,
       -- 源字 id
       source_id_ integer not null,
       -- 变体字 id
       target_id_ integer not null,
-      unique (source_id_, target_id_),
-      foreign key (source_id_) references meta_word (id_),
-      foreign key (target_id_) references meta_word (id_)
+      primary key (source_id_, target_id_)
     );
 
   -- --------------------------------------------------------------
@@ -449,51 +440,45 @@ export async function saveWords(db, wordMetas) {
   create view
     if not exists simple_word (
       -- 繁体字 id
-      id_,
+      source_id_,
       -- 繁体字
-      value_,
+      source_value_,
       -- 简体字 id
       target_id_,
       -- 简体字
       target_value_
     ) as
   select
-    word_.id_,
-    word_.value_,
-    sw_.id_,
-    sw_.value_
+    source_.id_,
+    source_.value_,
+    target_.id_,
+    target_.value_
   from
-    meta_word word_
-    --
-    left join link_word_with_simple_word sw_lnk_ on sw_lnk_.source_id_ = word_.id_
-    left join meta_word sw_ on sw_.id_ = sw_lnk_.target_id_
-  where
-    sw_.id_ is not null;
+    link_word_with_simple_word lnk_
+    inner join meta_word source_ on source_.id_ = lnk_.source_id_
+    inner join meta_word target_ on target_.id_ = lnk_.target_id_;
 
   -- 简体 -> 繁体
   create view
     if not exists traditional_word (
       -- 简体字 id
-      id_,
+      source_id_,
       -- 简体字
-      value_,
+      source_value_,
       -- 繁体字 id
       target_id_,
       -- 繁体字
       target_value_
     ) as
   select
-    word_.id_,
-    word_.value_,
-    tw_.id_,
-    tw_.value_
+    source_.id_,
+    source_.value_,
+    target_.id_,
+    target_.value_
   from
-    meta_word word_
-    --
-    left join link_word_with_traditional_word tw_lnk_ on tw_lnk_.source_id_ = word_.id_
-    left join meta_word tw_ on tw_.id_ = tw_lnk_.target_id_
-  where
-    tw_.id_ is not null;
+    link_word_with_traditional_word lnk_
+    inner join meta_word source_ on source_.id_ = lnk_.source_id_
+    inner join meta_word target_ on target_.id_ = lnk_.target_id_;
 `
   );
 
@@ -660,6 +645,8 @@ export async function saveWords(db, wordMetas) {
       }
     ],
     async ({ prop, table }) => {
+      const primaryKeys = ['source_id_', 'target_id_'];
+
       const linkData = {};
       (await db.all(`select * from ${table}`)).forEach((row) => {
         const code = row.source_id_ + ':' + row.target_id_;
@@ -693,18 +680,18 @@ export async function saveWords(db, wordMetas) {
 
       const missingLinks = [];
       Object.keys(linkData).forEach((code) => {
-        const id = linkData[code].id_;
+        const data = linkData[code];
 
-        if (id) {
-          // 关联在库中已存在，但未变更
-          missingLinks.push(id);
+        if (data.__exist__) {
+          // 关联在库中已存在，但未使用
+          missingLinks.push(data);
 
           delete linkData[code];
         }
       });
 
-      await saveToDB(db, table, linkData);
-      await removeFromDB(db, table, missingLinks);
+      await saveToDB(db, table, linkData, true, primaryKeys);
+      await removeFromDB(db, table, missingLinks, primaryKeys);
     }
   );
 
@@ -763,7 +750,7 @@ export async function saveWords(db, wordMetas) {
         const id = linkData[code].id_;
 
         if (id) {
-          // 关联在库中已存在，但未变更
+          // 关联在库中已存在，但未使用
           missingLinks.push(id);
 
           delete linkData[code];
@@ -1135,7 +1122,7 @@ export async function savePhrases(db, wordMetas) {
         const id = linkData[code].id_;
 
         if (id) {
-          // 关联在库中已存在，但未变更
+          // 关联在库中已存在，但未使用
           missingLinks.push(id);
 
           delete linkData[code];

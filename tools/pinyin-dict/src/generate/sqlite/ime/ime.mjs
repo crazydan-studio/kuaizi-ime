@@ -102,25 +102,19 @@ export async function syncWords(imeDB, rawDB) {
   -- --------------------------------------------------------------
   create table
     if not exists link_word_with_simple_word (
-      id_ integer not null primary key,
       -- 源字 id
       source_id_ integer not null,
       -- 简体字 id
       target_id_ integer not null,
-      unique (source_id_, target_id_),
-      foreign key (source_id_) references meta_word (id_),
-      foreign key (target_id_) references meta_word (id_)
+      primary key (source_id_, target_id_)
     );
   create table
     if not exists link_word_with_traditional_word (
-      id_ integer not null primary key,
       -- 源字 id
       source_id_ integer not null,
       -- 繁体字 id
       target_id_ integer not null,
-      unique (source_id_, target_id_),
-      foreign key (source_id_) references meta_word (id_),
-      foreign key (target_id_) references meta_word (id_)
+      primary key (source_id_, target_id_)
     );
 
   -- --------------------------------------------------------------
@@ -164,51 +158,37 @@ export async function syncWords(imeDB, rawDB) {
   create view
     if not exists simple_word (
       -- 繁体字 id
-      id_,
-      -- 繁体字
-      value_,
+      source_id_,
       -- 简体字 id
       target_id_,
       -- 简体字
       target_value_
     ) as
   select
-    word_.id_,
-    word_.value_,
-    sw_.id_,
-    sw_.value_
+    lnk_.source_id_,
+    target_.id_,
+    target_.value_
   from
-    meta_word word_
-    --
-    inner join link_word_with_simple_word sw_lnk_ on sw_lnk_.source_id_ = word_.id_
-    inner join meta_word sw_ on sw_.id_ = sw_lnk_.target_id_
-  where
-    sw_.id_ is not null;
+    link_word_with_simple_word lnk_
+    inner join meta_word target_ on target_.id_ = lnk_.target_id_;
 
   -- 简体 -> 繁体
   create view
     if not exists traditional_word (
       -- 简体字 id
-      id_,
-      -- 简体字
-      value_,
+      source_id_,
       -- 繁体字 id
       target_id_,
       -- 繁体字
       target_value_
     ) as
   select
-    word_.id_,
-    word_.value_,
-    tw_.id_,
-    tw_.value_
+    lnk_.source_id_,
+    target_.id_,
+    target_.value_
   from
-    meta_word word_
-    --
-    inner join link_word_with_traditional_word tw_lnk_ on tw_lnk_.source_id_ = word_.id_
-    inner join meta_word tw_ on tw_.id_ = tw_lnk_.target_id_
-  where
-    tw_.id_ is not null;
+    link_word_with_traditional_word lnk_
+    inner join meta_word target_ on target_.id_ = lnk_.target_id_;
 `
   );
 
@@ -356,9 +336,21 @@ export async function syncEmojis(imeDB, rawDB) {
 async function syncTableData(imeDB, rawDB, tables) {
   await asyncForEach(tables, async (tableInfo) => {
     const table = typeof tableInfo === 'string' ? tableInfo : tableInfo.name;
-    const columnsInImeDB = (
-      await imeDB.all(`select name from pragma_table_info('${table}');`)
-    ).map((row) => row.name);
+    const columnsInImeDB = [];
+    const primaryKeysInImeDB = [];
+
+    (await imeDB.all(`select name,pk from pragma_table_info('${table}');`)).map(
+      (row) => {
+        columnsInImeDB.push(row.name);
+        if (row.pk > 0) {
+          primaryKeysInImeDB.push(row.name);
+        }
+      }
+    );
+
+    const getId = (row) => {
+      return primaryKeysInImeDB.map((key) => row[key]).join(':');
+    };
 
     const dataInRawDB = {};
     (
@@ -368,7 +360,7 @@ async function syncTableData(imeDB, rawDB, tables) {
           : tableInfo.select
       )
     ).forEach((row) => {
-      const id = row.id_;
+      const id = getId(row);
 
       const data = (dataInRawDB[id] = {});
       columnsInImeDB.forEach((column) => {
@@ -379,7 +371,7 @@ async function syncTableData(imeDB, rawDB, tables) {
     const dataInImeDB = {};
     const missingDataInImeDB = [];
     (await imeDB.all(`select * from ${table}`)).forEach((row) => {
-      const id = row.id_;
+      const id = getId(row);
       const exist = dataInRawDB[id];
 
       if (exist) {
@@ -393,16 +385,16 @@ async function syncTableData(imeDB, rawDB, tables) {
         delete dataInRawDB[id];
       } else {
         // 待删除
-        missingDataInImeDB.push(id);
+        missingDataInImeDB.push(primaryKeysInImeDB.length === 0 ? id : row);
       }
     });
 
     // 添加新数据
-    await saveToDB(imeDB, table, dataInRawDB);
+    await saveToDB(imeDB, table, dataInRawDB, false, primaryKeysInImeDB);
     // 更新已存在数据
-    await saveToDB(imeDB, table, dataInImeDB);
+    await saveToDB(imeDB, table, dataInImeDB, false, primaryKeysInImeDB);
 
     // 删除多余数据
-    await removeFromDB(imeDB, table, missingDataInImeDB);
+    await removeFromDB(imeDB, table, missingDataInImeDB, primaryKeysInImeDB);
   });
 }
