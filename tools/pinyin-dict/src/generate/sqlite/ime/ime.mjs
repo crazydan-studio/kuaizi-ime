@@ -150,8 +150,7 @@ export async function syncWords(imeDB, rawDB) {
     --
     inner join meta_word_with_pinyin lnk_ on lnk_.word_id_ = word_.id_
     inner join meta_pinyin spell_ on spell_.id_ = lnk_.spell_id_
-    inner join meta_word_radical radical_ on radical_.id_ = word_.radical_id_
-    ;
+    inner join meta_word_radical radical_ on radical_.id_ = word_.radical_id_;
 
   -- --------------------------------------------------------------
   -- 繁体 -> 简体

@@ -97,8 +97,8 @@ export async function init(userDictDB) {
     word_id_, spell_chars_id_,
     ifnull(app_.weight_, 0) as weight_app_,
     ifnull(user_.weight_user_, 0) as weight_user_
-  from phrase.phrase_word as app_
-    full join phrase_word as user_
+  from phrase.phrase_word app_
+    full join phrase_word user_
       using(word_id_, spell_chars_id_)
   ;
   insert into tmp_phrase_trans_prob
@@ -107,8 +107,8 @@ export async function init(userDictDB) {
     word_id_, prev_word_id_,
     ifnull(app_.value_, 0) as value_app_,
     ifnull(user_.value_user_, 0) as value_user_
-  from phrase.phrase_trans_prob as app_
-    full join phrase_trans_prob as user_
+  from phrase.phrase_trans_prob app_
+    full join phrase_trans_prob user_
       using(word_id_, prev_word_id_)
   ;
 
