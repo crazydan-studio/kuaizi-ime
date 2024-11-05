@@ -103,7 +103,9 @@ async function start(userDictDB) {
     '  最终确认结果为: ',
     chars.join(' '),
     '->',
-    selectedPhrase.map(({ value, spell }) => `${value}(${spell})`).join('|')
+    selectedPhrase
+      .map(({ id, value, spell }) => `${id}:${value}:${spell}:`)
+      .join(',')
   );
   console.log();
 }

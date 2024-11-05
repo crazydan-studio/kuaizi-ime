@@ -218,6 +218,9 @@ export async function saveUsedPhrase(userDictDB, phrase) {
         }
       });
 
+      console.log(table, JSON.stringify(data));
+      console.log();
+
       await saveToDB(userDictDB, table, data, true, primaryKeys);
     }
   );
@@ -383,10 +386,14 @@ export async function predict(userDictDB, pinyinCharsArray) {
     }
   );
 
+  // console.log('trans_prob = ', JSON.stringify(trans_prob));
+  // console.log();
+
   // =====================================================
+  // https://github.com/wmhst7/THU_AI_Course_Pinyin
   const total = pinyin_chars_ids.length;
   // 用于 log 平滑时所取的最小值，用于代替 0
-  const min_prob = -3.14e100;
+  const min_prob = -50;
   // pos 是目前节点的位置，word 为当前汉字即当前状态，
   // probability 为从 pre_word 上一汉字即上一状态转移到目前状态的概率
   // viterbi[pos][word] = (probability, pre_word)
@@ -453,6 +460,9 @@ export async function predict(userDictDB, pinyinCharsArray) {
     });
   }
 
+  // console.log('viterbi = ', JSON.stringify(viterbi));
+  // console.log();
+
   // 对串进行回溯即可得对应拼音的汉字
   // 结构: words[n] = [[probability, s], ...]
   const words = [];
@@ -468,6 +478,9 @@ export async function predict(userDictDB, pinyinCharsArray) {
   for (let n = last_index - 1; n > -1; n--) {
     words[n] = words[n + 1].map((pair) => viterbi[n + 1][pair[1]]);
   }
+
+  // console.log('viterbi_words = ', JSON.stringify(words));
+  // console.log();
 
   // 结构: [sum probability, [w1, w2, ..]]
   return words.reduce(
