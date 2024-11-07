@@ -19,3 +19,6 @@
 [submodule "data/Pinyin2ChineseChars"]
 	path = data/Pinyin2ChineseChars
 	url = git@github.com:crazydan-studio/Pinyin2ChineseChars.git
+[submodule "data/simple-pinyin"]
+	path = data/simple-pinyin
+	url = git@github.com:crazydan-studio/simple-pinyin.git
