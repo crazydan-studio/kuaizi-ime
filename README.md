@@ -3,7 +3,7 @@
 
 <img src="./assets/img/logo.svg" width="172px" />
 
-> - Google Play 付费购买地址: https://play.google.com/store/apps/details?id=org.crazydan.studio.app.ime.kuaizi
+> - Google Play 安装地址（永久免费）: https://play.google.com/store/apps/details?id=org.crazydan.studio.app.ime.kuaizi
 > - v1.0 内测版下载地址（永久免费，需解压）: https://github.com/crazydan-studio/kuaizi-ime/files/13194753/Kuaizi_IME-1.1.0-alpha.zip
 > - v2.0 内测版下载地址（永久免费，需解压）: https://github.com/crazydan-studio/kuaizi-ime/files/13644988/Kuaizi_IME-2.0.0-alpha.zip
 
@@ -45,6 +45,7 @@
   输入模式，以画圈方式进行拼音、英文和数字的连续输入，从而提供顺滑的输入体验
 - 所有候选字均附带显示完整的拼音，可清晰识别各个字的准确读音
 - 输入数据本地存储，不收集、不分析用户数据
+- 采用隐马尔科夫模型（Hidden Markov Models）和维特比（Viterbi）算法实现拼音输入预测
 - 仅支持精确的拼音输入匹配，**不支持**拼音联想输入和模糊匹配机制
 - 提供光标移动、文本选择、复制、粘贴、剪切等编辑功能，
   同时，支持撤回已提交至目标编辑器的输入，以便于对输入进行修正
