@@ -1,7 +1,12 @@
 import got from 'got';
 import { JSDOM } from 'jsdom';
 
-import { sleep, splitChars, hasGlyphFontForCodePoint } from './utils.mjs';
+import {
+  sleep,
+  splitChars,
+  hasGlyphFontForCodePoint,
+  naiveHTMLNodeInnerText
+} from './utils.mjs';
 
 // 根据 zdic.net 获取字的详细数据
 const baseUrl = 'https://www.zdic.net/hans/';
@@ -60,7 +65,7 @@ async function fetchWordMeta(word) {
   // 拼音
   const $pinyin = $doc.querySelectorAll('.ziif .dsk .z_py .z_d');
   $pinyin.forEach(($el) => {
-    const value = naiveInnerText($el).trim();
+    const value = naiveHTMLNodeInnerText($el).trim();
     const $audio = $el.querySelector('a[data-src-mp3]');
     const audio = ($audio && $audio.getAttribute('data-src-mp3')) || '';
 
@@ -73,7 +78,7 @@ async function fetchWordMeta(word) {
   // 注音，与拼音按顺序对应
   const $zhuyin = $doc.querySelectorAll('.ziif .dsk .z_zy .z_d');
   $zhuyin.forEach(($el) => {
-    const value = naiveInnerText($el).trim();
+    const value = naiveHTMLNodeInnerText($el).trim();
     const $audio = $el.querySelector('a[data-src-mp3]');
     const audio = ($audio && $audio.getAttribute('data-src-mp3')) || '';
 
@@ -87,7 +92,7 @@ async function fetchWordMeta(word) {
   const $totalStrokeCount = $doc.querySelector('.ziif .dsk .z_bs2 .z_ts3');
   $totalStrokeCount &&
     (wordMeta.total_stroke_count = parseInt(
-      naiveInnerText($totalStrokeCount.parentElement)
+      naiveHTMLNodeInnerText($totalStrokeCount.parentElement)
         .replaceAll(/^.+\s+/g, '')
         .trim()
     ));
@@ -95,7 +100,7 @@ async function fetchWordMeta(word) {
   // 部首、部外笔画数
   const $radical = $doc.querySelectorAll('.ziif .dsk .z_bs2 .z_ts2');
   $radical.forEach(($el) => {
-    const text = naiveInnerText($el.parentElement);
+    const text = naiveHTMLNodeInnerText($el.parentElement);
     const value = text.replaceAll(/^.+\s+/g, '').trim();
 
     if (text.includes('部首')) {
@@ -115,8 +120,8 @@ async function fetchWordMeta(word) {
       return;
     }
 
-    const parentText = naiveInnerText($el.parentElement);
-    const value = naiveInnerText($el).trim();
+    const parentText = naiveHTMLNodeInnerText($el.parentElement);
+    const value = naiveHTMLNodeInnerText($el).trim();
 
     if (parentText.includes('繁体')) {
       wordMeta.traditional = false;
@@ -134,26 +139,27 @@ async function fetchWordMeta(word) {
       return;
     }
 
-    const value = naiveInnerText($el).trim();
+    const value = naiveHTMLNodeInnerText($el).trim();
     wordMeta.variant_words.push(value);
   });
 
   // 笔顺
   const $strokeOrder = $doc.querySelector('.ziif .dsk .z_bis2');
-  $strokeOrder && (wordMeta.stroke_order = naiveInnerText($strokeOrder).trim());
+  $strokeOrder &&
+    (wordMeta.stroke_order = naiveHTMLNodeInnerText($strokeOrder).trim());
 
   // 编码信息
   const codeTitles = [];
   const $codeTitle = $doc.querySelectorAll('.ziif .dsk .dsk_2_1 > p > span');
   $codeTitle.forEach(($el) => {
-    const value = naiveInnerText($el).trim();
+    const value = naiveHTMLNodeInnerText($el).trim();
 
     codeTitles.push(value);
   });
 
   const codes = [];
   $doc.querySelectorAll('.ziif .dsk .dsk_2_1').forEach(($el) => {
-    const value = naiveInnerText($el).trim();
+    const value = naiveHTMLNodeInnerText($el).trim();
 
     if (!codeTitles.includes(value)) {
       codes.push(value);
@@ -184,7 +190,7 @@ async function fetchWordMeta(word) {
   const phrases = [];
   const $phrase = $doc.querySelectorAll('.crefe');
   $phrase.forEach((el) => {
-    const text = naiveInnerText(el).trim();
+    const text = naiveHTMLNodeInnerText(el).trim();
 
     phrases.push(text);
   });
@@ -203,30 +209,6 @@ async function fetchWordMeta(word) {
   }
 
   return wordMeta;
-}
-
-function naiveInnerText(node) {
-  // https://github.com/jsdom/jsdom/issues/1245#issuecomment-1243809196
-  // We need Node(DOM's Node) for the constants,
-  // but Node doesn't exist in the nodejs global space,
-  // and any Node instance references the constants
-  // through the prototype chain
-  const Node = node;
-
-  return node && node.childNodes
-    ? [...node.childNodes]
-        .map((node) => {
-          switch (node.nodeType) {
-            case Node.TEXT_NODE:
-              return node.textContent;
-            case Node.ELEMENT_NODE:
-              return naiveInnerText(node);
-            default:
-              return '';
-          }
-        })
-        .join(' ')
-    : '';
 }
 
 async function fetchPhraseMeta(phrase) {
@@ -254,11 +236,11 @@ async function fetchPhraseMeta(phrase) {
   const zhuyinsArray = [];
   const $duyin = $doc.querySelectorAll('.ciif p .z_ts2');
   $duyin.forEach(($el) => {
-    const text = naiveInnerText($el);
+    const text = naiveHTMLNodeInnerText($el);
     const $dicpy = $el.parentElement.querySelectorAll('.dicpy');
 
     $dicpy.forEach(($e) => {
-      naiveInnerText($e)
+      naiveHTMLNodeInnerText($e)
         .split(/[，,；]/g)
         .forEach((val) => {
           const splits = val

@@ -9,6 +9,8 @@
     "generate:raw": "node src/generate/raw/index.mjs",
     "generate:raw:debug": "node --inspect-brk src/generate/raw/index.mjs",
     "generate:emoji": "node src/generate/emoji/index.mjs",
+    "generate:phrase": "node src/generate/phrase/index.mjs",
+    "generate:phrase:debug": "node --inspect-brk src/generate/phrase/index.mjs",
     "generate:sqlite:ime": "node src/generate/sqlite/ime/index.mjs",
     "generate:sqlite:word": "node src/generate/sqlite/word/index.mjs",
     "generate:sqlite:word:debug": "node --inspect-brk src/generate/sqlite/word/index.mjs",
