@@ -51,7 +51,7 @@ async function start(userDictDB) {
     return false;
   }
 
-  const chars = pinyin.split(/\s+/g);
+  const chars = pinyin.replaceAll(/v/g, 'ü').split(/\s+/g);
   const words = await sqlite.predict(userDictDB, chars);
 
   const selectedPhrase = await select({

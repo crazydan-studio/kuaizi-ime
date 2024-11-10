@@ -1,10 +1,5 @@
-import { splitChars, appendLineToFile } from '#utils/utils.mjs';
-import {
-  saveToDB,
-  removeFromDB,
-  execSQL,
-  asyncForEach
-} from '#utils/sqlite.mjs';
+import { splitChars, appendLineToFile, asyncForEach } from '#utils/utils.mjs';
+import { saveToDB, removeFromDB, execSQL } from '#utils/sqlite.mjs';
 
 export { openDB as open, closeDB as close } from '#utils/sqlite.mjs';
 

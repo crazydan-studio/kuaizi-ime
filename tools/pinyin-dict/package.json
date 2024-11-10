@@ -18,7 +18,8 @@
     "generate:sqlite:phrase:hmm": "node src/generate/sqlite/phrase/hmm/index.mjs",
     "generate:sqlite:phrase:hmm:debug": "node --inspect-brk src/generate/sqlite/phrase/hmm/index.mjs",
     "generate:sqlite:phrase:hmm:trans": "node src/generate/sqlite/phrase/hmm/trans/index.mjs",
-    "generate:sqlite:phrase:hmm:trans:debug": "node --inspect-brk src/generate/sqlite/phrase/hmm/trans/index.mjs"
+    "generate:sqlite:phrase:hmm:trans:debug": "node --inspect-brk src/generate/sqlite/phrase/hmm/trans/index.mjs",
+    "generate:sqlite:phrase:hmm:trans_kewen": "node src/generate/sqlite/phrase/hmm/trans_kewen/index.mjs"
   },
   "author": "flytreeleft@crazydan.org",
   "license": "Apache-2.0",

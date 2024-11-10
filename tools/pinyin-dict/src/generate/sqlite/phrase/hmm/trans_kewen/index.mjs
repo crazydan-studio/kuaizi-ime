@@ -2,16 +2,16 @@
 import {
   fromRootPath,
   appendLineToFile,
+  readLineFromFile,
   getAllFiles,
-  readFile
+  readFile,
+  asyncForEach
 } from '#utils/utils.mjs';
 import { openDB, closeDB } from '#utils/sqlite.mjs';
 import { readWordsFromDB } from '../utils.mjs';
 import * as trans from './trans.mjs';
 
-// 样本文件目录。可试用样本如下：
-// - [已分词] https://raw.githubusercontent.com/InsaneLife/ChineseNLPCorpus/master/NER/MSRA/train1.txt
-// - [已分词] https://raw.githubusercontent.com/InsaneLife/ChineseNLPCorpus/master/NER/renMinRiBao/renmin.txt
+// 训练课文数据
 let phraseSamplesDir = '';
 let appendExistData = false;
 
@@ -27,7 +27,7 @@ for (let i = 0; i < args.length; i++) {
 
 if (!phraseSamplesDir) {
   console.log(
-    'Usage: npm run generate:sqlite:phrase:hmm:trans -- [-a] -f /path/to/samples/file'
+    'Usage: npm run generate:sqlite:phrase:hmm:trans_kewen -- [-a] -f /path/to/samples/file'
   );
   console.log();
 
@@ -37,7 +37,7 @@ if (!phraseSamplesDir) {
 // SQLite 字典库
 const wordDictSQLiteFile = fromRootPath('data', 'pinyin-word-dict.sqlite');
 // HMM 参数目录
-const transParamsDir = fromRootPath('data', 'hmm_params');
+const transParamsDir = fromRootPath('data', 'hmm_params/kewen');
 
 console.log();
 console.log('创建计算参数 ...');
@@ -53,12 +53,17 @@ try {
 }
 
 let transParams;
-getAllFiles(phraseSamplesDir).forEach((file) => {
+await asyncForEach(getAllFiles(phraseSamplesDir), async (file) => {
   console.log(`  - 分析文件: ${file} ...`);
 
-  const sampleText = readFile(file);
+  await readLineFromFile(file, (line) => {
+    if (!line || !line.trim()) {
+      return;
+    }
 
-  transParams = trans.countParams(sampleText, words, transParams);
+    const json = JSON.parse(line);
+    transParams = trans.countParams(json, words, transParams);
+  });
 });
 
 Object.keys(transParams).forEach((name) => {

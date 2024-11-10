@@ -1,7 +1,7 @@
 /* 对比不同版本的 SQLite 字典库的数据差异 */
-import { fromRootPath } from '#utils/utils.mjs';
+import { fromRootPath, asyncForEach } from '#utils/utils.mjs';
 
-import { openDB, closeDB, asyncForEach } from '#utils/sqlite.mjs';
+import { openDB, closeDB } from '#utils/sqlite.mjs';
 
 const oldDictDataSQLiteFile = fromRootPath(
   'data',
@@ -68,52 +68,68 @@ async function diffMetaData(oldDb, newDb) {
           );
         }
       });
+
+      Object.keys(oldData).forEach((value) => {
+        if (!newData[value]) {
+          console.log(`- ${table} => 元数据 ${value} 已被删除`);
+          return;
+        }
+      });
     }
   );
 }
 
 async function diffWordData(oldDb, newDb) {
-  await asyncForEach(
-    ['link_word_with_pinyin' /*, 'link_word_with_zhuyin'*/],
-    async (table) => {
-      const oldData = {};
-      const newData = {};
+  await asyncForEach(['pinyin_word' /*, 'zhuyin_word'*/], async (table) => {
+    const oldData = {};
+    const newData = {};
 
-      (await oldDb.all(`select * from ${table}`)).forEach((row) => {
-        const id = row.id_;
+    (await oldDb.all(`select * from ${table}`)).forEach((row) => {
+      const id = row.id_;
 
-        oldData[id] = row;
-      });
-      (await newDb.all(`select * from ${table}`)).forEach((row) => {
-        const id = row.id_;
+      oldData[id] = row;
+    });
+    (await newDb.all(`select * from ${table}`)).forEach((row) => {
+      const id = row.id_;
 
-        newData[id] = row;
-      });
+      newData[id] = row;
+    });
 
-      const genCode = (row) => {
-        return `${row.word_id_ || row.source_id_}:${
-          row.spell_id_ || row.target_id_
-        }:${row.spell_chars_id_ || row.target_chars_id_}`;
-      };
+    const genCode = (row) => {
+      return `${row.word_id_ || row.source_id_}:${
+        row.spell_id_ || row.target_id_
+      }:${row.spell_chars_id_ || row.target_chars_id_}`;
+    };
 
-      Object.keys(newData).forEach((id) => {
-        const oldRow = oldData[id];
-        const newRow = newData[id];
+    Object.keys(newData).forEach((id) => {
+      const oldRow = oldData[id];
+      const newRow = newData[id];
 
-        if (!oldRow) {
-          console.log(`- ${table} => 字数据 ${id} 为新增`);
-          return;
-        }
+      if (!oldRow) {
+        console.log(
+          `- ${table} => 字数据 ${id}:${newRow.word_}:${newRow.spell_} 为新增`
+        );
+        return;
+      }
 
-        const oldCode = genCode(oldRow);
-        const newCode = genCode(newRow);
+      const oldCode = genCode(oldRow);
+      const newCode = genCode(newRow);
 
-        if (oldCode != newCode) {
-          console.log(
-            `- ${table} => 字数据 ${id} 的组合不同: ${oldCode} -> ${newCode}`
-          );
-        }
-      });
-    }
-  );
+      if (oldCode != newCode) {
+        console.log(
+          `- ${table} => 字数据 ${id}:${newRow.word_}:${newRow.spell_} 的组合不同: ${oldCode} -> ${newCode}`
+        );
+      }
+    });
+
+    Object.keys(oldData).forEach((id) => {
+      const oldRow = oldData[id];
+      if (!newData[id]) {
+        console.log(
+          `- ${table} => 字数据 ${id}:${oldRow.word_}:${oldRow.spell_} 已被删除`
+        );
+        return;
+      }
+    });
+  });
 }

@@ -1,5 +1,6 @@
-import { saveToDB, execSQL, asyncForEach } from '#utils/sqlite.mjs';
-import { countTrans } from '#generate/sqlite/phrase/hmm/trans/trans.mjs';
+import { asyncForEach } from '#utils/utils.mjs';
+import { saveToDB, execSQL } from '#utils/sqlite.mjs';
+import { countTrans } from '#generate/sqlite/phrase/hmm/utils.mjs';
 
 export {
   openDB as open,
@@ -218,8 +219,8 @@ export async function saveUsedPhrase(userDictDB, phrase) {
         }
       });
 
-      console.log(table, JSON.stringify(data));
-      console.log();
+      // console.log(table, JSON.stringify(data));
+      // console.log();
 
       await saveToDB(userDictDB, table, data, true, primaryKeys);
     }

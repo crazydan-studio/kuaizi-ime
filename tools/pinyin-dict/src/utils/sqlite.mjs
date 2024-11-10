@@ -4,7 +4,7 @@ import sqlite3 from 'sqlite3';
 // https://www.npmjs.com/package/sqlite
 import * as sqlite from 'sqlite';
 
-import { splitChars, extractPinyinChars } from './utils.mjs';
+import { splitChars, extractPinyinChars, asyncForEach } from './utils.mjs';
 
 export async function openDB(file, readonly) {
   const db = await sqlite.open({
@@ -168,12 +168,6 @@ export async function execSQL(db, sqls) {
   await asyncForEach(sqls.split(/;/g), async (sql) => {
     await db.exec(sql);
   });
-}
-
-export async function asyncForEach(array, cb) {
-  for (const e of array) {
-    await cb(e);
-  }
 }
 
 function mapToArray(obj, disableSorting) {

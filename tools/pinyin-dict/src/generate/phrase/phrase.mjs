@@ -184,5 +184,8 @@ function cleanZi(zi) {
     .replaceAll('&nbsp;', '')
     .replaceAll('<strong>', '')
     .replaceAll('</strong>', '')
+    .replaceAll('<b>', '')
+    .replaceAll('</b>', '')
+    .replaceAll(/[。，、+]/g, '')
     .trim();
 }

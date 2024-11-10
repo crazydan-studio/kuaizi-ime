@@ -22,6 +22,12 @@ const graphemeSplitter = new GraphemeSplitter();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+export async function asyncForEach(array, cb) {
+  for (const e of array) {
+    await cb(e);
+  }
+}
+
 export function fromRootPath(...paths) {
   return path.join(__dirname, '../..', ...paths);
 }
@@ -106,6 +112,12 @@ export async function readLineFromFile(filepath, consumer) {
 }
 
 export function appendLineToFile(filepath, line, doEmpty) {
+  const dirpath = path.dirname(filepath);
+
+  if (!fs.existsSync(dirpath)) {
+    fs.mkdirSync(dirpath);
+  }
+
   if (!fs.existsSync(filepath) || doEmpty) {
     fs.writeFileSync(filepath, '');
   }
