@@ -26,7 +26,7 @@ async function init(db) {
       -- 具体读音的字 id
       -- Note：其为字典库中 字及其拼音表（link_word_with_pinyin）中的 id
       word_id_ integer not null,
-      -- 拼音字母组合 id: 方便按拼音字母搜索
+      -- 拼音字母组合 id: 方便直接按拼音字母组合搜索
       -- Note：其为字典库中 字及其拼音表（link_word_with_pinyin）中的 spell_chars_id_
       spell_chars_id_ integer not null,
 
@@ -42,10 +42,16 @@ async function init(db) {
       -- 当前拼音字 id: EOS 用 -1 代替（句尾字）
       -- Note：其为字典库中 字及其拼音表（link_word_with_pinyin）中的 id
       word_id_ integer not null,
+      -- 当前拼音字的拼音字母组合 id: 方便直接按拼音字母组合搜索
+      -- Note：其为字典库中 字及其拼音表（link_word_with_pinyin）中的 spell_chars_id_
+      word_spell_chars_id_ integer not null,
 
       -- 前序拼音字 id: BOS 用 -1 代替（句首字），__total__ 用 -2 代替
       -- Note：其为字典库中 字及其拼音表（link_word_with_pinyin）中的 id
       prev_word_id_ integer not null,
+      -- 前序拼音字的拼音字母组合 id: 方便直接按拼音字母组合搜索
+      -- Note：其为字典库中 字及其拼音表（link_word_with_pinyin）中的 spell_chars_id_
+      prev_word_spell_chars_id_ integer not null,
 
       -- 字出现的次数
       -- Note：当 word_id_ == -1 且 prev_word_id_ == -2 时，
@@ -107,16 +113,16 @@ export async function updateData(phraseDictDB, wordDictDB, hmmParams) {
   // 收集短语中 具体读音的字 的出现次数
   // {'<word id>': {'<pinyin chars id>': 12, ...}, ...}
   const phrase_words = {};
-  const collect_phrase_words = (word_id, word_pinyin) => {
+  const collect_phrase_words = (word_id, word_spell) => {
     if ([-1, -2].includes(word_id)) {
       return;
     }
 
-    const word_pinyin_chars_id = word_dict.pinyin_chars[word_pinyin];
+    const word_spell_chars_id = word_dict.pinyin_chars[word_spell];
     phrase_words[word_id] ||= {};
-    phrase_words[word_id][word_pinyin_chars_id] ||= 0;
+    phrase_words[word_id][word_spell_chars_id] ||= 0;
 
-    phrase_words[word_id][word_pinyin_chars_id] += 1;
+    phrase_words[word_id][word_spell_chars_id] += 1;
   };
 
   const pred_dict = {
@@ -133,9 +139,14 @@ export async function updateData(phraseDictDB, wordDictDB, hmmParams) {
       return;
     }
 
+    const word_spell = word_code.split(':')[1];
+    const word_spell_chars_id = word_spell
+      ? word_dict.pinyin_chars[word_spell]
+      : // 非拼音字使用字 id 表示
+        word_id;
+
     // 在转移矩阵中，同一个字会同时成为前序和后序，故而，仅收集当前字即可
-    const word_pinyin = word_code.split(':')[1];
-    collect_phrase_words(word_id, word_pinyin);
+    collect_phrase_words(word_id, word_spell);
 
     Object.keys(probs).forEach((prev_word_code) => {
       const prob_value = probs[prev_word_code];
@@ -153,9 +164,17 @@ export async function updateData(phraseDictDB, wordDictDB, hmmParams) {
         return;
       }
 
+      const prev_word_spell = prev_word_code.split(':')[1];
+      const prev_word_spell_chars_id = prev_word_spell
+        ? word_dict.pinyin_chars[prev_word_spell]
+        : // 非拼音字使用字 id 表示
+          prev_word_id;
+
       pred_dict.trans_prob[prob_code] = {
         word_id_: word_id,
+        word_spell_chars_id_: word_spell_chars_id,
         prev_word_id_: prev_word_id,
+        prev_word_spell_chars_id_: prev_word_spell_chars_id,
         value_: prob_value
       };
     });
@@ -163,13 +182,13 @@ export async function updateData(phraseDictDB, wordDictDB, hmmParams) {
 
   // 收集字与其拼音信息
   Object.keys(phrase_words).forEach((word_id) => {
-    Object.keys(phrase_words[word_id]).forEach((word_pinyin_chars_id) => {
-      const code = `${word_id}:${word_pinyin_chars_id}`;
+    Object.keys(phrase_words[word_id]).forEach((word_spell_chars_id) => {
+      const code = `${word_id}:${word_spell_chars_id}`;
 
       pred_dict.word_chars[code] = {
         word_id_: word_id,
-        spell_chars_id_: word_pinyin_chars_id,
-        weight_: phrase_words[word_id][word_pinyin_chars_id]
+        spell_chars_id_: word_spell_chars_id,
+        weight_: phrase_words[word_id][word_spell_chars_id]
       };
     });
   });
@@ -180,34 +199,33 @@ export async function updateData(phraseDictDB, wordDictDB, hmmParams) {
       {
         table: 'phrase_word',
         prop: 'word_chars',
-        primaryKeys: ['word_id_', 'spell_chars_id_']
+        primaryKeys: ['word_id_', 'spell_chars_id_'],
+        update: (data, row) => {
+          data.weight_ += row.weight_;
+        }
       },
       {
         table: 'phrase_trans_prob',
         prop: 'trans_prob',
-        primaryKeys: ['word_id_', 'prev_word_id_']
+        primaryKeys: ['word_id_', 'prev_word_id_'],
+        update: (data, row) => {
+          data.value_ += row.value_;
+        }
       }
     ],
-    async ({ table, prop, primaryKeys }) => {
+    async ({ table, prop, primaryKeys, update }) => {
       const data = pred_dict[prop];
-      const missing = [];
 
       (await phraseDictDB.all(`select * from ${table}`)).forEach((row) => {
-        const code_obj = primaryKeys.reduce((acc, key) => {
-          acc[key] = row[key];
-          return acc;
-        }, {});
         const code = primaryKeys.map((k) => row[k]).join(':');
 
-        if (!data[code]) {
-          missing.push(code_obj);
-        } else {
+        if (data[code]) {
           data[code].__exist__ = row;
+          update(data[code], row);
         }
       });
 
       await saveToDB(phraseDictDB, table, data, true, primaryKeys);
-      await removeFromDB(phraseDictDB, table, missing, primaryKeys);
     }
   );
 }

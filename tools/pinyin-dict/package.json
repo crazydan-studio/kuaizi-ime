@@ -12,6 +12,7 @@
     "generate:phrase": "node src/generate/phrase/index.mjs",
     "generate:phrase:debug": "node --inspect-brk src/generate/phrase/index.mjs",
     "generate:sqlite:ime": "node src/generate/sqlite/ime/index.mjs",
+    "generate:sqlite:ime:debug": "node --inspect-brk src/generate/sqlite/ime/index.mjs",
     "generate:sqlite:word": "node src/generate/sqlite/word/index.mjs",
     "generate:sqlite:word:debug": "node --inspect-brk src/generate/sqlite/word/index.mjs",
     "generate:sqlite:word:diff": "node src/generate/sqlite/word/diff.mjs",

@@ -57,7 +57,11 @@ export function copyFile(source, target, override) {
   fs.copyFileSync(source, target);
 }
 
-export function readJSONFromFile(filepath) {
+export function readJSONFromFile(filepath, defaultValue = {}) {
+  if (!existFile(filepath)) {
+    return defaultValue;
+  }
+
   return JSON.parse(readFile(filepath));
 }
 
@@ -70,6 +74,10 @@ export function readAllFiles(dir) {
 }
 
 export function getAllFiles(dir) {
+  if (Array.isArray(dir)) {
+    return dir.map(getAllFiles).reduce((acc, files) => acc.concat(files), []);
+  }
+
   if (fs.lstatSync(dir).isFile()) {
     return [dir];
   }

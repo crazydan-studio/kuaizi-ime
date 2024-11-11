@@ -3,31 +3,32 @@ import {
   fromRootPath,
   appendLineToFile,
   getAllFiles,
+  readJSONFromFile,
   readFile
 } from '#utils/utils.mjs';
 import { openDB, closeDB } from '#utils/sqlite.mjs';
 import { readWordsFromDB } from '../utils.mjs';
 import * as trans from './trans.mjs';
 
-// 样本文件目录。可试用样本如下：
+// 样本文件。可试用样本如下：
 // - [已分词] https://raw.githubusercontent.com/InsaneLife/ChineseNLPCorpus/master/NER/MSRA/train1.txt
 // - [已分词] https://raw.githubusercontent.com/InsaneLife/ChineseNLPCorpus/master/NER/renMinRiBao/renmin.txt
-let phraseSamplesDir = '';
+let phraseSampleFiles = [];
 let appendExistData = false;
 
 const args = process.argv.slice(2);
 for (let i = 0; i < args.length; i++) {
   const arg = args[i];
   if (arg == '-f') {
-    phraseSamplesDir = args[++i];
+    phraseSampleFiles.push(args[++i]);
   } else if (arg == '-a') {
     appendExistData = true;
   }
 }
 
-if (!phraseSamplesDir) {
+if (!phraseSampleFiles) {
   console.log(
-    'Usage: npm run generate:sqlite:phrase:hmm:trans -- [-a] -f /path/to/samples/file'
+    'Usage: npm run generate:sqlite:phrase:hmm:trans -- [-a] -f /file1 -f file2 ...'
   );
   console.log();
 
@@ -40,7 +41,7 @@ const wordDictSQLiteFile = fromRootPath('data', 'pinyin-word-dict.sqlite');
 const transParamsDir = fromRootPath('data', 'hmm_params');
 
 console.log();
-console.log('创建计算参数 ...');
+console.log(`创建计算参数${appendExistData ? '（累积更新）' : ''} ...`);
 let wordDictDB = await openDB(wordDictSQLiteFile, true);
 
 let words;
@@ -52,8 +53,14 @@ try {
   await closeDB(wordDictDB);
 }
 
-let transParams;
-getAllFiles(phraseSamplesDir).forEach((file) => {
+let transParams = appendExistData
+  ? {
+      word_prob: readJSONFromFile(transParamsDir + `/word_prob.json`),
+      trans_prob: readJSONFromFile(transParamsDir + `/trans_prob.json`)
+    }
+  : null;
+
+getAllFiles(phraseSampleFiles).forEach((file) => {
   console.log(`  - 分析文件: ${file} ...`);
 
   const sampleText = readFile(file);
@@ -64,7 +71,7 @@ getAllFiles(phraseSamplesDir).forEach((file) => {
 Object.keys(transParams).forEach((name) => {
   appendLineToFile(
     transParamsDir + `/${name}.json`,
-    JSON.stringify(transParams[name], null, 2),
+    JSON.stringify(transParams[name]),
     true
   );
 });

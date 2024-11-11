@@ -134,13 +134,12 @@ export async function saveToDB(
 }
 
 /** 删除数据 */
-export async function removeFromDB(db, table, ids, primaryKeys) {
-  if (ids.length === 0) {
+export async function removeFromDB(db, table, data, primaryKeys) {
+  if (data.length === 0) {
     return;
   }
 
   primaryKeys = primaryKeys || ['id_'];
-  const hasOnlyIdKey = primaryKeys.length == 1 && primaryKeys[0] == 'id_';
 
   const deleteStatement = await db.prepare(
     `delete from ${table} where ${primaryKeys
@@ -149,8 +148,8 @@ export async function removeFromDB(db, table, ids, primaryKeys) {
     `
   );
 
-  await asyncForEach(ids, async (id) => {
-    const params = hasOnlyIdKey ? [id] : primaryKeys.map((c) => id[c]);
+  await asyncForEach(data, async (d) => {
+    const params = typeof d == 'object' ? primaryKeys.map((c) => d[c]) : [d];
     await deleteStatement.run(...params);
   });
 
