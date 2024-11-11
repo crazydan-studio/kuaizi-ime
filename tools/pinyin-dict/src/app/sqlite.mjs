@@ -30,7 +30,7 @@ export async function init(userDictDB) {
       -- 具体读音的字 id
       -- Note：其为字典库中 字及其拼音表（link_word_with_pinyin）中的 id_
       word_id_ integer not null,
-      -- 拼音字母组合 id: 方便按拼音字母搜索
+      -- 拼音字母组合 id: 方便直接按拼音字母组合搜索
       -- Note：其为字典库中 字及其拼音表（link_word_with_pinyin）中的 spell_chars_id_
       spell_chars_id_ integer not null,
 
@@ -39,7 +39,7 @@ export async function init(userDictDB) {
       -- 用户字典中短语内的字权重：出现次数
       weight_user_ integer not null,
 
-      primary key (word_id_, spell_chars_id_)
+      primary key (word_id_)
     );
 
   -- 汉字间转移概率矩阵：当前字与前一个字的关联次数（概率在应用侧计算）
@@ -48,10 +48,16 @@ export async function init(userDictDB) {
       -- 当前拼音字 id: EOS 用 -1 代替（句尾字）
       -- Note：其为字典库中 字及其拼音表（link_word_with_pinyin）中的 id_
       word_id_ integer not null,
+      -- 当前拼音字的拼音字母组合 id: 方便直接按拼音字母组合搜索
+      -- Note：其为字典库中 字及其拼音表（link_word_with_pinyin）中的 spell_chars_id_
+      word_spell_chars_id_ integer not null,
 
       -- 前序拼音字 id: BOS 用 -1 代替（句首字），__total__ 用 -2 代替
       -- Note：其为字典库中 字及其拼音表（link_word_with_pinyin）中的 id_
       prev_word_id_ integer not null,
+      -- 前序拼音字的拼音字母组合 id: 方便直接按拼音字母组合搜索
+      -- Note：其为字典库中 字及其拼音表（link_word_with_pinyin）中的 spell_chars_id_
+      prev_word_spell_chars_id_ integer not null,
 
       -- Note：当 word_id_ == -1 且 prev_word_id_ == -2 时，
       --       其代表训练数据的句子总数，用于计算 句首字出现频率；
@@ -81,11 +87,13 @@ export async function init(userDictDB) {
     spell_chars_id_ integer not null,
     weight_app_ integer not null,
     weight_user_ integer not null,
-    primary key (word_id_, spell_chars_id_)
+    primary key (word_id_)
   );
   create table tmp_phrase_trans_prob (
     word_id_ integer not null,
+    word_spell_chars_id_ integer not null,
     prev_word_id_ integer not null,
+    prev_word_spell_chars_id_ integer not null,
     value_app_ integer not null,
     value_user_ integer not null,
     primary key (word_id_, prev_word_id_)
@@ -95,17 +103,28 @@ export async function init(userDictDB) {
   insert into tmp_phrase_word
     (word_id_, spell_chars_id_, weight_app_, weight_user_)
   select
-    word_id_, spell_chars_id_,
+    word_id_, -3,
     ifnull(app_.weight_, 0) as weight_app_,
     ifnull(user_.weight_user_, 0) as weight_user_
   from phrase.phrase_word app_
     full join phrase_word user_
-      using(word_id_, spell_chars_id_)
+      using(word_id_)
   ;
   insert into tmp_phrase_trans_prob
-    (word_id_, prev_word_id_, value_app_, value_user_)
+    (word_id_, prev_word_id_,
+      word_spell_chars_id_, prev_word_spell_chars_id_,
+      value_app_, value_user_
+    )
   select
     word_id_, prev_word_id_,
+    (case
+      when word_id_ < 0 then word_id_
+      else -3
+    end) as word_spell_chars_id_,
+    (case
+      when prev_word_id_ < 0 then prev_word_id_
+      else -3
+    end) as prev_word_spell_chars_id_,
     ifnull(app_.value_, 0) as value_app_,
     ifnull(user_.value_user_, 0) as value_user_
   from phrase.phrase_trans_prob app_
@@ -113,11 +132,41 @@ export async function init(userDictDB) {
       using(word_id_, prev_word_id_)
   ;
 
+  -- 补充拼音字的拼音字母组合 id
+  update tmp_phrase_word
+    set spell_chars_id_ = (
+      select spell_chars_id_
+      from link_word_with_pinyin
+      where id_ = tmp_phrase_word.word_id_
+    )
+    where spell_chars_id_ = -3;
+
+  update tmp_phrase_trans_prob
+    set word_spell_chars_id_ = (
+      select spell_chars_id_
+      from link_word_with_pinyin
+      where id_ = tmp_phrase_trans_prob.word_id_
+    )
+    where word_spell_chars_id_ = -3;
+
+  update tmp_phrase_trans_prob
+    set prev_word_spell_chars_id_ = (
+      select spell_chars_id_
+      from link_word_with_pinyin
+      where id_ = tmp_phrase_trans_prob.prev_word_id_
+    )
+    where prev_word_spell_chars_id_ = -3;
+
   -- 重建表会比对表做数据删除再新增会快点
   drop table phrase_word;
   alter table tmp_phrase_word rename to phrase_word;
   drop table phrase_trans_prob;
   alter table tmp_phrase_trans_prob rename to phrase_trans_prob;
+
+  -- 补充索引
+  create index idx_ph_wrd_spell_chars on phrase_word(spell_chars_id_);
+  create index idx_ph_trp_spell_chars
+    on phrase_trans_prob(word_spell_chars_id_, prev_word_spell_chars_id_);
 
   -- 空间回收
   vacuum;
@@ -132,6 +181,7 @@ export async function saveUsedPhrase(userDictDB, phrase) {
   ]);
 
   const pred_dict = {
+    phrases: {},
     word_chars: {},
     pinyin_word: { BOS: -1, EOS: -1, __total__: -2 },
     trans_prob: {}
@@ -139,9 +189,11 @@ export async function saveUsedPhrase(userDictDB, phrase) {
 
   phrase.forEach(({ id, value, spell, spell_chars_id }) => {
     const word_code = `${value}:${spell}`;
-    pred_dict.pinyin_word[word_code] = id;
 
-    const word_chars_code = `${id}:${spell_chars_id}`;
+    pred_dict.pinyin_word[word_code] = id;
+    pred_dict.phrases[word_code] = { spell_chars_id };
+
+    const word_chars_code = `${id}`;
     if (!pred_dict.word_chars[word_chars_code]) {
       pred_dict.word_chars[word_chars_code] = {
         word_id_: id,
@@ -155,16 +207,28 @@ export async function saveUsedPhrase(userDictDB, phrase) {
   Object.keys(trans_prob).forEach((word_code) => {
     const probs = trans_prob[word_code];
     const word_id = pred_dict.pinyin_word[word_code];
+    const word_spell_chars_id =
+      word_id > 0
+        ? pred_dict.phrases[word_code].spell_chars_id
+        : // 代表 EOS/BOS 的字用其 id 表示拼音字母组合
+          word_id;
 
     Object.keys(probs).forEach((prev_word_code) => {
       const prob_value = probs[prev_word_code];
       const prev_word_id = pred_dict.pinyin_word[prev_word_code];
+      const prev_word_spell_chars_id =
+        prev_word_id > 0
+          ? pred_dict.phrases[prev_word_code].spell_chars_id
+          : // 代表 EOS/BOS 的字用其 id 表示拼音字母组合
+            prev_word_id;
 
       const prob_code = `${word_id}:${prev_word_id}`;
 
       pred_dict.trans_prob[prob_code] = {
         word_id_: word_id,
+        word_spell_chars_id_: word_spell_chars_id,
         prev_word_id_: prev_word_id,
+        prev_word_spell_chars_id_: prev_word_spell_chars_id,
         value_user_: prob_value
       };
     });
@@ -175,7 +239,7 @@ export async function saveUsedPhrase(userDictDB, phrase) {
       {
         table: 'phrase_word',
         prop: 'word_chars',
-        primaryKeys: ['word_id_', 'spell_chars_id_'],
+        primaryKeys: ['word_id_'],
         create: (data) => {
           data.weight_app_ = 0;
         },
@@ -244,9 +308,8 @@ export async function predict(userDictDB, pinyinCharsArray) {
       where
         py_.spell_chars_ in (${"'" + pinyinCharsArray.join("', '") + "'"})
       order by
-        ( ifnull(ph_.weight_app_, 0) +
-          ifnull(ph_.weight_user_, 0) +
-          iif(ifnull(ph_.weight_user_, 0) > 0, ${user_phrase_base_weight}, 0)
+        ( ph_.weight_app_ + ph_.weight_user_ +
+          iif(ph_.weight_user_ > 0, ${user_phrase_base_weight}, 0)
         ) desc,
         py_.weight_ desc, py_.glyph_weight_ desc, py_.spell_id_ asc
       `)
@@ -273,87 +336,35 @@ export async function predict(userDictDB, pinyinCharsArray) {
 
   // =====================================================
   const pinyin_chars_ids = pinyinCharsArray.map((ch) => pinyin_chars[ch]);
-  const unique_pinyin_chars_ids = Array.from(new Set(pinyin_chars_ids));
 
   const trans_prob = {};
   const trans_pinyin_chars_and_words = {};
 
+  const chars_id_pairs = [];
+  const chars_ids = [-1, ...pinyin_chars_ids, -1];
+  for (let i = 1; i < chars_ids.length; i++) {
+    const prev_chars_id = chars_ids[i - 1];
+    const curr_chars_id = chars_ids[i];
+
+    chars_id_pairs.push([prev_chars_id, curr_chars_id]);
+  }
+
   await asyncForEach(
     [
       {
-        select:
-          // https://www.sqlite.org/lang_with.html
-          'with recursive\n' +
-          (() => {
-            // Note：确保构建的表是唯一的
-            const word_tables = unique_pinyin_chars_ids
-              .map(
-                (id) => `
-              word_ids_${id}(word_id_, spell_chars_id_) as (
-                select
-                  word_id_, spell_chars_id_
-                from
-                  phrase_word
-                where
-                  spell_chars_id_ = ${id}
-              )
-            `
-              )
-              .concat(
-                'word_ids_01(word_id_, spell_chars_id_) as (values(-1, null))'
-              );
-
-            const union_sqls = [];
-            // Note：确保前后序准确
-            const union_codes = {};
-            // 01 对应表 word_ids_01
-            const chars_ids = ['01', ...pinyin_chars_ids, '01'];
-
-            for (let i = 1; i < chars_ids.length; i++) {
-              const prev_chars_id = chars_ids[i - 1];
-              const curr_chars_id = chars_ids[i];
-
-              const union_code = `${prev_chars_id}_${curr_chars_id}`;
-              if (union_codes[union_code]) {
-                continue;
-              }
-              union_codes[union_code] = true;
-
-              union_sqls.push(`
-                  select
-                    prev_.word_id_ as prev_word_id_
-                    , curr_.word_id_ as curr_word_id_
-                    , curr_.spell_chars_id_ as curr_word_spell_chars_id_
-                  from
-                    word_ids_${prev_chars_id} prev_
-                      , word_ids_${curr_chars_id} curr_
-                `);
-            }
-
-            return (
-              word_tables.join(', ') +
-              (', word_ids(' +
-                ' prev_word_id_, curr_word_id_,' +
-                ' curr_word_spell_chars_id_' +
-                ') as (' +
-                union_sqls.join(' union ') +
-                ')')
-            );
-          })() +
-          `
-        select distinct
-          s_.*
-          , t_.curr_word_spell_chars_id_ as word_spell_chars_id_
+        select: `
+        select distinct *
         from
-          phrase_trans_prob s_
-          , word_ids t_
+          phrase_trans_prob
         where
-          s_.word_id_ = t_.curr_word_id_
-          and (
-            s_.prev_word_id_ = t_.prev_word_id_
-            -- 当前拼音字都包含 __total__ 列
-            or s_.prev_word_id_ = -2
-          )
+          (prev_word_spell_chars_id_, word_spell_chars_id_)
+          in (${chars_id_pairs
+            .map((pair) => `(${pair.join(', ')})`)
+            .join(', ')})
+          or
+          -- 当前拼音字都包含 __total__ 列
+          (prev_word_spell_chars_id_, word_spell_chars_id_)
+          in (${chars_id_pairs.map((pair) => `(-2, ${pair[1]})`).join(', ')})
         `,
         convert: ({
           word_id_,
@@ -370,7 +381,7 @@ export async function predict(userDictDB, pinyinCharsArray) {
             value_user_ +
             (value_user_ > 0 ? user_phrase_base_weight : 0);
 
-          if (word_spell_chars_id_) {
+          if (word_spell_chars_id_ >= 0) {
             const words = (trans_pinyin_chars_and_words[
               word_spell_chars_id_
             ] ||= []);
@@ -381,6 +392,8 @@ export async function predict(userDictDB, pinyinCharsArray) {
       }
     ],
     async ({ select, convert }) => {
+      // console.log(select);
+
       (await userDictDB.all(select)).forEach((row) => {
         convert(row);
       });

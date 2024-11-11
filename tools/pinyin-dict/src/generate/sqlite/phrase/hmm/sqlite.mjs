@@ -26,14 +26,11 @@ async function init(db) {
       -- 具体读音的字 id
       -- Note：其为字典库中 字及其拼音表（link_word_with_pinyin）中的 id
       word_id_ integer not null,
-      -- 拼音字母组合 id: 方便直接按拼音字母组合搜索
-      -- Note：其为字典库中 字及其拼音表（link_word_with_pinyin）中的 spell_chars_id_
-      spell_chars_id_ integer not null,
 
       -- 短语中的字权重：出现次数
       weight_ integer not null,
 
-      primary key (word_id_, spell_chars_id_)
+      primary key (word_id_)
     );
 
   -- 汉字间转移概率矩阵：当前字与前一个字的关联次数（概率在应用侧计算）
@@ -42,16 +39,10 @@ async function init(db) {
       -- 当前拼音字 id: EOS 用 -1 代替（句尾字）
       -- Note：其为字典库中 字及其拼音表（link_word_with_pinyin）中的 id
       word_id_ integer not null,
-      -- 当前拼音字的拼音字母组合 id: 方便直接按拼音字母组合搜索
-      -- Note：其为字典库中 字及其拼音表（link_word_with_pinyin）中的 spell_chars_id_
-      word_spell_chars_id_ integer not null,
 
       -- 前序拼音字 id: BOS 用 -1 代替（句首字），__total__ 用 -2 代替
       -- Note：其为字典库中 字及其拼音表（link_word_with_pinyin）中的 id
       prev_word_id_ integer not null,
-      -- 前序拼音字的拼音字母组合 id: 方便直接按拼音字母组合搜索
-      -- Note：其为字典库中 字及其拼音表（link_word_with_pinyin）中的 spell_chars_id_
-      prev_word_spell_chars_id_ integer not null,
 
       -- 字出现的次数
       -- Note：当 word_id_ == -1 且 prev_word_id_ == -2 时，
@@ -110,21 +101,6 @@ export async function updateData(phraseDictDB, wordDictDB, hmmParams) {
   );
 
   // =======================================================
-  // 收集短语中 具体读音的字 的出现次数
-  // {'<word id>': {'<pinyin chars id>': 12, ...}, ...}
-  const phrase_words = {};
-  const collect_phrase_words = (word_id, word_spell) => {
-    if ([-1, -2].includes(word_id)) {
-      return;
-    }
-
-    const word_spell_chars_id = word_dict.pinyin_chars[word_spell];
-    phrase_words[word_id] ||= {};
-    phrase_words[word_id][word_spell_chars_id] ||= 0;
-
-    phrase_words[word_id][word_spell_chars_id] += 1;
-  };
-
   const pred_dict = {
     word_chars: {},
     trans_prob: {}
@@ -138,15 +114,6 @@ export async function updateData(phraseDictDB, wordDictDB, hmmParams) {
       console.log('汉字间转移概率矩阵中的当前字不存在：', word_code);
       return;
     }
-
-    const word_spell = word_code.split(':')[1];
-    const word_spell_chars_id = word_spell
-      ? word_dict.pinyin_chars[word_spell]
-      : // 非拼音字使用字 id 表示
-        word_id;
-
-    // 在转移矩阵中，同一个字会同时成为前序和后序，故而，仅收集当前字即可
-    collect_phrase_words(word_id, word_spell);
 
     Object.keys(probs).forEach((prev_word_code) => {
       const prob_value = probs[prev_word_code];
@@ -164,33 +131,24 @@ export async function updateData(phraseDictDB, wordDictDB, hmmParams) {
         return;
       }
 
-      const prev_word_spell = prev_word_code.split(':')[1];
-      const prev_word_spell_chars_id = prev_word_spell
-        ? word_dict.pinyin_chars[prev_word_spell]
-        : // 非拼音字使用字 id 表示
-          prev_word_id;
-
       pred_dict.trans_prob[prob_code] = {
         word_id_: word_id,
-        word_spell_chars_id_: word_spell_chars_id,
         prev_word_id_: prev_word_id,
-        prev_word_spell_chars_id_: prev_word_spell_chars_id,
         value_: prob_value
       };
     });
   });
 
-  // 收集字与其拼音信息
-  Object.keys(phrase_words).forEach((word_id) => {
-    Object.keys(phrase_words[word_id]).forEach((word_spell_chars_id) => {
-      const code = `${word_id}:${word_spell_chars_id}`;
+  // 收集字权重信息
+  // {'<word:pinyin>': 12, ...}
+  Object.keys(hmmParams.word_prob).forEach((word_code) => {
+    const weight = hmmParams.word_prob[word_code];
+    const word_id = word_dict.pinyin_word[word_code];
 
-      pred_dict.word_chars[code] = {
-        word_id_: word_id,
-        spell_chars_id_: word_spell_chars_id,
-        weight_: phrase_words[word_id][word_spell_chars_id]
-      };
-    });
+    pred_dict.word_chars[word_id] = {
+      word_id_: word_id,
+      weight_: weight
+    };
   });
 
   // =======================================================
@@ -199,7 +157,7 @@ export async function updateData(phraseDictDB, wordDictDB, hmmParams) {
       {
         table: 'phrase_word',
         prop: 'word_chars',
-        primaryKeys: ['word_id_', 'spell_chars_id_'],
+        primaryKeys: ['word_id_'],
         update: (data, row) => {
           data.weight_ += row.weight_;
         }
