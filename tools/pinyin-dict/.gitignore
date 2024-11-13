@@ -1,6 +1,7 @@
 node_modules/
 *.log
 data/pinyin-dict.*.txt
+data/pinyin-dict-*.*.txt
 data/pinyin-*.sqlite
 data/*_params/
 result.txt
