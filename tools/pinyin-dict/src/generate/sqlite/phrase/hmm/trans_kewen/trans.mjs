@@ -6,30 +6,33 @@ import { countTrans, countWords } from '../utils.mjs';
  * trans_prob - 汉字间转移概率
  */
 export function countParams(articles, words, existParams) {
-  const clauses = readClausesFromArticles(articles, words);
-
   existParams = existParams || { word_prob: {}, trans_prob: {} };
+
+  const symbols = existParams.symbols || {};
+  const clauses = readClausesFromArticles(articles, words, symbols);
 
   return {
     // 字的出现次数
     word_prob: countWords(clauses, existParams.word_prob),
     // 当前字为 EOS 且其前序为 BOS 的转移次数即为 训练的句子总数，
     // 而各个包含 BOS 前序的字即为句首字，且其出现次数即为 BOS 的值
-    trans_prob: countTrans(clauses, existParams.trans_prob)
+    trans_prob: countTrans(clauses, existParams.trans_prob),
+    // 所用到的符号及其出现次数
+    symbols
   };
 }
 
 /**
  * @param articles <pre>[{title: [...], subtitle: [...], pargraphs: [[...], ...]}, {...}, ...]</pre>
  */
-function readClausesFromArticles(articles, words) {
+function readClausesFromArticles(articles, words, symbols) {
   let clauses = [];
 
   articles.forEach(({ title, subtitle, pargraphs }) => {
     console.log(`  - 分析文章: ${title.map((w) => w.zi).join('')}`);
 
     [title, subtitle].concat(pargraphs).forEach((p) => {
-      clauses = clauses.concat(readClausesFromPargraph(p, words));
+      clauses = clauses.concat(readClausesFromPargraph(p, words, symbols));
     });
   });
 
@@ -39,7 +42,7 @@ function readClausesFromArticles(articles, words) {
 /**
  * @param pargraph <pre>[{zi: '字', py: 'zì'}, {zi: '，'}, {...}, ...]</pre>
  */
-function readClausesFromPargraph(pargraph, words) {
+function readClausesFromPargraph(pargraph, words, symbols) {
   const clauses = [];
   const addClause = (c) => {
     c.length > 0 && clauses.push(c);
@@ -63,9 +66,14 @@ function readClausesFromPargraph(pargraph, words) {
       }
     } else if (zi == '“' && prev.py) {
       // 忽略字与字间的引号
+      symbols[zi] ||= 0;
+      symbols[zi] += 1;
     }
     // 短语结束
     else {
+      symbols[zi] ||= 0;
+      symbols[zi] += 1;
+
       if (clause.length > 0) {
         addClause(clause);
       }

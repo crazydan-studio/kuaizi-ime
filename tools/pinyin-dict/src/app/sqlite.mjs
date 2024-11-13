@@ -297,6 +297,8 @@ export async function predict(userDictDB, pinyinCharsArray) {
   const pinyin_chars = {};
   const pinyin_words = {};
 
+  // TODO 修正拼音，并对修正后的预测结果排序，提供词组可选项
+
   // ====================================================
   (
     await userDictDB.all(`
@@ -347,6 +349,8 @@ export async function predict(userDictDB, pinyinCharsArray) {
     const curr_chars_id = chars_ids[i];
 
     chars_id_pairs.push([prev_chars_id, curr_chars_id]);
+    // 当前拼音字都包含 __total__ 列，以得到其转移总数
+    chars_id_pairs.push([-2, curr_chars_id]);
   }
 
   await asyncForEach(
@@ -361,10 +365,6 @@ export async function predict(userDictDB, pinyinCharsArray) {
           in (${chars_id_pairs
             .map((pair) => `(${pair.join(', ')})`)
             .join(', ')})
-          or
-          -- 当前拼音字都包含 __total__ 列
-          (prev_word_spell_chars_id_, word_spell_chars_id_)
-          in (${chars_id_pairs.map((pair) => `(-2, ${pair[1]})`).join(', ')})
         `,
         convert: ({
           word_id_,
@@ -421,7 +421,9 @@ export async function predict(userDictDB, pinyinCharsArray) {
     const current_index = prev_index + 1;
     const current_pinyin_chars_id = pinyin_chars_ids[current_index];
     const current_word_ids =
-      trans_pinyin_chars_and_words[current_pinyin_chars_id];
+      trans_pinyin_chars_and_words[current_pinyin_chars_id] ||
+      // 处理未记录的拼音字母组合
+      pinyin_chars_and_words[current_pinyin_chars_id];
 
     // Note：句首字的前序字设为 -1
     const prev_pinyin_chars_id = pinyin_chars_ids[prev_index];
