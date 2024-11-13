@@ -3,16 +3,16 @@
 
 <img src="./assets/img/logo.svg" width="172px" />
 
-> - Google Play 安装地址（永久免费）: https://play.google.com/store/apps/details?id=org.crazydan.studio.app.ime.kuaizi
 > - v1.0 内测版下载地址（永久免费，需解压）: https://github.com/crazydan-studio/kuaizi-ime/files/13194753/Kuaizi_IME-1.1.0-alpha.zip
 > - v2.0 内测版下载地址（永久免费，需解压）: https://github.com/crazydan-studio/kuaizi-ime/files/13644988/Kuaizi_IME-2.0.0-alpha.zip
 
-> **Warning**：筷字输入法目前仅上线了 Google Play 应用商店，
-> 在国内外的其他应用发布平台均没有本团队的注册帐号，也没有在其上发布任何应用，
-> 请注意识别并警惕相关风险。此外，筷字输入法的内测版本仅在 Github
+> **Warning**：筷字输入法目前在国内外的各大应用发布平台均未上架，
+> 请注意识别并警惕相关风险。此外，筷字输入法的各个版本仅在 Github
 > 上由 [Crazydan Studio](https://github.com/crazydan-studio) 发布，
-> 本团队均未在其他平台上传 APK 安装包，若需下载试用，
-> 请注意下载链接是以 https://github.com/crazydan-studio/kuaizi-ime/files/ 开头的。
+> 本团队均未在其他平台上传 APK 安装包，若需下载试用，请直接点击以上链接。
+
+> 若有缺陷反馈和改进意见，请移步至 [Issues](https://github.com/crazydan-studio/kuaizi-ime/issues)
+> 页面。
 
 **筷字输入法** 是一款根据汉语拼音的组合特征而专门设计的、
 高效且快速的、适用于电子触屏设备的拼音输入法。
