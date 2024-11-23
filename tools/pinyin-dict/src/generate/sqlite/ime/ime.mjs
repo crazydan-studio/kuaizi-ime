@@ -6,6 +6,10 @@ export { openDB as open, closeDB as close } from '#utils/sqlite.mjs';
 // 查看表上的索引: PRAGMA index_list('MyTable');
 // 查看索引的列: PRAGMA index_info('MyIndex');
 
+// 除主键外，唯一性约束、外键约束、索引等均在 IME 客户端初始化时设置，
+// 从而降低 App 的打包大小，其相关的数据准确性由原始字典库保证。
+// Note: 在 IME 客户端，对于只读不写的表，其外键约束也可以去掉，但需添加索引
+
 /** 同步字读音信息 */
 export async function syncSpells(imeDB, rawDB) {
   await execSQL(
@@ -15,8 +19,8 @@ export async function syncSpells(imeDB, rawDB) {
   create table
     if not exists meta_pinyin_chars (
       id_ integer not null primary key,
-      value_ text not null,
-      unique (value_)
+      value_ text not null
+      -- , unique (value_)
     );
   -- 含声调的拼音：可根据 id_ 大小排序
   create table
@@ -24,9 +28,9 @@ export async function syncSpells(imeDB, rawDB) {
       id_ integer not null primary key,
       value_ text not null,
       -- 拼音字母组合 id
-      chars_id_ integer not null,
-      unique (value_),
-      foreign key (chars_id_) references meta_pinyin_chars (id_)
+      chars_id_ integer not null
+      -- , unique (value_),
+      -- foreign key (chars_id_) references meta_pinyin_chars (id_)
     );
 `
   );
@@ -44,8 +48,8 @@ export async function syncWords(imeDB, rawDB) {
     if not exists meta_word_radical (
       id_ integer not null primary key,
       value_ text not null,
-      stroke_count_ integer default 0,
-      unique (value_)
+      stroke_count_ integer default 0
+      -- , unique (value_)
     );
 
   -- --------------------------------------------------------------
@@ -58,9 +62,9 @@ export async function syncWords(imeDB, rawDB) {
       -- 是否为繁体字
       traditional_ integer default 0,
       -- 部首 id
-      radical_id_ integer default null,
-      unique (value_),
-      foreign key (radical_id_) references meta_word_radical (id_)
+      radical_id_ integer default null
+      -- , unique (value_),
+      -- foreign key (radical_id_) references meta_word_radical (id_)
     );
   create table
     if not exists meta_word_with_pinyin (
@@ -70,10 +74,10 @@ export async function syncWords(imeDB, rawDB) {
       -- 拼音 id
       spell_id_ integer not null,
       -- 字形权重：用于对相同拼音字母组合的字按字形相似性排序
-      glyph_weight_ integer default 0,
-      unique (word_id_, spell_id_),
-      foreign key (word_id_) references meta_word (id_),
-      foreign key (spell_id_) references meta_pinyin (id_)
+      glyph_weight_ integer default 0
+      -- , unique (word_id_, spell_id_),
+      -- foreign key (word_id_) references meta_word (id_),
+      -- foreign key (spell_id_) references meta_pinyin (id_)
     );
 
   -- --------------------------------------------------------------
@@ -194,6 +198,8 @@ export async function syncWords(imeDB, rawDB) {
     'link_word_with_simple_word',
     'link_word_with_traditional_word'
   ]);
+
+  // TODO 在 meta_word_with_pinyin 中记录各个拼音字的繁/简形式
 }
 
 /** 同步词组信息
@@ -308,8 +314,8 @@ export async function syncEmojis(imeDB, rawDB) {
   create table
     if not exists meta_emoji_group (
       id_ integer not null primary key,
-      value_ text not null,
-      unique (value_)
+      value_ text not null
+      -- , unique (value_)
     );
 
   create table
@@ -318,9 +324,9 @@ export async function syncEmojis(imeDB, rawDB) {
       value_ text not null,
       group_id_ interget not null,
       -- 表情关键字中的字 id（meta_word 中的 id）数组列表：二维 json 数组形式
-      keyword_ids_list_ text not null,
-      unique (value_),
-      foreign key (group_id_) references meta_emoji_group (id_)
+      keyword_ids_list_ text not null
+      -- , unique (value_),
+      -- foreign key (group_id_) references meta_emoji_group (id_)
     );
 `
   );
