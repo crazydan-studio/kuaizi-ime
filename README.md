@@ -38,6 +38,15 @@
 也有助于向世界传播中华的传统文化，加深世界友人对中华文化的认识和了解，
 同时，也让中华儿女能够对其民族文化拥有更加坚定的自信。
 
+## 开发工具
+
+- [拼音按键布局在线分析工具](./tools/analyze/README.md)
+- [拼音字典数据采集和校正程序](./tools/pinyin-dict/README.md)
+
+## License
+
+[Apache 2.0](./LICENSE)
+
 ## 功能特性
 
 - 以连续滑屏方式录入拼音，且单次录入最多仅需滑屏两次
@@ -100,12 +109,3 @@ https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/274d41dd-e858-4b71-
 ### 类 8VIM/8pen 型输入
 
 https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/534fa61e-34dc-4e81-a7d1-5eb7cc3b291f
-
-## 开发工具
-
-- [拼音按键布局在线分析工具](./tools/analyze/README.md)
-- [拼音字典数据采集和校正程序](./tools/pinyin-dict/README.md)
-
-## License
-
-[Apache 2.0](./LICENSE)
