@@ -60,6 +60,9 @@ npm run generate:phrase
 
 > 注：解压 `data/pinyin-dict-kewen-data.zip` 也可以得到已经就绪的上述文件。
 
+> 注：为表示感谢，本团队已以购买打印服务方式资助该网站
+> <img src="./images/donate-cngwzj.png" height="30"/>。
+
 - 生成 HMM 训练数据
 
 ```bash
