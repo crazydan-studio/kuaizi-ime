@@ -29,7 +29,18 @@ function readClausesFromArticles(articles, words, symbols) {
   let clauses = [];
 
   articles.forEach(({ title, subtitle, pargraphs }) => {
-    console.log(`  - 分析文章: ${title.map((w) => w.zi).join('')}`);
+    const titleText = title.map((w) => w.zi).join('');
+
+    if (
+      titleText.includes('生字表') ||
+      titleText.includes('写字表') ||
+      titleText.includes('识字表') ||
+      titleText.includes('练习版')
+    ) {
+      console.log(`  - 忽略文章: ${titleText}`);
+      return;
+    }
+    console.log(`  - 分析文章: ${titleText}`);
 
     [title, subtitle].concat(pargraphs).forEach((p) => {
       clauses = clauses.concat(readClausesFromPargraph(p, words, symbols));
@@ -59,30 +70,33 @@ function readClausesFromPargraph(pargraph, words, symbols) {
     if (py) {
       const spells = words[zi] || [];
 
-      if (spells.includes(py)) {
+      if (/\w+/.test(zi)) {
+        console.error(`  - 非汉字：${curr.zi}:${curr.py}`);
+      } else if (spells.includes(py)) {
         clause.push(`${zi}:${py}`);
       } else {
         console.error(`  - 不存在拼音字: ${curr.zi}:${curr.py}`);
       }
-    } else if (zi == '“' && prev.py) {
-      // 忽略字与字间的引号
-      symbols[zi] ||= 0;
-      symbols[zi] += 1;
-    }
-    // 短语结束
-    else {
+    } else {
       symbols[zi] ||= 0;
       symbols[zi] += 1;
 
-      if (clause.length > 0) {
-        addClause(clause);
+      // 短语结束
+      if (isClauseEnd(zi)) {
+        if (clause.length > 0) {
+          addClause(clause);
+        }
+        clause = [];
       }
-      clause = [];
     }
   }
   addClause(clause);
 
   return clauses;
+}
+
+function isClauseEnd(zi) {
+  return ['，', '。', '；', '：', '？', '！', '∶', '…'].includes(zi);
 }
 
 function getCorrectWord({ zi, py }) {
@@ -109,70 +123,6 @@ function getCorrectWord({ zi, py }) {
 
 function getCorrectPinyin({ zi, py }, prev) {
   switch (zi) {
-    case '其':
-      py = 'qí';
-      break;
-    case '实':
-      py = 'shí';
-      break;
-    case '他':
-      py = 'tā';
-      break;
-    case '朴':
-      py = 'pǔ';
-      break;
-    case '笼':
-      py = 'lóng';
-      break;
-    case '牛':
-      py = 'niú';
-      break;
-    case '妞':
-      py = 'niū';
-      break;
-    case '剔':
-      py = 'tī';
-      break;
-    case '菇':
-      py = 'gū';
-      break;
-    case '活':
-      py = 'huó';
-      break;
-    case '笛':
-      py = 'dí';
-      break;
-    case '杵':
-      py = 'chǔ';
-      break;
-    case '釭':
-      py = 'gāng';
-      break;
-    // <<<<<<<<<<<<<<<<<<<<<
-    case '碌':
-      ['lū', 'lu'].includes(py) && (py = 'lù');
-      break;
-    case '莫':
-      py == 'mo' && (py = 'mò');
-      break;
-    case '夫':
-      py == 'fu' && (py = 'fū');
-      break;
-    case '么':
-      py == 'mò' && (py = 'me');
-      break;
-    case '少':
-      py == 'shāo' && (py = 'shǎo');
-      break;
-    case '搁':
-      py == 'ge' && (py = 'gē');
-      break;
-    case '地':
-      py == 'di' && (py = 'dì');
-      break;
-    case '呵':
-      py == 'ā' && (py = 'a');
-      break;
     // <<<<<<<<<<<<<<<<<<<<<<
     case '看':
       prev.zi == zi && (py = 'kàn');
@@ -194,25 +144,71 @@ function getCorrectPinyin({ zi, py }, prev) {
     case '儿':
       ['墩', '褂', '势', '猴', '点', '劲'].includes(prev.zi) && (py = 'ér');
       break;
-    case '墩':
-      py = 'dūn';
-      break;
-    case '褂':
-      py = 'guà';
-      break;
-    case '势':
-      py = 'shì';
-      break;
-    case '猴':
-      py = 'hóu';
-      break;
-    case '点':
-      py = 'diǎn';
-      break;
-    case '劲':
-      py == 'jìnr' && (py = 'jìn');
-      break;
     // >>>>>>>>>>>>>>>>>>>>>
+    default:
+      const replacements = {
+        其: 'qí',
+        实: 'shí',
+        他: 'tā',
+        朴: 'pǔ',
+        笼: 'lóng',
+        牛: 'niú',
+        妞: 'niū',
+        剔: 'tī',
+        菇: 'gū',
+        活: 'huó',
+        笛: 'dí',
+        杵: 'chǔ',
+        釭: 'gāng',
+        墩: 'dūn',
+        褂: 'guà',
+        势: 'shì',
+        猴: 'hóu',
+        点: 'diǎn',
+        //
+        '景:ijǐng': 'jǐng',
+        '温:yùn': 'wēn',
+        '篷:peng': 'péng',
+        '蓬:peng': 'péng',
+        '晨:chen': 'chén',
+        '袋:dai': 'dài',
+        '来:lai': 'lái',
+        '枉:wang': 'wǎng',
+        '蟆:ma': 'má',
+        '铛:dang': 'dāng',
+        '闷:men': 'mèn',
+        '粱:liang': 'liáng',
+        '里:li': 'lǐ',
+        '角:gǔ': 'jiǎo',
+        '那:nàr': 'nà',
+        '时:shi': 'shí',
+        '焚:fèn': 'fén',
+        '亮:liang': 'liàng',
+        '道:dao': 'dào',
+        '家:gū': 'jiā',
+        '司:si': 'sī',
+        '上:shang': 'shàng',
+        '是:shi': 'shì',
+        '不:bu': 'bù',
+        '芦:lu': 'lú',
+        '莫:mo': 'mò',
+        '夫:fu': 'fū',
+        '么:mò': 'me',
+        '少:shāo': 'shǎo',
+        '搁:ge': 'gē',
+        '地:di': 'dì',
+        '呵:ā': 'a',
+        '劲:jìnr': 'jìn',
+        '碌:lū': 'lù',
+        '碌:lu': 'lù'
+      };
+
+      for (let key of Object.keys(replacements)) {
+        if ([zi, `${zi}:${py}`].includes(key)) {
+          py = replacements[key];
+          break;
+        }
+      }
   }
 
   return py;

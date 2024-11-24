@@ -67,7 +67,37 @@ export function patch(meta) {
     '傍:páng',
     // 王维《鹿柴》
     // https://www.cngwzj.com/pygushi/TangDai/11206/
-    '柴:zhài'
+    '柴:zhài',
+    // 礼记《虽有嘉肴》- 学学半
+    // https://www.cngwzj.com/pygushi/LiangHan/76970/
+    '学:xiào',
+    // 屈原《离骚》- 肇锡余以嘉名
+    // https://www.cngwzj.com/pygushi/XianQin/87343/
+    '锡:cì',
+    //          - 来吾道夫先路
+    '道:dǎo',
+    // 论语《不义而富且贵，于我如浮云》- 久要不忘平生之言
+    // https://www.cngwzj.com/pygushi/XianQin/88550/
+    '要:yuē',
+    // 论语《己所不欲，勿施于人》- 举皋陶
+    // https://www.cngwzj.com/pygushi/XianQin/88549/
+    '陶:yáo',
+    //           - 乡也
+    '乡:xiàng',
+    // 论语《好仁不好学，其蔽也愚》- 陈亢问
+    // https://www.cngwzj.com/pygushi/XianQin/88551/
+    '亢:gāng',
+    // 荀子《劝学》- 君子生非异也
+    // https://www.cngwzj.com/pygushi/XianQin/86629/
+    '生:xìng',
+    // 司马迁《陈涉世家》- 发闾左適戍渔阳
+    // https://www.cngwzj.com/pygushi/LiangHan/88083/
+    '適:zhé',
+    '夏:jiǎ',
+    '苦:hù',
+    // 列子《杞人忧天》- 舍然大喜
+    // https://www.cngwzj.com/pygushi/KeWen/87901/
+    '舍:shì'
   ];
 
   extraWords(added).forEach(({ value, pinyin, chars }) => {
