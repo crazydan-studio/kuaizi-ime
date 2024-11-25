@@ -179,7 +179,7 @@ group by
   radical_
 order by
   radical_stroke_count_ asc,
-  weight_ desc;
+  used_weight_ desc;
 ```
 
 - 各部首包含的字数
@@ -318,7 +318,7 @@ select distinct
   glyph_struct_, traditional_,
   radical_, radical_stroke_count_,
   stroke_order_, total_stroke_count_,
-  weight_, spell_weight_, glyph_weight_
+  used_weight_, spell_weight_, glyph_weight_
 from
   pinyin_word where spell_chars_ = 'wo'
 order by

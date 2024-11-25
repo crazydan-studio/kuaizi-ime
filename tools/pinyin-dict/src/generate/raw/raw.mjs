@@ -211,24 +211,13 @@ export function saveWordMetasToFile(file, wordMetas) {
 export function plusWordUsageWeight(wordMetas, usages) {
   wordMetas.forEach((meta) => {
     const word = meta.value;
-    // 确保字的初始权重为 null
-    [...meta.pinyins, ...meta.zhuyins].forEach((spell) => {
-      delete spell.weight;
-    });
 
     let weight = usages[word] || 0;
     if (weight <= 0) {
       return;
     }
 
-    // 以拼音内最大字数为基数，在使用权重上加上该基数，
-    // 以确保处于最后位置的常用字能够靠前排列
-    weight += 1000;
-
-    // 权重以字优先，不管读音
-    [...meta.pinyins, ...meta.zhuyins].forEach((spell) => {
-      spell.weight = weight;
-    });
+    meta.used_weight = weight;
   });
 }
 
@@ -289,7 +278,7 @@ export function calculateWordWeightByGlyph(wordMetas) {
       for (let i = 0; i < metas.length; i++) {
         const meta = metas[i];
 
-        meta.weight = radicalBaseWeight - i;
+        meta.glyph_weight = radicalBaseWeight - i;
       }
     });
 

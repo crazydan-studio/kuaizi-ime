@@ -79,7 +79,9 @@ export async function syncWords(imeDB, rawDB) {
       -- 是否为繁体字
       traditional_ integer default 0,
       -- 部首 id
-      radical_id_ integer default null
+      radical_id_ integer default null,
+      -- 字使用权重
+      used_weight_ integer default 0
       -- , unique (value_),
       -- foreign key (radical_id_) references meta_word_radical (id_)
     );
@@ -90,35 +92,14 @@ export async function syncWords(imeDB, rawDB) {
       word_id_ integer not null,
       -- 拼音 id
       spell_id_ integer not null,
-      -- 字形权重：用于对相同拼音字母组合的字按字形相似性排序
+      -- 按拼音分组计算的字形权重
       glyph_weight_ integer default 0,
       -- 当前拼音字的繁/简字的 id（对应 meta_word 表的 id_）
-      variant_id_ integer defualt null
+      variant_id_ integer default null
       -- , unique (word_id_, spell_id_),
       -- foreign key (word_id_) references meta_word (id_),
       -- foreign key (spell_id_) references meta_pinyin (id_)
     );
-
-  -- --------------------------------------------------------------
-  create view
-    if not exists link_word_with_pinyin (
-      id_,
-      word_id_,
-      spell_id_,
-      spell_chars_id_,
-      glyph_weight_,
-      variant_id_
-    ) as
-  select
-    meta_.id_,
-    meta_.word_id_,
-    meta_.spell_id_,
-    spell_.chars_id_,
-    meta_.glyph_weight_,
-    meta_.variant_id_
-  from
-    meta_word_with_pinyin meta_
-    left join meta_pinyin spell_ on spell_.id_ = meta_.spell_id_;
 
   -- --------------------------------------------------------------
   -- 字及其拼音
@@ -130,8 +111,8 @@ export async function syncWords(imeDB, rawDB) {
       spell_,
       spell_id_,
       spell_chars_id_,
+      used_weight_,
       glyph_weight_,
-      stroke_order_,
       traditional_,
       radical_,
       radical_stroke_count_,
@@ -145,8 +126,8 @@ export async function syncWords(imeDB, rawDB) {
     spell_.value_,
     spell_.id_,
     spell_.chars_id_,
+    word_.used_weight_,
     lnk_.glyph_weight_,
-    word_.stroke_order_,
     word_.traditional_,
     radical_.value_,
     radical_.stroke_count_,

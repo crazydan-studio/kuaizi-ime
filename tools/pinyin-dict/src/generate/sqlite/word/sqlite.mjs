@@ -168,8 +168,10 @@ export async function saveWords(db, wordMetas) {
       total_stroke_count_ integer default 0,
       -- 是否为繁体字
       traditional_ integer default 0,
-      -- 按字形排序的权重
-      weight_ integer default 0,
+      -- 按部首分组计算的字形权重
+      glyph_weight_ integer default 0,
+      -- 字使用权重
+      used_weight_ integer default 0,
       unique (value_),
       foreign key (radical_id_) references meta_word_radical (id_)
     );
@@ -182,10 +184,8 @@ export async function saveWords(db, wordMetas) {
       word_id_ integer not null,
       -- 拼音 id
       spell_id_ integer not null,
-      -- 字形权重：用于对相同拼音字母组合的字按字形相似性排序
+      -- 按拼音分组计算的字形权重
       glyph_weight_ integer default 0,
-      -- 按使用频率等排序的权重
-      weight_ integer default 0,
       unique (word_id_, spell_id_),
       foreign key (word_id_) references meta_word (id_),
       foreign key (spell_id_) references meta_pinyin (id_)
@@ -197,10 +197,8 @@ export async function saveWords(db, wordMetas) {
       word_id_ integer not null,
       -- 注音 id
       spell_id_ integer not null,
-      -- 字形权重：用于对相同拼音字母组合的字按字形相似性排序
+      -- 按拼音分组计算的字形权重
       glyph_weight_ integer default 0,
-      -- 按使用频率等排序的权重
-      weight_ integer default 0,
       unique (word_id_, spell_id_),
       foreign key (word_id_) references meta_word (id_),
       foreign key (spell_id_) references meta_zhuyin (id_)
@@ -273,16 +271,14 @@ export async function saveWords(db, wordMetas) {
       word_id_,
       spell_id_,
       spell_chars_id_,
-      glyph_weight_,
-      weight_
+      glyph_weight_
     ) as
   select
     meta_.id_,
     meta_.word_id_,
     meta_.spell_id_,
     spell_.chars_id_,
-    meta_.glyph_weight_,
-    meta_.weight_
+    meta_.glyph_weight_
   from
     meta_word_with_pinyin meta_
     left join meta_pinyin spell_ on spell_.id_ = meta_.spell_id_;
@@ -293,16 +289,14 @@ export async function saveWords(db, wordMetas) {
       word_id_,
       spell_id_,
       spell_chars_id_,
-      glyph_weight_,
-      weight_
+      glyph_weight_
     ) as
   select
     meta_.id_,
     meta_.word_id_,
     meta_.spell_id_,
     spell_.chars_id_,
-    meta_.glyph_weight_,
-    meta_.weight_
+    meta_.glyph_weight_
   from
     meta_word_with_zhuyin meta_
     left join meta_zhuyin spell_ on spell_.id_ = meta_.spell_id_;
@@ -315,10 +309,9 @@ export async function saveWords(db, wordMetas) {
       word_,
       word_id_,
       unicode_,
-      weight_,
+      used_weight_,
       spell_,
       spell_id_,
-      spell_weight_,
       spell_chars_,
       spell_chars_id_,
       glyph_weight_,
@@ -337,10 +330,9 @@ export async function saveWords(db, wordMetas) {
     word_.value_,
     word_.id_,
     word_.unicode_,
-    word_.weight_,
+    word_.used_weight_,
     spell_.value_,
     spell_.id_,
-    word_lnk_.weight_,
     spell_ch_.value_,
     spell_ch_.id_,
     word_lnk_.glyph_weight_,
@@ -376,10 +368,9 @@ export async function saveWords(db, wordMetas) {
       word_,
       word_id_,
       unicode_,
-      weight_,
+      used_weight_,
       spell_,
       spell_id_,
-      spell_weight_,
       spell_chars_,
       spell_chars_id_,
       glyph_weight_,
@@ -398,10 +389,9 @@ export async function saveWords(db, wordMetas) {
     word_.value_,
     word_.id_,
     word_.unicode_,
-    word_.weight_,
+    word_.used_weight_,
     spell_.value_,
     spell_.id_,
-    word_lnk_.weight_,
     spell_ch_.value_,
     spell_ch_.id_,
     word_lnk_.glyph_weight_,
@@ -489,7 +479,8 @@ export async function saveWords(db, wordMetas) {
       stroke_order_: meta.stroke_order,
       total_stroke_count_: meta.total_stroke_count,
       traditional_: meta.traditional,
-      weight_: meta.weight || 0
+      glyph_weight_: meta.glyph_weight || 0,
+      used_weight_: meta.used_weight || 0,
     };
 
     const radical = meta.radical;
@@ -590,14 +581,12 @@ export async function saveWords(db, wordMetas) {
         source.__meta__[prop].forEach((target) => {
           const word_id_ = source.id_;
           const spell_id_ = targetMetaMap[target.value];
-          const weight_ = target.weight || 0;
           const glyph_weight_ = target.glyph_weight || 0;
 
           const code = word_id_ + ':' + spell_id_;
           linkDataMap[code] = {
             word_id_,
             spell_id_,
-            weight_,
             glyph_weight_
           };
         });
