@@ -27,146 +27,93 @@ order by
 ;
 */
 
-/** 同步字读音信息 */
-export async function syncSpells(imeDB, rawDB) {
+/** 同步字信息 */
+export async function syncWords(imeDB, rawDB) {
   await execSQL(
     imeDB,
     `
-  -- 不含声调的拼音字母组合
+  -- 拼音字母组合
   create table
     if not exists meta_pinyin_chars (
       id_ integer not null primary key,
       value_ text not null
       -- , unique (value_)
     );
-  -- 含声调的拼音：可根据 id_ 大小排序
-  create table
-    if not exists meta_pinyin (
-      id_ integer not null primary key,
-      value_ text not null,
-      -- 拼音字母组合 id
-      chars_id_ integer not null
-      -- , unique (value_),
-      -- foreign key (chars_id_) references meta_pinyin_chars (id_)
-    );
-`
-  );
 
-  await syncTableData(imeDB, rawDB, ['meta_pinyin_chars', 'meta_pinyin']);
-}
-
-/** 同步字信息 */
-export async function syncWords(imeDB, rawDB) {
-  await execSQL(
-    imeDB,
-    `
-  -- Note：索引放在输入法初始化时创建，以降低索引造成的字典文件过大
+  -- 在一张表中记录拼音字的全部信息，从而降低数据库文件大小，同时消除表连接以提升查询性能
   create table
-    if not exists meta_word_radical (
+    if not exists pinyin_word (
       id_ integer not null primary key,
-      value_ text not null,
-      stroke_count_ integer default 0
-      -- , unique (value_)
-    );
-
-  -- --------------------------------------------------------------
-  create table
-    if not exists meta_word (
-      id_ integer not null primary key,
-      value_ text not null,
-      -- 笔画顺序：1 - 横，2 - 竖，3 - 撇，4 - 捺，5 - 折
-      stroke_order_ text default '',
-      -- 是否为繁体字
-      traditional_ integer default 0,
-      -- 部首 id
-      radical_id_ integer default null,
-      -- 字使用权重
-      used_weight_ integer default 0
-      -- , unique (value_),
-      -- foreign key (radical_id_) references meta_word_radical (id_)
-    );
-  create table
-    if not exists meta_word_with_pinyin (
-      id_ integer not null primary key,
-      -- 字 id
+      -- 字
+      word_ text not null,
       word_id_ integer not null,
-      -- 拼音 id
+      -- 拼音
+      spell_ text not null,
       spell_id_ integer not null,
+      spell_chars_id_ integer not null,
+      -- 字使用权重
+      used_weight_ integer default 0,
       -- 按拼音分组计算的字形权重
       glyph_weight_ integer default 0,
-      -- 当前拼音字的繁/简字的 id（对应 meta_word 表的 id_）
-      variant_id_ integer default null
-      -- , unique (word_id_, spell_id_),
-      -- foreign key (word_id_) references meta_word (id_),
-      -- foreign key (spell_id_) references meta_pinyin (id_)
+      -- 部首
+      radical_ text default null,
+      radical_stroke_count_ integer default 0,
+      -- 当前拼音字的繁/简字及其 id（对应 pinyin_word 表的 id_）
+      variant_ text default null,
+      variant_id_ integer default null,
+      traditional_ integer default 0
     );
-
-  -- --------------------------------------------------------------
-  -- 字及其拼音
-  create view
-    if not exists pinyin_word (
-      id_,
-      word_,
-      word_id_,
-      spell_,
-      spell_id_,
-      spell_chars_id_,
-      used_weight_,
-      glyph_weight_,
-      traditional_,
-      radical_,
-      radical_stroke_count_,
-      variant_,
-      variant_id_
-    ) as
-  select
-    lnk_.id_,
-    word_.value_,
-    word_.id_,
-    spell_.value_,
-    spell_.id_,
-    spell_.chars_id_,
-    word_.used_weight_,
-    lnk_.glyph_weight_,
-    word_.traditional_,
-    radical_.value_,
-    radical_.stroke_count_,
-    var_.value_,
-    lnk_.variant_id_
-  from
-    meta_word_with_pinyin lnk_
-    --
-    inner join meta_word word_ on word_.id_ = lnk_.word_id_
-    inner join meta_pinyin spell_ on spell_.id_ = lnk_.spell_id_
-    inner join meta_word_radical radical_ on radical_.id_ = word_.radical_id_
-    --
-    left join meta_word var_ on var_.id_ = lnk_.variant_id_;
 `
   );
+  await syncTableData(imeDB, rawDB, ['meta_pinyin_chars']);
 
-  await syncTableData(imeDB, rawDB, [
-    'meta_word_radical',
-    'meta_word',
-    'meta_word_with_pinyin'
-  ]);
+  // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  const dataInRawDB = {};
+  (
+    await rawDB.all(
+      `
+      select
+        lnk_.id_ as id_,
+        word_.value_ as word_,
+        word_.id_ as word_id_,
+        spell_.value_ as spell_,
+        spell_.id_ as spell_id_,
+        spell_.chars_id_ as spell_chars_id_,
+        word_.used_weight_ as used_weight_,
+        lnk_.glyph_weight_ as glyph_weight_,
+        word_.traditional_ as traditional_,
+        radical_.value_ as radical_,
+        radical_.stroke_count_ as radical_stroke_count_,
+        -- 提供字段占位，以确保做更新检查时，数据中已包含全部的字段
+        null as variant_,
+        null as variant_id_
+      from
+        meta_word_with_pinyin lnk_
+        inner join meta_word word_ on word_.id_ = lnk_.word_id_
+        inner join meta_pinyin spell_ on spell_.id_ = lnk_.spell_id_
+        inner join meta_word_radical radical_ on radical_.id_ = word_.radical_id_
+      `
+    )
+  ).forEach((row) => {
+    dataInRawDB[row.id_] = row;
+  });
+  // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
   // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  const pinyins = {};
-  (await imeDB.all(`select * from meta_pinyin`)).forEach((row) => {
-    pinyins[row.id_] = row.value_;
+  // 绑定各个拼音字的繁/简体，且繁/简体的读音需相同
+  const pinyinWords = {};
+  Object.keys(dataInRawDB).forEach((id) => {
+    const raw = dataInRawDB[id];
+
+    pinyinWords[raw.word_id_] ||= [];
+    pinyinWords[raw.word_id_].push(raw);
   });
+
   const words = {};
-  (await imeDB.all(`select * from meta_word`)).forEach((row) => {
+  (await rawDB.all(`select * from meta_word`)).forEach((row) => {
     words[row.id_] = row;
   });
   const getWord = (id) => words[id].value_;
-
-  // 在 meta_word_with_pinyin 中记录各个拼音字的繁/简形式
-  const pinyinWordMetas = {};
-  (await imeDB.all(`select * from meta_word_with_pinyin`)).forEach((row) => {
-    pinyinWordMetas[row.word_id_] ||= [];
-    pinyinWordMetas[row.word_id_].push(row);
-  });
 
   const variantWords = {};
   (
@@ -182,13 +129,13 @@ export async function syncWords(imeDB, rawDB) {
       `
     )
   ).forEach((row) => {
-    if ((pinyinWordMetas[row.source_id_] || []).length == 0) {
+    if ((pinyinWords[row.source_id_] || []).length == 0) {
       console.log(
         `字 ${getWord(row.source_id_)}:${row.source_id_} 没有拼音信息`
       );
       return;
     }
-    if ((pinyinWordMetas[row.target_id_] || []).length == 0) {
+    if ((pinyinWords[row.target_id_] || []).length == 0) {
       console.log(
         `字 ${getWord(row.target_id_)}:${row.target_id_} 没有拼音信息`
       );
@@ -217,37 +164,62 @@ export async function syncWords(imeDB, rawDB) {
     }
   });
 
-  const wordMetaData = {};
   Object.keys(variantWords).forEach((source_id_) => {
-    const variant = variantWords[source_id_];
-    const target_id_ = variant.target_id_;
+    const { target_id_ } = variantWords[source_id_];
 
-    const sources = pinyinWordMetas[source_id_];
-    const targets = pinyinWordMetas[target_id_];
+    const sources = pinyinWords[source_id_];
+    const targets = pinyinWords[target_id_];
 
     sources.forEach((source) => {
-      const existed =
-        targets.filter((target) => target.spell_id_ == source.spell_id_)
-          .length > 0;
+      const exist = targets.filter(
+        (target) => target.spell_id_ == source.spell_id_
+      )[0];
 
-      if (!existed) {
+      if (!exist) {
         console.log(
-          `拼音字 ${source.id_}:${getWord(source.word_id_)}:${
-            pinyins[source.spell_id_]
-          } 没有相同读音的繁/简体：${getWord(target_id_)}:${targets
-            .map((t) => pinyins[t.spell_id_])
+          `拼音字 ${source.id_}:${source.word_}:${
+            source.spell_
+          } 没有相同读音的繁/简体：${targets[0].word_}:${targets
+            .map((t) => t.spell_)
             .join(',')}`
         );
         return;
       }
 
-      wordMetaData[source.id_] = { ...source, variant_id_: target_id_ };
-      wordMetaData[source.id_].__exist__ = source;
+      // 绑定繁/简体的拼音字
+      source.variant_ = exist.word_;
+      source.variant_id_ = exist.id_;
     });
   });
-
-  await saveToDB(imeDB, 'meta_word_with_pinyin', wordMetaData);
   // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+  const dataInImeDB = {};
+  const missingDataInImeDB = [];
+  (await imeDB.all(`select * from pinyin_word`)).forEach((row) => {
+    const id = row.id_;
+    const raw = dataInRawDB[id];
+
+    if (raw) {
+      // 待更新
+      dataInImeDB[id] = {
+        ...raw,
+        __exist__: row
+      };
+
+      // Note: 在原始数据中仅保留待新增的
+      delete dataInRawDB[id];
+    } else {
+      // 待删除
+      missingDataInImeDB.push(id);
+    }
+  });
+
+  // 添加新数据
+  await saveToDB(imeDB, 'pinyin_word', dataInRawDB);
+  // 更新已存在数据
+  await saveToDB(imeDB, 'pinyin_word', dataInImeDB);
+  // 删除多余数据
+  await removeFromDB(imeDB, 'pinyin_word', missingDataInImeDB);
 }
 
 /** 同步词组信息

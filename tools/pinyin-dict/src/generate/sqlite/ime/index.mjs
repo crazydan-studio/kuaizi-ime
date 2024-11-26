@@ -38,9 +38,6 @@ const wordDictDB = await ime.open(wordDictSQLiteFile, true);
 const imeWordDictDB = await ime.open(wordDictImeSQLiteFile);
 
 try {
-  await ime.syncSpells(imeWordDictDB, wordDictDB);
-  console.log('- 已同步字读音信息');
-
   await ime.syncWords(imeWordDictDB, wordDictDB);
   console.log('- 已同步字信息');
 
