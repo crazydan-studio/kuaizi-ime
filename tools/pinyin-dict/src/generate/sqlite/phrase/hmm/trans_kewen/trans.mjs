@@ -30,12 +30,15 @@ function readClausesFromArticles(articles, words, symbols) {
 
   articles.forEach(({ title, subtitle, pargraphs }) => {
     const titleText = title.map((w) => w.zi).join('');
+    const subtitleText = subtitle.map((w) => w.zi).join('');
 
     if (
       titleText.includes('生字表') ||
       titleText.includes('写字表') ||
       titleText.includes('识字表') ||
-      titleText.includes('练习版')
+      titleText.includes('练习版') ||
+      subtitleText.includes('一年级') ||
+      subtitleText.includes('二年级')
     ) {
       console.log(`  - 忽略文章: ${titleText}`);
       return;

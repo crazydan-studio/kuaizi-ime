@@ -313,7 +313,7 @@ export async function predict(userDictDB, pinyinCharsArray) {
         ( ph_.weight_app_ + ph_.weight_user_ +
           iif(ph_.weight_user_ > 0, ${user_phrase_base_weight}, 0)
         ) desc,
-        py_.weight_ desc, py_.glyph_weight_ desc, py_.spell_id_ asc
+        py_.used_weight_ desc, py_.glyph_weight_ desc, py_.spell_id_ asc
       `)
   ).forEach((row) => {
     const { id_, word_, spell_, spell_chars_, spell_chars_id_ } = row;

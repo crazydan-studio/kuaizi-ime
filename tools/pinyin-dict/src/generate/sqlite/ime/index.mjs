@@ -41,9 +41,6 @@ try {
   await ime.syncWords(imeWordDictDB, wordDictDB);
   console.log('- 已同步字信息');
 
-  // await ime.syncPhrases(imeWordDictDB, wordDictDB);
-  // console.log('- 已同步词组信息');
-
   await ime.syncEmojis(imeWordDictDB, wordDictDB);
   console.log('- 已同步表情符号数据');
 } catch (e) {
