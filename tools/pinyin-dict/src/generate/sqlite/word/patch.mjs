@@ -100,6 +100,7 @@ export function patch(meta) {
     '舍:shì'
   ];
 
+  // 先增改，
   extraWords(added).forEach(({ value, pinyin, chars }) => {
     if (
       meta.value == value &&
@@ -108,7 +109,7 @@ export function patch(meta) {
       meta.pinyins.push({ value: pinyin, chars });
     }
   });
-
+  // 再删除，以避免自增 id 发生较大变动
   extraWords(deleted).forEach(({ value, pinyin }) => {
     if (meta.value == value) {
       meta.pinyins = meta.pinyins.filter((py) => py.value !== pinyin);
