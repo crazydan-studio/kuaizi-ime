@@ -3,8 +3,8 @@
 
 <img src="./assets/img/logo.svg" width="172px" />
 
-> - v1.0 内测版下载地址（永久免费，需解压）: https://github.com/crazydan-studio/kuaizi-ime/files/13194753/Kuaizi_IME-1.1.0-alpha.zip
-> - v2.0 内测版下载地址（永久免费，需解压）: https://github.com/crazydan-studio/kuaizi-ime/files/13644988/Kuaizi_IME-2.0.0-alpha.zip
+> - 最新正式版下载地址（永久免费）: https://github.com/crazydan-studio/kuaizi-ime-android/releases/download/v2.1.0/Kuaizi_IME-2.1.0.apk
+> - 查看过往版本：https://github.com/crazydan-studio/kuaizi-ime-android/releases
 
 > **Warning**：筷字输入法目前在国内外的各大应用发布平台均未上架，
 > 请注意识别并警惕相关风险。此外，筷字输入法的各个版本仅在 Github
