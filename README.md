@@ -43,6 +43,15 @@
 - [拼音按键布局在线分析工具](./tools/analyze/README.md)
 - [拼音字典数据采集和校正程序](./tools/pinyin-dict/README.md)
 
+## 项目克隆
+
+```bash
+git clone git@github.com:crazydan-studio/kuaizi-ime.git
+
+cd kuaizi-ime
+git submodule update --init android
+```
+
 ## License
 
 [Apache 2.0](./LICENSE)
