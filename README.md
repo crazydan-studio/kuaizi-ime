@@ -38,7 +38,7 @@
 也有助于向世界传播中华的传统文化，加深世界友人对中华文化的认识和了解，
 同时，也让中华儿女能够对其民族文化拥有更加坚定的自信。
 
-## 项目克隆
+## 仓库克隆
 
 ```bash
 git clone git@github.com:crazydan-studio/kuaizi-ime.git
@@ -49,10 +49,17 @@ git submodule update --init android
 
 > 具体的构建说明，请详见各模块的 README 文档。
 
-## 开发工具
+## 工程结构
 
-- [拼音按键布局在线分析工具](./tools/analyze/README.md)
-- [拼音字典数据采集和校正程序](./tools/pinyin-dict/README.md)：客户端的字/词典数据库也由该工具生成
+- [筷字输入法 Android 客户端实现](./android/README.md)：
+  完整的 Android 工程代码
+-
+- [拼音按键布局在线分析工具](./tools/analyze/README.md)：
+  用于分析拼音的字母组合结构，并验证正六边形按键的布局方案
+- [拼音字典数据采集和校正程序](./tools/pinyin-dict/README.md)：
+  采集汉字数据并生成 SQLite 数据库。筷字输入法客户端的字/词典数据库也由该工具生成
+- [第三方数据](./thirdparty/)：
+  本项目所使用的第三方字词数据
 
 ## License
 
