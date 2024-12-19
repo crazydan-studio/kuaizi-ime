@@ -2,6 +2,11 @@
   "name": "pinyin-dict",
   "version": "0.1.0",
   "description": "Pinyin dictionary maker",
+  "author": "flytreeleft@crazydan.org",
+  "license": "Apache-2.0",
+  "imports": {
+    "#*": "./src/*"
+  },
   "scripts": {
     "app:shell": "node src/app/shell.mjs",
     "app:shell:debug": "node --inspect-brk src/app/shell.mjs",
@@ -21,11 +26,6 @@
     "generate:sqlite:phrase:hmm:trans": "node src/generate/sqlite/phrase/hmm/trans/index.mjs",
     "generate:sqlite:phrase:hmm:trans:debug": "node --inspect-brk src/generate/sqlite/phrase/hmm/trans/index.mjs",
     "generate:sqlite:phrase:hmm:trans_kewen": "node src/generate/sqlite/phrase/hmm/trans_kewen/index.mjs"
-  },
-  "author": "flytreeleft@crazydan.org",
-  "license": "Apache-2.0",
-  "imports": {
-    "#*": "./src/*"
   },
   "dependencies": {
     "@inquirer/prompts": "^3.3.0",

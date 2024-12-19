@@ -1,10 +1,38 @@
 拼音字典数据采集和校正程序
 =========================
 
-## 项目初始化
+## 快速开始
+
+- 构建字/词典库
 
 ```bash
-yarn install
+# 安装依赖
+npm install
+
+# 解压原始数据
+unzip data/pinyin-dict-data-word.zip -d data
+unzip data/pinyin-dict-data-phrase.zip -d data
+unzip data/pinyin-dict-db.zip -d data
+
+# 更新/生成全量字典库
+npm run generate:sqlite:word
+
+# 构建 HMM 词典库
+npm run generate:sqlite:phrase:hmm:trans_kewen \
+  -- -f data/pinyin-dict-kewen.raw.txt \
+&& npm run generate:sqlite:phrase:hmm
+```
+
+- 功能本地验证
+
+```bash
+npm run app:shell
+```
+
+- 为客户端生成专用的字/词典库
+
+```bash
+npm run generate:sqlite:ime
 ```
 
 ## 数据处理
@@ -21,7 +49,7 @@ npm run generate:raw
 >   否则，仅更新 `data/pinyin-dict.valid.txt` 的数据；
 > - 涉及按字形排序等的权重计算，故而生成时间会比较长；
 
-> 注：解压 `data/pinyin-dict-data.zip` 也可以得到已经就绪的上述文件。
+> 注：解压 `data/pinyin-dict-data-word.zip` 也可以得到已经就绪的上述文件。
 
 - 从 [EmojiXD](https://emojixd.com/) 抓取表情符号，
   并将 json 数据存放在 `data/emotions.json` 中：
@@ -58,7 +86,7 @@ npm run generate:phrase
 > `data/pinyin-dict-kewen.raw.txt`（小学课文）中，每一行都为
 > JSON 数组，数组元素为课文内容及其字的拼音。
 
-> 注：解压 `data/pinyin-dict-kewen-data.zip` 也可以得到已经就绪的上述文件。
+> 注：解压 `data/pinyin-dict-data-phrase.zip` 也可以得到已经就绪的上述文件。
 
 > 注：为表示感谢，本团队已以购买打印服务方式资助该网站
 > <img src="./images/donate-cngwzj.png" height="30"/>。
