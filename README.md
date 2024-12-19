@@ -51,8 +51,9 @@ git submodule update --init android
 
 ## 工程结构
 
-- [筷字输入法 Android 客户端实现](./android/README.md)：
-  完整的 Android 工程代码
+- [筷字输入法 Android 客户端实现](./android)：
+  完整的 Android 工程代码。注：使用命令 `git submodule update --init android`
+  拉取工程代码
 -
 - [拼音按键布局在线分析工具](./tools/analyze/README.md)：
   用于分析拼音的字母组合结构，并验证正六边形按键的布局方案
