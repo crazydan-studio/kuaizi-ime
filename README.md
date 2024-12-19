@@ -38,11 +38,6 @@
 也有助于向世界传播中华的传统文化，加深世界友人对中华文化的认识和了解，
 同时，也让中华儿女能够对其民族文化拥有更加坚定的自信。
 
-## 开发工具
-
-- [拼音按键布局在线分析工具](./tools/analyze/README.md)
-- [拼音字典数据采集和校正程序](./tools/pinyin-dict/README.md)
-
 ## 项目克隆
 
 ```bash
@@ -52,9 +47,26 @@ cd kuaizi-ime
 git submodule update --init android
 ```
 
+> 具体的构建说明，请详见各模块的 README 文档。
+
+## 开发工具
+
+- [拼音按键布局在线分析工具](./tools/analyze/README.md)
+- [拼音字典数据采集和校正程序](./tools/pinyin-dict/README.md)：客户端的字/词典数据库也由该工具生成
+
 ## License
 
 [Apache 2.0](./LICENSE)
+
+## 友情赞助
+
+**注**：赞助时请添加备注信息 `筷字输入法`。
+
+详细的赞助清单请查看[《友情赞助清单》](https://github.com/crazydan-studio/kuaizi-ime/blob/master/docs/donate/index.md)。
+
+| 支付宝 | 微信支付 |
+| -- | -- |
+| <img src="https://github.com/crazydan-studio/kuaizi-ime/blob/master/docs/donate/alipay.jpg?raw=true" width="200px"/> | <img src="https://github.com/crazydan-studio/kuaizi-ime/blob/master/docs/donate/wechat.png?raw=true" width="200px"/> |
 
 ## 功能特性
 
