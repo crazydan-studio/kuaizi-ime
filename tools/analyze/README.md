@@ -20,7 +20,7 @@ npx http-server
 
 > 代码为 [char-tree.js](./char-tree.js)。
 
-![](../../assets/img/pinyin-char-tree.png)
+![](./img/pinyin-char-tree.png)
 
 ## 汉语拼音字母组合树
 
@@ -29,7 +29,7 @@ npx http-server
 
 > 代码为 [char-links.js](./char-links.js)。
 
-![](../../assets/img/pinyin-char-links.png)
+![](./img/pinyin-char-links.png)
 
 ## 汉语拼音划词模拟
 
@@ -38,7 +38,7 @@ npx http-server
 
 > 代码为 [simulate.js](./simulate.js)。
 
-![](../../assets/img/pinyin-key-layout.png)
+![](./img/pinyin-key-layout.png)
 
 ## 外部资料
 

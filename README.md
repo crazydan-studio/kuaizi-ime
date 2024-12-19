@@ -1,7 +1,7 @@
 筷字（Kuaizi）输入法
 =======================================
 
-<img src="./assets/img/logo.svg" width="172px" />
+<img src="./logo.svg" width="172px" />
 
 > - 最新正式版下载地址（永久免费）: https://github.com/crazydan-studio/kuaizi-ime-android/releases/download/v2.1.0/Kuaizi_IME-2.1.0.apk
 > - 查看过往版本：https://github.com/crazydan-studio/kuaizi-ime-android/releases
