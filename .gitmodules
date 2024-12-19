@@ -1,3 +1,9 @@
 [submodule "android"]
 	path = android
 	url = git@github.com:crazydan-studio/kuaizi-ime-android.git
+[submodule "thirdparty/OpenCC"]
+	path = thirdparty/OpenCC
+	url = git@github.com:crazydan-studio/OpenCC.git
+[submodule "thirdparty/pinyin-data"]
+	path = thirdparty/pinyin-data
+	url = git@github.com:crazydan-studio/pinyin-data.git
