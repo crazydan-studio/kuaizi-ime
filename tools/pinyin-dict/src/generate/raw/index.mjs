@@ -13,16 +13,16 @@ import {
 
 // 采用 汉典网(http://zdic.net/) 的数据
 // https://github.com/mozillazg/pinyin-data/blob/master/zdic.txt
-const pinyinDataFile = fromRootPath('../..', 'data/pinyin-data/zdic.txt');
+const pinyinDataFile = fromRootPath('../..', 'thirdparty/pinyin-data/zdic.txt');
 // 繁->简 转换数据，用于确定繁体字
 // https://github.com/BYVoid/OpenCC/blob/master/data/dictionary/TSCharacters.txt
 const tradToSimpleDataFile = fromRootPath(
   '../..',
-  'data/OpenCC/data/dictionary/TSCharacters.txt'
+  'thirdparty/OpenCC/data/dictionary/TSCharacters.txt'
 );
 // 字/词的使用权重
-const wordUsageDataFile = fromRootPath('../..', 'data/hanzi-weight.txt');
-const phraseUsageDataFile = fromRootPath('../..', 'data/hanzi-weight.ciyu.txt');
+const wordUsageDataFile = fromRootPath('../..', 'thirdparty/hanzi-weight.txt');
+const phraseUsageDataFile = fromRootPath('../..', 'thirdparty/hanzi-weight.ciyu.txt');
 
 // 包含完整拼音和字信息的文本文件
 const dictDataRawFile = fromRootPath('data', 'pinyin-dict.raw.txt');

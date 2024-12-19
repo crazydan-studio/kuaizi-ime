@@ -3,6 +3,17 @@
 
 ## 快速开始
 
+- 拉取外部仓库代码
+
+```bash
+# Note: 在当前 git 仓库的根目录中执行
+git submodule \
+  update --init \
+  android \
+  thirdparty/OpenCC \
+  thirdparty/pinyin-data
+```
+
 - 构建字/词典库
 
 ```bash
@@ -89,7 +100,7 @@ npm run generate:phrase
 > 注：解压 `data/pinyin-dict-data-phrase.zip` 也可以得到已经就绪的上述文件。
 
 > 注：为表示感谢，本团队已以购买打印服务方式资助该网站
-> <img src="./images/donate-cngwzj.png" height="30"/>。
+> <img src="./docs/img/donate-cngwzj.png" height="30"/>。
 
 - 生成 HMM 训练数据
 
@@ -633,6 +644,23 @@ vacuum;
 -- 检查新旧版本数据是否存在差异（注意修改新旧数据库文件名）: npm run generate:sqlite:word:diff
 ```
 
-## License
+## 参考资料
 
-[Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0)
+- [mozillazg/pinyin-data](https://github.com/mozillazg/pinyin-data):
+  汉字拼音数据。注：本工具以该项目 `zdic.txt` 中的汉字为基础数据，从汉典网拉取详细的字信息
+- [BYVoid/OpenCC](https://github.com/BYVoid/OpenCC):
+  中文簡繁轉換開源項目，支持詞彙級別的轉換、異體字轉換和地區習慣用詞轉換（中國大陸、臺灣、香港、日本新字體）。
+  注：本工具根据该项目 `data/dictionary/TSCharacters.txt` 中的数据确定繁/简字的转换关系
+-
+- [OrangeX4/simple-pinyin](https://github.com/OrangeX4/simple-pinyin):
+  简易拼音输入法（拼音转汉字），基于隐马尔可夫模型（HMM）做输入短语预测，含详细的 HMM 算法说明
+- [letiantian/Pinyin2Hanzi](https://github.com/letiantian/Pinyin2Hanzi):
+  拼音转汉字，可以作为拼音输入法的转换引擎，兼容 Python 2、Python 3
+- [iseesaw/Pinyin2ChineseChars](https://github.com/iseesaw/Pinyin2ChineseChars):
+  实现基于 Bigram+HMM 的拼音汉字转换系统
+- [theajack/cnchar](https://github.com/theajack/cnchar):
+  功能全面的汉字工具库 (拼音 笔画 偏旁 成语 语音 可视化等)
+- [mozillazg/phrase-pinyin-data](https://github.com/mozillazg/phrase-pinyin-data):
+  词语拼音数据
+- [secsilm/zi-dataset](https://github.com/secsilm/zi-dataset):
+  汉字数据集，包括汉字的相关信息，例如笔画数、部首、拼音、英文释义/同义词等
