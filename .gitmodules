@@ -1,24 +1,3 @@
 [submodule "android"]
 	path = android
 	url = git@github.com:crazydan-studio/kuaizi-ime-android.git
-[submodule "data/OpenCC"]
-	path = data/OpenCC
-	url = git@github.com:crazydan-studio/OpenCC.git
-[submodule "data/cnchar"]
-	path = data/cnchar
-	url = git@github.com:crazydan-studio/cnchar.git
-[submodule "data/phrase-pinyin-data"]
-	path = data/phrase-pinyin-data
-	url = git@github.com:crazydan-studio/phrase-pinyin-data.git
-[submodule "data/pinyin-data"]
-	path = data/pinyin-data
-	url = git@github.com:crazydan-studio/pinyin-data.git
-[submodule "data/zi-dataset"]
-	path = data/zi-dataset
-	url = git@github.com:crazydan-studio/zi-dataset.git
-[submodule "data/Pinyin2ChineseChars"]
-	path = data/Pinyin2ChineseChars
-	url = git@github.com:crazydan-studio/Pinyin2ChineseChars.git
-[submodule "data/simple-pinyin"]
-	path = data/simple-pinyin
-	url = git@github.com:crazydan-studio/simple-pinyin.git
