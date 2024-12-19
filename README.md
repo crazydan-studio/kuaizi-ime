@@ -51,16 +51,18 @@ git submodule update --init android
 
 ## 工程结构
 
-- [android/](https://github.com/crazydan-studio/kuaizi-ime-android)：
+- [android/](https://github.com/crazydan-studio/kuaizi-ime-android):
   筷字输入法 Android 客户端的完整工程代码。注：使用命令 `git submodule update --init android`
   初始化该 git 子模块
 -
-- [拼音按键布局在线分析工具](./tools/analyze/README.md)：
-  用于分析拼音的字母组合结构，并验证正六边形按键的布局方案
-- [拼音字典数据采集和校正程序](./tools/pinyin-dict/README.md)：
-  采集汉字数据并生成 SQLite 数据库。筷字输入法客户端的字/词典数据库也由该工具生成
-- [第三方数据](./thirdparty/)：
-  本项目所使用的第三方字词数据
+- [tools/analyze/](./tools/analyze/):
+  拼音按键布局在线分析工具，用于分析拼音的字母组合结构，并验证正六边形按键的布局方案
+- [tools/pinyin-dict/](./tools/pinyin-dict/):
+  拼音字典数据采集和校正程序，采集汉字数据并生成 SQLite 数据库。筷字输入法客户端的字/词典数据库也由该工具生成
+- [thirdparty/](./thirdparty/):
+  本项目所使用的第三方字词数据。注：使用命令
+  `git submodule update --init thirdparty/OpenCC thirdparty/pinyin-data`
+  初始化该目录内的 git 子模块
 
 ## License
 
