@@ -95,7 +95,7 @@ git submodule update --init android
 - 支持直接输入括号、引号等配对的标点符号，并自动将选中内容包裹在配对符号中
 - 在拉丁字符与汉字、操作数与运算符之间自动添加空格，以规范输入格式
 
-https://github.com/user-attachments/assets/4fa34706-5568-4a5e-a05c-9c2d7c58ae19
+https://github.com/user-attachments/assets/76294549-8fb2-437f-9c9f-349961f39e64
 
 > Note: 以上音频和字幕由 [GitPodcast](https://www.gitpodcast.com/)
 > 生成，最终的视频则是通过 [Veed](https://www.veed.io) 制作而成。
