@@ -37,6 +37,18 @@ function readClausesFromArticles(articles, words, symbols) {
       titleText.includes('写字表') ||
       titleText.includes('识字表') ||
       titleText.includes('练习版') ||
+      titleText.includes('唐诗') ||
+      titleText.includes('诗词') ||
+      titleText.includes('诗歌') ||
+      titleText.includes('词四首') ||
+      titleText.includes('课文版') ||
+      titleText.includes('世说新语') ||
+      titleText.includes('短诗') ||
+      titleText.includes('庄子') ||
+      titleText.includes('老子') ||
+      titleText.includes('离骚') ||
+      titleText.includes('一年级') ||
+      titleText.includes('二年级') ||
       subtitleText.includes('一年级') ||
       subtitleText.includes('二年级')
     ) {
