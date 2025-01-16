@@ -101,7 +101,6 @@ https://github.com/user-attachments/assets/c5a3c769-0e6d-42e1-bc2f-babe85607bfb
 > 生成，最终的视频则是通过 [Veed](https://www.veed.io) 制作而成。
 
 <img src="https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/766cea91-5a1b-48d5-9ce0-d921a43fefe3" height="300"/>
-<img src="https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/b21413f0-1357-426f-b536-d5bfe6b47f2f" height="300"/>
 <img src="https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/eef674fb-b41c-4514-9167-37b9b88cfe8a" height="300"/>
 <img src="https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/8ecd285d-aa9a-4274-b5f9-879bc20b0ab5" height="300"/>
 <img src="https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/643016b6-462b-4079-93d5-50a54a97de1b" height="300"/>
@@ -133,10 +132,6 @@ https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/7fff6ddf-9e10-408f-
 ### 配对符号输入
 
 https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/97b0f99b-92e1-4b28-a5b6-d45150c4bada
-
-### 英文/拼音输入补全
-
-https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/c77c37e8-054c-41f7-a5ba-db407964fb60
 
 ### 拼音输入提交选项
 
