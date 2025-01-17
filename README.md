@@ -3,7 +3,7 @@
 
 <img src="./logo.svg" width="172px" />
 
-> - 最新正式版下载地址（永久免费）: https://github.com/crazydan-studio/kuaizi-ime-android/releases/download/v3.0.0/Kuaizi_IME-3.0.0.apk
+> - 最新正式版下载地址（永久免费）: https://github.com/crazydan-studio/kuaizi-ime-android/releases/download/v3.0.1/Kuaizi_IME-3.0.1.apk
 > - 查看过往版本：https://github.com/crazydan-studio/kuaizi-ime-android/releases
 
 > **Warning**：筷字输入法目前在国内外的各大应用发布平台均未上架，
@@ -72,11 +72,11 @@ git submodule update --init android
 
 **注**：赞助时请添加备注信息 `筷字输入法`。
 
-详细的赞助清单请查看[《友情赞助清单》](https://github.com/crazydan-studio/kuaizi-ime/blob/master/docs/donate/index.md)。
+详细的赞助清单请查看[《友情赞助清单》](./docs/donate/index.md)。
 
 | 支付宝 | 微信支付 |
 | -- | -- |
-| <img src="https://github.com/crazydan-studio/kuaizi-ime/blob/master/docs/donate/alipay.jpg?raw=true" width="200px"/> | <img src="https://github.com/crazydan-studio/kuaizi-ime/blob/master/docs/donate/wechat.png?raw=true" width="200px"/> |
+| <img src="./docs/donate/alipay.jpg?raw=true" width="200px"/> | <img src="./docs/donate/wechat.png?raw=true" width="200px"/> |
 
 ## 功能特性
 
@@ -100,14 +100,14 @@ https://github.com/user-attachments/assets/c5a3c769-0e6d-42e1-bc2f-babe85607bfb
 > Note: 以上音频和字幕由 [GitPodcast](https://www.gitpodcast.com/)
 > 生成，最终的视频则是通过 [Veed](https://www.veed.io) 制作而成。
 
-<img src="https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/766cea91-5a1b-48d5-9ce0-d921a43fefe3" height="300"/>
-<img src="https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/eef674fb-b41c-4514-9167-37b9b88cfe8a" height="300"/>
-<img src="https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/8ecd285d-aa9a-4274-b5f9-879bc20b0ab5" height="300"/>
-<img src="https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/643016b6-462b-4079-93d5-50a54a97de1b" height="300"/>
-<img src="https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/4e0afd48-d9e9-4b84-a17d-bd8f570bbadc" height="300"/>
-<img src="https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/e13c6f18-c9e1-4141-bed2-2024ac77782f" height="300"/>
-<img src="https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/04cb3b6b-343a-4174-8521-ca1b34afa175" height="300"/>
-<img src="https://github.com/crazydan-studio/kuaizi-ime/assets/1321315/039ff5f0-a134-49ec-a4fc-3060bf6d5485" height="300"/>
+<img src="./docs/image/kuaizi_ime_pinyin_slipping_input.png" height="300"/>
+<img src="./docs/image/kuaizi_ime_editor_editing.png" height="300"/>
+<img src="./docs/image/kuaizi_ime_has_many_emojis.png" height="300"/>
+<img src="./docs/image/kuaizi_ime_candidates_and_emojis.png" height="300"/>
+<img src="./docs/image/kuaizi_ime_pair_symbols.png" height="300"/>
+<img src="./docs/image/kuaizi_ime_latin_case_input.png" height="300"/>
+<img src="./docs/image/kuaizi_ime_math_expr_input.png" height="300"/>
+<img src="./docs/image/kuaizi_ime_x_pad_input.png" height="300"/>
 
 ## 功能演示
 
