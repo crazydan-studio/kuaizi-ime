@@ -100,14 +100,7 @@ https://github.com/user-attachments/assets/c5a3c769-0e6d-42e1-bc2f-babe85607bfb
 > Note: 以上音频和字幕由 [GitPodcast](https://www.gitpodcast.com/)
 > 生成，最终的视频则是通过 [Veed](https://www.veed.io) 制作而成。
 
-<img src="./docs/image/kuaizi_ime_pinyin_slipping_input.png" height="300"/>
-<img src="./docs/image/kuaizi_ime_editor_editing.png" height="300"/>
-<img src="./docs/image/kuaizi_ime_has_many_emojis.png" height="300"/>
-<img src="./docs/image/kuaizi_ime_candidates_and_emojis.png" height="300"/>
-<img src="./docs/image/kuaizi_ime_pair_symbols.png" height="300"/>
-<img src="./docs/image/kuaizi_ime_latin_case_input.png" height="300"/>
-<img src="./docs/image/kuaizi_ime_math_expr_input.png" height="300"/>
-<img src="./docs/image/kuaizi_ime_x_pad_input.png" height="300"/>
+<img src="./docs/image/kuaizi_ime_pinyin_slipping_input.png" height="300"/> <img src="./docs/image/kuaizi_ime_editor_editing.png" height="300"/> <img src="./docs/image/kuaizi_ime_has_many_emojis.png" height="300"/> <img src="./docs/image/kuaizi_ime_candidates_and_emojis.png" height="300"/> <img src="./docs/image/kuaizi_ime_pair_symbols.png" height="300"/> <img src="./docs/image/kuaizi_ime_latin_case_input.png" height="300"/> <img src="./docs/image/kuaizi_ime_math_expr_input.png" height="300"/> <img src="./docs/image/kuaizi_ime_x_pad_input.png" height="300"/>
 
 ## 功能演示
 
