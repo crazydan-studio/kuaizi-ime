@@ -6,10 +6,12 @@
 > - 最新正式版下载地址（永久免费）: https://github.com/crazydan-studio/kuaizi-ime-android/releases/download/v3.0.1/Kuaizi_IME-3.0.1.apk
 > - 查看过往版本：https://github.com/crazydan-studio/kuaizi-ime-android/releases
 
-> **Warning**：筷字输入法目前在国内外的各大应用发布平台均未上架，
-> 请注意识别并警惕相关风险。此外，筷字输入法的各个版本仅在 Github
-> 上由 [Crazydan Studio](https://github.com/crazydan-studio) 发布，
-> 本团队均未在其他平台上传 APK 安装包，若需下载试用，请直接点击以上链接。
+[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
+  alt="Get it on F-Droid"
+  height="80">](https://f-droid.org/packages/org.crazydan.studio.app.ime.kuaizi)
+
+> **Warning**：筷字输入法目前仅发布在 [F-Droid](https://f-droid.org) 上，并未发布在其他应用平台，
+> 请注意识别并警惕相关风险，若需下载使用，请直接点击以上链接。
 
 > 若有缺陷反馈和改进意见，请移步至 [Issues](https://github.com/crazydan-studio/kuaizi-ime/issues)
 > 页面。
