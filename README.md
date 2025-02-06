@@ -3,7 +3,7 @@
 
 <img src="./logo.svg" width="172px" />
 
-> - 最新正式版下载地址（永久免费）: https://github.com/crazydan-studio/kuaizi-ime-android/releases/download/v3.0.4/Kuaizi_IME-3.0.4.apk
+> - 最新正式版下载地址（永久免费）: https://github.com/crazydan-studio/kuaizi-ime-android/releases/latest/download/Kuaizi_IME-3.0.4.apk
 > - 查看过往版本：https://github.com/crazydan-studio/kuaizi-ime-android/releases
 
 [<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
