@@ -548,10 +548,156 @@ j|14|ji,jia,jie,jin,jiu,jian,jiao,jing,jiang,jiong,ju,jue,jun,juan
 q|14|qi,qia,qie,qin,qiu,qian,qiao,qing,qiang,qiong,qu,que,qun,quan
 x|14|xi,xia,xie,xin,xiu,xian,xiao,xing,xiang,xiong,xu,xue,xun,xuan
 f|10|fa,fan,fang,fei,fen,feng,fiao,fo,fou,fu
-w|9|wa,wai,wan,wang,wei,wen,weng,wo,wu
-a|5|a,ai,an,ang,ao
-e|5|e,ei,en,eng,er
-o|2|o,ou
+w| 9|wa,wai,wan,wang,wei,wen,weng,wo,wu
+a| 5|a,ai,an,ang,ao
+e| 5|e,ei,en,eng,er
+o| 2|o,ou
+```
+
+- 韵母可与哪些声母组合
+
+```sql
+select
+  PRINTF('%5s', follow_) || ' ',
+  PRINTF('%02d', count(start_)) as start_total_,
+  ' ' || group_concat (start_)
+from
+  (
+    select distinct
+      substr (value_, 2) as follow_,
+      substr (value_, 1, 1) as start_
+    from
+      meta_pinyin_chars
+    where
+      substr (value_, 1, 2) not in ('ch', 'zh', 'sh')
+    union
+    select distinct
+      substr (value_, 3) as follow_,
+      substr (value_, 1, 2) as start_
+    from
+      meta_pinyin_chars
+    where
+      substr (value_, 1, 2) in ('ch', 'zh', 'sh')
+  )
+group by
+  follow_
+order by
+  start_total_ asc,
+  follow_ asc;
+```
+
+以上输出结果为：
+
+```
+      |05| a,e,m,n,o
+    g |01| n
+    m |01| h
+    r |01| e
+    n |02| a,e
+    ü |02| l,n
+   üe |02| l,n
+ iong |03| j,q,x
+   ng |03| a,e,h
+   ue |04| j,q,x,y
+   ia |05| d,j,l,q,x
+ iang |05| j,l,n,q,x
+  uai |06| g,h,k,  zh,ch,sh
+ uang |06| g,h,k,  zh,ch,sh
+   iu |07| d,j,l,m,n,q,x
+   ua |07| g,h,k,r,  zh,ch,sh
+    o |08| a,b,f,l,m,p,w,y
+   in |09| b,j,l,m,n,p,q,x,y
+  ian |10| b,d,j,l,m,n,p,q,t,x
+   ie |10| b,d,j,l,m,n,p,q,t,x
+  iao |11| b,d,f,j,l,m,n,p,q,t,x
+  ing |11| b,d,j,l,m,n,p,q,t,x,y
+   ui |12| c,d,g,h,k,r,s,t,z,  zh,ch,sh
+   ei |14| b,d,f,g,h,k,l,m,n,p,w,z,  zh,sh
+  ong |14| c,d,g,h,k,l,n,r,s,t,y,z,  zh,ch
+   uo |14| c,d,g,h,k,l,n,r,s,t,z,  zh,ch,sh
+    e |16| c,d,g,h,k,l,m,n,r,s,t,y,z,  zh,ch,sh
+   ai |17| b,c,d,g,h,k,l,m,n,p,s,t,w,z,  zh,ch,sh
+   en |17| b,c,d,f,g,h,k,m,n,p,r,s,w,z,  zh,ch,sh
+   ao |18| b,c,d,g,h,k,l,m,n,p,r,s,t,y,z,  zh,ch,sh
+   ou |18| c,d,f,g,h,k,l,m,n,p,r,s,t,y,z,  zh,ch,sh
+  uan |18| c,d,g,h,j,k,l,n,q,r,s,t,x,y,z,  zh,ch,sh
+   un |18| c,d,g,h,j,k,l,n,q,r,s,t,x,y,z,  zh,ch,sh
+    a |19| b,c,d,f,g,h,k,l,m,n,p,s,t,w,y,z,  zh,ch,sh
+  eng |19| b,c,d,f,g,h,k,l,m,n,p,r,s,t,w,z,  zh,ch,sh
+   an |20| b,c,d,f,g,h,k,l,m,n,p,r,s,t,w,y,z,  zh,ch,sh
+  ang |20| b,c,d,f,g,h,k,l,m,n,p,r,s,t,w,y,z,  zh,ch,sh
+    i |20| a,b,c,d,e,j,l,m,n,p,q,r,s,t,x,y,z,  zh,ch,sh
+    u |24| b,c,d,f,g,h,j,k,l,m,n,o,p,q,r,s,t,w,x,y,z,  zh,ch,sh
+```
+
+- 韵母列表
+
+```sql
+-- 韵母列表
+select distinct
+  follow_
+from (
+  select
+    substr (value_, 2) as follow_
+  from
+    meta_pinyin_chars
+  where
+    substr (value_, 1, 2) not in ('ch', 'zh', 'sh')
+  group by
+    follow_
+  union
+  select
+    substr (value_, 3) as follow_
+  from
+    meta_pinyin_chars
+  where
+    substr (value_, 1, 2) in ('ch', 'zh', 'sh')
+)
+order by
+  follow_ asc;
+```
+
+以上输出结果为：
+
+```
+a
+ai
+an
+ang
+ao
+e
+ei
+en
+eng
+g
+i
+ia
+ian
+iang
+iao
+ie
+in
+ing
+iong
+iu
+m
+n
+ng
+o
+ong
+ou
+r
+u
+ua
+uai
+uan
+uang
+ue
+ui
+un
+uo
+ü
+üe
 ```
 
 ### 按表情查询
