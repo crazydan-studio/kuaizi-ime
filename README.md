@@ -56,6 +56,8 @@ git submodule update --init android
   筷字输入法 Android 客户端的完整工程代码。注：使用命令 `git submodule update --init android`
   初始化该 git 子模块
 -
+- [docs/](./docs/): 本项目的文档目录
+  - [十字型输入的交互设计](./docs/design/cross-mode.md): 针对 X 型输入的优化改进方案
 - [tools/analyze/](./tools/analyze/):
   拼音按键布局在线分析工具，用于分析拼音的字母组合结构，并验证正六边形按键的布局方案
 - [tools/pinyin-dict/](./tools/pinyin-dict/):
@@ -82,7 +84,7 @@ git submodule update --init android
 ## 功能特性
 
 - 以连续滑屏方式录入拼音，且单次录入最多仅需滑屏两次
-- 内置 [8VIM](https://github.com/8VIM/8VIM)/[8pen](https://github.com/crazydan-studio/kuaizi-ime/files/13110790/504690_1_En.pdf)
+- 内置 [8VIM](https://github.com/8VIM/8VIM)/[8pen](./docs/Increasing_the_Efficiency_of_Text_Input_in_the_8pen_Method.pdf)
   输入模式，以画圈方式进行拼音、英文和数字的连续输入，从而提供顺滑的输入体验
 - 所有候选字均附带显示完整的拼音，可清晰识别各个字的准确读音
 - 输入数据本地存储，不收集、不分析用户数据
