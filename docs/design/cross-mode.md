@@ -199,15 +199,15 @@ l |26| la,lai,lan,lao,lang, le,lei,leng, li,lia,lie,lin,liu,lian,liao,ling,liang
 
 d |23| da,dai,dan,dao,dang, de,dei,den,deng, di,dia,die,diu,dian,diao,ding, dou,dong, du,dui,dun,duo,duan
 
-=> 布局的第一维度：da:5, de:4, di:7, do:2, du:5
+=> 布局的第一维度：[da:1, da*:4], [di:1, di*:6], [de*:4, do*:2], [du:1, du*:4]
 
 h |21| hm,hng, ha,hai,han,hao,hang, he,hei,hen,heng, hou,hong, hu,hua,hui,hun,huo,huai,huan,huang
 
-=> 布局的第一维度：[hm:1, hn:1], ha:5, he:4, ho:2, hu:8
+=> 布局的第一维度：[hm:1, hn:1], [ha:1, ha*:4], [he*:4, ho*:2], [hu:1, hu*:7]
 
 m |20| m, ma,mai,man,mao,mang, me,mei,men,meng, mi,mie,min,miu,mian,miao,ming, mo,mou, mu
 
-=> 布局的第一维度：m:1, ma:5, me:5, mi:7, mo:2, mu:1
+=> 布局的第一维度：[m:1, mu:1], [ma:1, ma*:4], [mi:1, mi*:6], [me*:5, mo*:2]
 ```
 
 ### 盲打输入模式
