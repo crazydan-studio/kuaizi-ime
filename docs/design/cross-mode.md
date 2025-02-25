@@ -5,7 +5,50 @@
 > [Kuzi_IME_Cross_Mode_Prototype.drawio](./cross-mode/Kuzi_IME_Cross_Mode_Prototype.drawio)
 > 以改进或重新设计。
 
-筷字输入法的**十字型输入**在本质上是基于
+为了能够在触屏设备上提供更加便捷、简洁的汉字输入支持，在综合多位热心网友的反馈意见后，
+筷字输入法最终确定了以下几点改进方向（预计在 4.0 版本中实现）：
+
+- 通过滑行方向等**维度**，在确保可唯一定位字符的前提下，让多个字符**共用布局空间**，
+  从而增加手指可操作面积，降低误触几率，减少用户的心智负担，提升输入效率。（在
+  [#32](https://github.com/crazydan-studio/kuaizi-ime/issues/32)
+  中由 [@LoongVeeng](https://github.com/LoongVeeng) 反馈提出）
+- 保证滑行输入的连贯性和连续性，做到「一气呵成」、**「一笔成画」**，
+  使得输入过程更加顺滑、**自然**、流畅。（在
+  [#1](https://github.com/crazydan-studio/kuaizi-ime/issues/1)
+  和 [#32](https://github.com/crazydan-studio/kuaizi-ime/issues/32)
+  中分别由 [@Vinfall](https://github.com/Vinfall)
+  和 [@LoongVeeng](https://github.com/LoongVeeng) 反馈提出）
+- 确保能够形成**固定**的滑行轨迹图，只要滑行形成的轨迹路径匹配，便可完成输入，
+  不需要等待字符布局的更新，也不用眼睛始终盯着屏幕，从而为**盲打**提供支持。（在
+  [#32](https://github.com/crazydan-studio/kuaizi-ime/issues/32)
+  中由 [@LoongVeeng](https://github.com/LoongVeeng) 反馈提出）
+- 支持双拼/简拼输入，内置多种双拼映射方案，从而减少拼音输入的滑行次数和距离，
+  为高效率输入需求的用户提供简短且快速的拼音输入模式的支持。（在
+  [#8](https://github.com/crazydan-studio/kuaizi-ime/issues/8)、
+  [#3](https://github.com/crazydan-studio/kuaizi-ime/issues/3) 中由多位网友反馈提出）
+
+> 注：剪贴和剪贴板管理，将在 3.x 版本中完成，并延续到后面的版本，因此，不在本文档的讨论范围内。
+
+注意，由于最后一项功能并不影响输入的交互逻辑，因此，本文档将主要针对前面三项改进进行深入说明。
+
+在结合以上要求，并对以下参考案例进行分析和特色融合后：
+
+- [手心输入法](https://github.com/crazydan-studio/kuaizi-ime/issues/32#issuecomment-2668010138)：
+  由 [@LoongVeeng](https://github.com/LoongVeeng) 提供
+- [8VIM](https://github.com/8VIM/8VIM)/[8pen](../Increasing_the_Efficiency_of_Text_Input_in_the_8pen_Method.pdf)：
+  由 [@Vinfall](https://github.com/Vinfall) 提供
+- [虾滑输入法](https://github.com/crazydan-studio/kuaizi-ime/issues/1#issuecomment-2636091392)：
+  由 [@sgzman](https://github.com/sgzman) 提供
+
+最终得到如下形式的交互设计原型：
+
+![](./cross-mode/00-lantin-init.png)
+
+> 注：该图仅作为演示说明，实际的按键布局会综合使用频率、使用习惯、操作便捷性等因素进行优化调整。
+
+在这里，我们将其称为**十字型输入**。
+
+**十字型输入**在本质上是基于
 [8VIM](https://github.com/8VIM/8VIM)/[8pen](../Increasing_the_Efficiency_of_Text_Input_in_the_8pen_Method.pdf)
 的 X 型输入的优化改进方案。
 
@@ -42,24 +85,6 @@ X 型输入具有以下优点：
   没有有效的拐点区分出不同的圆周，因而，在使用时，将始终无法让视线脱离屏幕
 - 没有动态布局模式，无法实现对拼音韵母的布局和输入支持
 
-筷字输入法综合热心网友提出的以下建议：
-
-- [@Vinfall](https://github.com/Vinfall) 在
-  [#1](https://github.com/crazydan-studio/kuaizi-ime/issues/1)
-  中首次提出对 8VIM/8pen 的 X 型输入的参考
-- [@sgzman](https://github.com/sgzman) 在
-  [#1](https://github.com/crazydan-studio/kuaizi-ime/issues/1)
-  中首次提出参考案例
-  [虾滑输入法](https://github.com/crazydan-studio/kuaizi-ime/issues/1#issuecomment-2636091392)，
-  其是一种全屏模式的滑屏输入方案，为筷字输入法的[盲打输入](#盲打输入模式)提供了灵感来源
-- [@LoongVeeng](https://github.com/LoongVeeng) 在
-  [#32](https://github.com/crazydan-studio/kuaizi-ime/issues/32)
-  中首次提出参考案例
-  [手心输入法](https://github.com/crazydan-studio/kuaizi-ime/issues/32#issuecomment-2668010138)，
-  其提供一种通过方向区分输入字符的方案，可有效复用布局空间。
-  同时，该网友提到的「复用字符位置空间」、「连滑输入，一笔成画」、「固定滑行输入轨迹，提供盲打支持」等改进方向，
-  这在一定程度上促使了筷字输入法的十字型输入模式的确立
-
 对 X 型输入进行了以下方面的增强和改进：
 
 - 保留在辐射轴上做字符布局，以及通过顺/逆两个滑行方向确定输入字符的输入模式：
@@ -71,12 +96,6 @@ X 型输入具有以下优点：
   确保每个字符都有易于识别、固定且唯一的输入轨迹形状（符号 `8` 及其变形），为**盲打**打下基础
 - 增强对 `8` 及其变形的形状的输入轨迹的识别，通过轨迹的运动方向、拐点出现位置，以及 `8` 中两个 `o`
   的相对位置（水平、垂直、重叠），便可识别出所要输入的字符，视线无需始终盯着屏幕，滑行动作也不需要从固定位置出发
-
-最终得到十字型输入的设计原型如下：
-
-![](./cross-mode/00-lantin-init.png)
-
-> 注：该图仅作为演示说明，实际的按键布局会综合使用频率、使用习惯、操作便捷性等因素进行优化调整。
 
 从中心原点出发，向横纵两个方向画一个 `十` 字，十字的每条轴为辐射轴，并在辐射轴的两侧布局**最多**四个字符。
 辐射轴隔开的四个区域从右上角开始沿顺时针方向分别命名为 `0#`、`1#`、`2#` 和 `3#`。
@@ -122,8 +141,32 @@ X 型输入具有以下优点：
 
 ## 拼音输入模式
 
-- 声母按照拉丁字符的模式输入，再自动进入韵母的布局模式
-- 单字母/多字母韵母最多的有 26 个，所以，输入一个拼音最多需要画两个 `8`，最少则需要画三个 `o`
+- 拼音布局的本质就是对其字母组合进行合适的拆分并动态布局，从而以最小的滑行代价完成输入
+- 将拼音的声母作为第一级布局，再将声母之后的有效韵母进行拆分
+- 布局的韵母最好能够通过一次滑行便可完成定位，所以，优先放置在第一个布局维度中，再配合滑行方向确定韵母
+
+```log
+n |27| n,ng, na,nai,nan,nao,nang, ne,nei,nen,neng, ni,nie,nin,niu,nian,niao,ning,niang, nou,nong, nu,nun,nuo,nuan, nü,nüe
+
+=> 第一维度布局：[ni:1, ni*:7], [ng:1, na*:5], [ne*:4, nu*:4], [no*:2, nü*:2]
+=> 注：去掉 n，其与 ng 对应的字相同，且 ng 的读音更多
+
+l |26| la,lai,lan,lao,lang, le,lei,leng, li,lia,lie,lin,liu,lian,liao,ling,liang, lo,lou,long, lu,lun,luo,luan, lü,lüe
+
+=> 第一维度布局：[la:1, la*:4], [li:1, li*:8], [le:3, lo:3], [lu:4, lü:2]
+
+d |23| da,dai,dan,dao,dang, de,dei,den,deng, di,dia,die,diu,dian,diao,ding, dou,dong, du,dui,dun,duo,duan
+
+=> 第一维度布局：da:5, de:4, di:7, do:2, du:5
+
+h |21| hm,hng, ha,hai,han,hao,hang, he,hei,hen,heng, hou,hong, hu,hua,hui,hun,huo,huai,huan,huang
+
+=> 第一维度布局：[hm:1, hn:1], ha:5, he:4, ho:2, hu:8
+
+m |20| m, ma,mai,man,mao,mang, me,mei,men,meng, mi,mie,min,miu,mian,miao,ming, mo,mou, mu
+
+=> 第一维度布局：m:1, ma:5, me:5, mi:7, mo:2, mu:1
+```
 
 ## 盲打输入模式
 
@@ -154,6 +197,10 @@ X 型输入具有以下优点：
 > - 全屏的十字型输入面板不是一直显示的，仅在开始滑行时才出现，并在滑行结束后，自动消失；
 
 这样，便可让视线逐渐脱离输入键盘，实现滑屏盲打输入。
+
+> 注：「面板投屏」方案的灵感来源为 [@sgzman](https://github.com/sgzman) 在
+> [#1](https://github.com/crazydan-studio/kuaizi-ime/issues/1) 中提供的参考案例
+> [虾滑输入法](https://github.com/crazydan-studio/kuaizi-ime/issues/1#issuecomment-2636091392)。
 
 ## 其他
 
