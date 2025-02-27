@@ -172,11 +172,11 @@ https://github.com/user-attachments/assets/3b5f2503-4852-4678-acd8-6f599eb523cd
 
 若是对所有字符的输入轨迹进行分析，在不考虑滑行方向的情况下，可以得到以下形状的轨迹图：
 
-- 第一步滑行轨迹（橙色曲线）在垂直方向时
+- 第一步输入轨迹（橙色曲线）在垂直方向时
 
   ![](./cross-mode/30-lantin-trace-shape-vertical.png)
 
-- 第一步滑行轨迹（橙色曲线）在水平方向时
+- 第一步输入轨迹（橙色曲线）在水平方向时
 
   ![](./cross-mode/30-lantin-trace-shape-horizontal.png)
 
