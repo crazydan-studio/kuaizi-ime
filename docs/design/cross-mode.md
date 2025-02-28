@@ -243,6 +243,7 @@ X 型输入更方便、更省力、更准确。
 ### 拼音输入模式
 
 - 根据拼音组合的特点，对其字母组合进行合适的拆分再动态布局，以最小的滑行次数完成输入
+- 尽量按声母、韵母顺序布局，而不是使用频率或拼音数量
 - 将拼音的声母作为第一级布局，再将声母之后仅有的韵母进行拆分
 - 布局的韵母最好能够滑行一次便完成输入，所以，优先将其放置在布局的第一维度中，
   再配合滑行方向确定或展开韵母的其他组合
@@ -250,24 +251,28 @@ X 型输入更方便、更省力、更准确。
 ```log
 n |27| n,ng, na,nai,nan,nao,nang, ne,nei,nen,neng, ni,nie,nin,niu,nian,niao,ning,niang, nou,nong, nu,nun,nuo,nuan, nü,nüe
 
-=> 布局的第一维度：[ni:1, ni*:7], [ng:1, na*:5], [ne*:4, nu*:4], [no*:2, nü*:2]
+=> 布局的第一维度：[ng:1], [na:1, na*:4], [ne:1, ne*:3], [ni:1, ni*:7], [no*:2, nu*:4, nü*:2]
 => 注：去掉 n，其与 ng 对应的字相同，且 ng 的读音更多
 
 l |26| la,lai,lan,lao,lang, le,lei,leng, li,lia,lie,lin,liu,lian,liao,ling,liang, lo,lou,long, lu,lun,luo,luan, lü,lüe
 
-=> 布局的第一维度：[la:1, la*:4], [li:1, li*:8], [le:3, lo:3], [lu:4, lü:2]
+=> 布局的第一维度：[lü:1], [la:1, la*:4], [le:1, le*:2], [li:1, li*:8], [lo*:3, lu*:4, lüe:1]
 
 d |23| da,dai,dan,dao,dang, de,dei,den,deng, di,dia,die,diu,dian,diao,ding, dou,dong, du,dui,dun,duo,duan
 
-=> 布局的第一维度：[da:1, da*:4], [di:1, di*:6], [de*:4, do*:2], [du:1, du*:4]
+=> 布局的第一维度：[dou:1], [da:1, da*:4], [de:1, de*:3], [di:1, di*:6], [dong:1, du*:5]
 
 h |21| hm,hng, ha,hai,han,hao,hang, he,hei,hen,heng, hou,hong, hu,hua,hui,hun,huo,huai,huan,huang
 
-=> 布局的第一维度：[hm:1, hn:1], [ha:1, ha*:4], [he*:4, ho*:2], [hu:1, hu*:7]
+=> 布局的第一维度：[hm:1, hng:1], [ha:1, ha*:4], [he*:4, ho*:2], [hu:1, hu*:7]
 
 m |20| m, ma,mai,man,mao,mang, me,mei,men,meng, mi,mie,min,miu,mian,miao,ming, mo,mou, mu
 
-=> 布局的第一维度：[m:1, mu:1], [ma:1, ma*:4], [mi:1, mi*:6], [me*:5, mo*:2]
+=> 布局的第一维度：[m:1], [ma:1, ma*:4], [me:1, me*:4], [mi:1, mi*:6], [mo*:2, mu:1]
+
+p|17|pa,pai,pan,pao,pang, pei,pen,peng, pi,pie,pin,pian,piao,ping, po,pou, pu
+
+=> 布局的第一维度：[pu:1], [pa:1, pa*:4], [pe:1, pe*:2], [pi:1, pi*:5], [po:1, pou:1]
 ```
 
 ### 盲打输入模式
