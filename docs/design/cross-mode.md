@@ -42,7 +42,7 @@
 
 最终得到如下形式的交互设计原型：
 
-![](./cross-mode/20-lantin-input-steps.png)
+![](./cross-mode/20-latin-input-steps.png)
 
 也就是，我们将会在一个「十」字形面板上进行输入交互，因此，本设计将该输入模式称为**十字型输入**。
 
@@ -111,7 +111,7 @@ https://github.com/user-attachments/assets/3b5f2503-4852-4678-acd8-6f599eb523cd
 
 ## 十字型输入
 
-![](./cross-mode/00-lantin-init.png)
+![](./cross-mode/00-latin-init.png)
 
 > 注：这里的字符布局规则为，从 `0#` 分区开始，沿顺时针方向，并按字母表顺序，
 > 依次向分区的左/右两侧各放置四个字符，直到字符全部放置完毕。
@@ -129,7 +129,7 @@ https://github.com/user-attachments/assets/3b5f2503-4852-4678-acd8-6f599eb523cd
 即，从中心点出发滑入字符 `B` 所在的 `0#` 分区，接着，沿逆时针方向滑入 `3#`
 分区，再滑回到中心点：
 
-![](./cross-mode/20-lantin-input-active-zone.png)
+![](./cross-mode/20-latin-input-active-zone.png)
 
 > 注：若是最终依然从 `0#` 分区滑回中心点，则表示取消对该分区字符的选择，
 > 可重新选择其他输入字符所在的分区。
@@ -137,7 +137,7 @@ https://github.com/user-attachments/assets/3b5f2503-4852-4678-acd8-6f599eb523cd
 在选中分区侧边后，十字型输入将通过**动态布局**把分区侧边上的（最多）四个字符重新布局到四个分区中。
 也就是，对侧边上排列的字符做**布局展开**：
 
-![](./cross-mode/20-lantin-input-expand-zone.png)
+![](./cross-mode/20-latin-input-expand-zone.png)
 
 > 注：这里的布局展开规则为，从 `0#` 分区开始，沿顺时针方向依次向各个分区放置字符。
 
@@ -150,11 +150,11 @@ https://github.com/user-attachments/assets/3b5f2503-4852-4678-acd8-6f599eb523cd
 
 - 逆时针输入字符的大写形式
 
-  ![](./cross-mode/20-lantin-input-upper-b.png)
+  ![](./cross-mode/20-latin-input-upper-b.png)
 
 - 顺时针输入字符的小写形式
 
-  ![](./cross-mode/20-lantin-input-lower-b.png)
+  ![](./cross-mode/20-latin-input-lower-b.png)
 
 > 注：若是最终依然从 `1#` 分区滑回中心点，则表示取消对字符 `B` 的选择，可重新选择其他字符。
 
@@ -163,7 +163,7 @@ https://github.com/user-attachments/assets/3b5f2503-4852-4678-acd8-6f599eb523cd
 在完成字符的输入后，输入面板将自动恢复到初始布局。因此，无需中断滑行，
 可继续从中心点滑入目标输入字符所在的分区（比如 `1#`），并按照上述过程输入其他字符即可：
 
-![](./cross-mode/20-lantin-input-another.png)
+![](./cross-mode/20-latin-input-another.png)
 
 也就是，在十字型输入中，字符的定位坐标为 `(分区, 分区侧边, 分区, 分区侧边)`，
 与 X 型输入相比，其不再利用轴序号，而是通过动态布局，连续使用两次分区及其侧边，
@@ -174,11 +174,11 @@ https://github.com/user-attachments/assets/3b5f2503-4852-4678-acd8-6f599eb523cd
 
 - 第一步输入轨迹（橙色曲线）在垂直方向时
 
-  ![](./cross-mode/30-lantin-trace-shape-vertical.png)
+  ![](./cross-mode/30-latin-trace-shape-vertical.png)
 
 - 第一步输入轨迹（橙色曲线）在水平方向时
 
-  ![](./cross-mode/30-lantin-trace-shape-horizontal.png)
+  ![](./cross-mode/30-latin-trace-shape-horizontal.png)
 
 从中可以发现十字型输入的以下特点：
 
@@ -229,7 +229,7 @@ https://github.com/user-attachments/assets/3b5f2503-4852-4678-acd8-6f599eb523cd
 下图表示的是从非中心位置开始的字符输入轨迹，其对应的是小写字符 `f`
 的输入（橙色曲线为第一步轨迹，绿色曲线为第二步轨迹）：
 
-![](./cross-mode/50-lantin-blind-hit.png)
+![](./cross-mode/50-latin-blind-hit.png)
 
 > 注：对于盲打的输入支持，请详见章节[《盲打输入模式》](#盲打输入模式)。
 
@@ -365,7 +365,7 @@ p|17|pa,pai,pan,pao,pang, pei,pen,peng, pi,pie,pin,pian,piao,ping, po,pou, pu
 
 ### 键盘切换与输入补全选择
 
-![](./cross-mode/60-switch-lantin-to-pinyin.png)
+![](./cross-mode/60-switch-latin-to-pinyin.png)
 
 - 如何自然地切换到数字、算术等输入键盘？
   - 在轨迹原点画圈，类似于拨动旋钮，根据画圈的数量来循环切换不同的输入
@@ -373,7 +373,7 @@ p|17|pa,pai,pan,pao,pang, pei,pen,peng, pi,pie,pin,pian,piao,ping, po,pou, pu
     - 顺时针拨动为向前切换，逆时针拨动为向后切换
   - 符号、表情等，仅放置常用的，更多的选择，需点击切换按键再做选择
 
-![](./cross-mode/60-select-lantin-completion.png)
+![](./cross-mode/60-select-latin-completion.png)
 
 - 英文补全内容（输入补全）、拼音高频字（候选字）均以气泡形式展示在键盘上方并自带序号
   - 如何在输入过程中，通过滑屏手势平滑地根据序号选中输入补全或候选字？
@@ -390,3 +390,7 @@ p|17|pa,pai,pan,pao,pang, pei,pen,peng, pi,pie,pin,pian,piao,ping, po,pou, pu
   但可以考虑在滑行输入的初始布局的空位中放置常用的表情和符号
 - 可否支持通过滑屏手势，对输入列表中的输入做选择和删除？
   - 在选中输入后释放手指，则自动进入输入修改或拼音候选字选择模式
+
+## X 型输入 - 扇形布局
+
+![](./x-mode/10-latin-input-steps.png)
