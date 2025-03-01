@@ -242,20 +242,75 @@ X 型输入更方便、更省力、更准确。
 
 ### 拼音输入模式
 
+当前以拼音**全拼**输入为例，说明拼音输入的交互逻辑。
+
 ![](./cross-mode/70-pinyin-input-step-1.png)
 
 ![](./cross-mode/70-pinyin-input-step-2.png)
 
-- 根据拼音组合的特点，对其字母组合进行合适的拆分再动态布局，以最小的滑行次数完成输入
-- 尽量按声母、韵母顺序布局，而不是使用频率或拼音数量
-- 将拼音的声母作为第一级布局，再将声母之后仅有的韵母进行拆分
-- 布局的韵母最好能够滑行一次便完成输入，所以，优先将其放置在布局的第一维度中，
-  再配合滑行方向确定或展开韵母的其他组合
+全拼拼音由声母和韵母组成，其中，声母基本对应英文字母表，而韵母则由一到四个字母组成。
+而一个声母最多可与韵母组成 26 个拼音，拼音总数则达到数百个。
+所以，无法在十字型输入的初始面板中布局全部拼音，需要采用多级**布局展开**，
+以便于将拼音逐级分解，从而完成对全部拼音的输入布局。
 
+已知声母 `n` 的拼音组合如下：
+
+| 韵母首字母 | 韵母组合 |
+| -- | -- |
+| g | ng |
+| a | na, nai, nan, nao, nang |
+| e | ne, nei, nen, neng |
+| i | ni, nie, nin, niu, nian, niao, ning, niang |
+| u | nu, nun, nuo, nuan |
+| o | nou, nong |
+| ü | nü, nüe |
+
+下面以输入拼音 `niang` 为例：
+
+![](./cross-mode/75-pinyin-input-active-zone.png)
+
+> 注：拼音键盘的初始布局尽量与拉丁键盘的初始布局一致，从而降低适应成本。
+
+在初始布局中，选中 `1#` 分区右侧边的字符，并将其做布局展开：
+
+![](./cross-mode/75-pinyin-input-expand-zone-level-1.png)
+
+当前为**第一级**布局展开，由于待展开字符只有四个，而布局展开有八个位置，
+所以，暂且规定，沿顺时针方向的分区左侧边直接放置只有一个组合的拼音，
+或者使用频率最高的拼音，其余的拼音组合则放在分区右侧边，并以 `声母 + *`
+的形式表示其拼音组合需继续展开，如 `n*`。
+
+继续选中 `n*` 以展开其拼音组合：
+
+![](./cross-mode/75-pinyin-input-expand-zone-level-2.png)
+
+此为**第二级**布局展开，其以韵母组合中的第一个字母，沿顺时针方向按
+`a, e, i, u, o, ü` 顺序依次放置韵母组合，其中，`a, e, i, u`
+均放置在分区侧边，剩下的，若只有一个或两个韵母组合，则直接放置整个韵母，
+不再做展开，比如上图中的 `nou`、`nong`、`nü`、`nüe`。
+
+接下来，选中 `ni*` 以展开其韵母组合：
+
+![](./cross-mode/75-pinyin-input-active-zone-level-2.png)
+
+![](./cross-mode/75-pinyin-input-expand-zone-level-3.png)
+
+此为**第三级**布局展开，由于以 `ni` 开头的拼音组合正好只有八个，
+因此，可以全部布局到八个分区侧边中。其布局规则则以去掉 `ni` 后的首字母为准，
+按照 `a, e, i, o, n` 的顺序，沿顺时针方向依次放置。
+
+最后，选中目标拼音 `niang` 即可：
+
+![](./cross-mode/75-pinyin-input-end.png)
+
+分析全部拼音组合后，可以发现，输入一个完整的拼音，最少需要两次滑行，
+即，绘制两个椭圆轨迹，最多则需要四次滑行。
+
+<!--
 ```log
 n |27| n,ng, na,nai,nan,nao,nang, ne,nei,nen,neng, ni,nie,nin,niu,nian,niao,ning,niang, nou,nong, nu,nun,nuo,nuan, nü,nüe
 
-=> 布局的第一维度：[ng:1], [na:1, na*:4], [ne:1, ne*:3], [ni:1, ni*:7], [no*:2, nu*:4, nü*:2]
+=> 布局的第一维度：[ng:1], [na*:5], [ne*:4], [ni*:8], [nu*:4], [nou:1], [nong:1], [nü:1], [nüe:1]
 => 注：去掉 n，其与 ng 对应的字相同，且 ng 的读音更多
 
 l |26| la,lai,lan,lao,lang, le,lei,leng, li,lia,lie,lin,liu,lian,liao,ling,liang, lo,lou,long, lu,lun,luo,luan, lü,lüe
@@ -278,6 +333,7 @@ p|17|pa,pai,pan,pao,pang, pei,pen,peng, pi,pie,pin,pian,piao,ping, po,pou, pu
 
 => 布局的第一维度：[pu:1], [pa:1, pa*:4], [pe:1, pe*:2], [pi:1, pi*:5], [po:1, pou:1]
 ```
+-->
 
 ### 盲打输入模式
 
