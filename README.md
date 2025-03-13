@@ -96,8 +96,7 @@ For a complete list of donations, please check the [Donation list](./docs/donate
 
 https://github.com/user-attachments/assets/c5a3c769-0e6d-42e1-bc2f-babe85607bfb
 
-> Note: The audio and subtitles are provided by [GitPodcast](https://www.gitpodcast.com/)
-> The final videos were generated and produced using [Veed](https://www.veed.io)
+> Note: The audio and subtitles were provided by [GitPodcast](https://www.gitpodcast.com/), the final videos were generated and produced using [Veed](https://www.veed.io)
 
 <img src="./docs/image/kuaizi_ime_pinyin_slipping_input.png" height="300"/> <img src="./docs/image/kuaizi_ime_editor_editing.png" height="300"/> <img src="./docs/image/kuaizi_ime_has_many_emojis.png" height="300"/> <img src="./docs/image/kuaizi_ime_candidates_and_emojis.png" height="300"/> <img src="./docs/image/kuaizi_ime_pair_symbols.png" height="300"/> <img src="./docs/image/kuaizi_ime_latin_case_input.png" height="300"/> <img src="./docs/image/kuaizi_ime_math_expr_input.png" height="300"/> <img src="./docs/image/kuaizi_ime_x_pad_input.png" height="300"/>
 
