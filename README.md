@@ -9,7 +9,7 @@
 [<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
   alt="Get it on F-Droid"
   height="80">](https://f-droid.org/packages/org.crazydan.studio.app.ime.kuaizi)
-C
+
 > **Warning**：筷字输入法目前仅发布在 [F-Droid](https://f-droid.org) 上，并未发布在其他应用平台，
 > 请注意识别并警惕相关风险，若需下载使用，请直接点击以上链接。
 
