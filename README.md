@@ -1,6 +1,7 @@
 筷字（Kuaizi）输入法
 =======================================
-> Click here for an [English version of the README](README-eng.md)
+
+中文版 | [English](./README-en.md)
 
 <img src="./logo.svg" width="172px" />
 

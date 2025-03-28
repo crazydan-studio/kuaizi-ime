@@ -1,6 +1,8 @@
 筷字输入法 (Kuaizi IME)
 =======================================
 
+[中文版](./README.md) | English
+
 <img src="./logo.svg" width="172px" />
 
 > To download the latest version for Android,
