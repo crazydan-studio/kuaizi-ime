@@ -398,37 +398,17 @@ select
 from
   (
     select
-      substr (value_, 1, 2) as start_,
-      substr (value_, 3, 1) as follow_,
+      (case when substr(value_, 2, 1) = 'h'
+        then substr(value_, 1, 2)
+        else substr(value_, 1, 1)
+      end) as start_,
+      (case when substr(value_, 2, 1) = 'h'
+        then substr(value_, 3, 1)
+        else substr(value_, 2, 1)
+      end) as follow_,
       count(value_) as total_
     from
       meta_pinyin_chars
-    where
-      substr (value_, 1, 2) in ('ch', 'zh', 'sh')
-    group by
-      start_,
-      follow_
-    order by
-      start_ asc,
-      follow_ asc
-  )
-group by
-  start_
-union
-select
-  start_,
-  sum(total_),
-  group_concat (follow_ || ':' || total_)
-from
-  (
-    select
-      substr (value_, 1, 1) as start_,
-      substr (value_, 2, 1) as follow_,
-      count(value_) as total_
-    from
-      meta_pinyin_chars
-    where
-      substr (value_, 1, 2) not in ('ch', 'zh', 'sh')
     group by
       start_,
       follow_
@@ -481,38 +461,25 @@ h|21|a:5,e:4,m:1,n:1,o:2,u:8
 
 ```sql
 select
-  substr (value_, 1, 2) as start_,
+  start_,
   count(value_) as total_,
   group_concat (distinct value_)
 from
   (
     select
-      *
+      value_,
+      (case when substr(value_, 2, 1) = 'h'
+        then substr(value_, 1, 2)
+        else substr(value_, 1, 1)
+      end) as start_,
+      (case when substr(value_, 2, 1) = 'h'
+        then substr(value_, 3, 1)
+        else substr(value_, 2, 1)
+      end) as follow_
     from
       meta_pinyin_chars
-    where
-      substr (value_, 1, 2) in ('ch', 'zh', 'sh')
     order by
-      substr (value_, 3, 1) asc,
-      length (value_) asc
-  )
-group by
-  start_
-union
-select
-  substr (value_, 1, 1) as start_,
-  count(value_) as total_,
-  group_concat (distinct value_)
-from
-  (
-    select
-      *
-    from
-      meta_pinyin_chars
-    where
-      substr (value_, 1, 2) not in ('ch', 'zh', 'sh')
-    order by
-      substr (value_, 2, 1) asc,
+      follow_ asc,
       length (value_) asc
   )
 group by
@@ -564,20 +531,16 @@ select
 from
   (
     select distinct
-      substr (value_, 2) as follow_,
-      substr (value_, 1, 1) as start_
+      (case when substr(value_, 2, 1) = 'h'
+        then substr(value_, 3)
+        else substr(value_, 2)
+      end) as follow_,
+      (case when substr(value_, 2, 1) = 'h'
+        then substr(value_, 1, 2)
+        else substr(value_, 1, 1)
+      end) as start_
     from
       meta_pinyin_chars
-    where
-      substr (value_, 1, 2) not in ('ch', 'zh', 'sh')
-    union
-    select distinct
-      substr (value_, 3) as follow_,
-      substr (value_, 1, 2) as start_
-    from
-      meta_pinyin_chars
-    where
-      substr (value_, 1, 2) in ('ch', 'zh', 'sh')
   )
 group by
   follow_
@@ -635,24 +598,12 @@ order by
 ```sql
 -- 韵母列表
 select distinct
-  follow_
-from (
-  select
-    substr (value_, 2) as follow_
-  from
-    meta_pinyin_chars
-  where
-    substr (value_, 1, 2) not in ('ch', 'zh', 'sh')
-  group by
-    follow_
-  union
-  select
-    substr (value_, 3) as follow_
-  from
-    meta_pinyin_chars
-  where
-    substr (value_, 1, 2) in ('ch', 'zh', 'sh')
-)
+  (case when substr(value_, 2, 1) = 'h'
+    then substr(value_, 3)
+    else substr(value_, 2)
+  end) as follow_
+from
+  meta_pinyin_chars
 order by
   follow_ asc;
 ```
@@ -698,6 +649,70 @@ un
 uo
 ü
 üe
+```
+
+- 根据词典表统计声母的使用情况
+
+```sql
+attach '/path/to/data/pinyin-word-dict.sqlite' as word;
+
+select
+  PRINTF('%3s', starts_) || ' ',
+  ' ' || weight_
+from (
+  select
+    (case when substr(t_.chars_, 2, 1) = 'h'
+      then substr(t_.chars_, 1, 2)
+      else substr(t_.chars_, 1, 1)
+    end) as starts_,
+    sum(t_.weight_) as weight_
+  from (
+    select
+      w_.spell_chars_ as chars_,
+      sum(pw_.weight_) as weight_
+    from
+      phrase_word pw_
+      inner join pinyin_word w_ on pw_.word_id_ = w_.id_
+    group by
+      w_.spell_chars_
+  ) t_
+  group by
+    starts_
+)
+order by
+  weight_ desc
+;
+```
+
+以上输出结果为：
+
+```
+  d | 53745
+  y | 30395
+ sh | 22998
+  h | 22460
+  t | 21993
+  l | 17788
+  j | 17330
+  b | 15419
+  x | 15146
+ zh | 14690
+  n | 13618
+  m | 12392
+  q | 12052
+  g | 12031
+  z | 10887
+ ch | 9655
+  w | 9333
+  f | 7756
+  r | 6386
+  k | 5629
+  c | 5163
+  s | 4940
+  p | 3467
+  e | 3131
+  a | 1710
+  o | 91
 ```
 
 ### 按表情查询
