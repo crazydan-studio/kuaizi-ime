@@ -651,15 +651,13 @@ uo
 üe
 ```
 
-- 根据词典表统计声母的使用情况
+- 根据词典表统计声母的使用占比
 
 ```sql
 attach '/path/to/data/pinyin-word-dict.sqlite' as word;
 
-select
-  PRINTF('%3s', starts_) || ' ',
-  ' ' || weight_
-from (
+drop table if exists pinyin_starts_weight;
+create temp table pinyin_starts_weight as
   select
     (case when substr(t_.chars_, 2, 1) = 'h'
       then substr(t_.chars_, 1, 2)
@@ -677,8 +675,16 @@ from (
       w_.spell_chars_
   ) t_
   group by
-    starts_
-)
+    starts_;
+
+select
+  PRINTF('%3s', starts_) || ' ',
+  ' ' || (
+    ROUND(weight_ * 100.0 / (
+      select sum(weight_) from pinyin_starts_weight
+    ), 2)
+  ) || '%'
+from pinyin_starts_weight
 order by
   weight_ desc
 ;
@@ -687,32 +693,89 @@ order by
 以上输出结果为：
 
 ```
-  d | 53745
-  y | 30395
- sh | 22998
-  h | 22460
-  t | 21993
-  l | 17788
-  j | 17330
-  b | 15419
-  x | 15146
- zh | 14690
-  n | 13618
-  m | 12392
-  q | 12052
-  g | 12031
-  z | 10887
- ch | 9655
-  w | 9333
-  f | 7756
-  r | 6386
-  k | 5629
-  c | 5163
-  s | 4940
-  p | 3467
-  e | 3131
-  a | 1710
-  o | 91
+  d | 15.35%
+  y | 8.68%
+ sh | 6.57%
+  h | 6.41%
+  t | 6.28%
+  l | 5.08%
+  j | 4.95%
+  b | 4.4%
+  x | 4.32%
+ zh | 4.19%
+  n | 3.89%
+  m | 3.54%
+  q | 3.44%
+  g | 3.44%
+  z | 3.11%
+ ch | 2.76%
+  w | 2.67%
+  f | 2.21%
+  r | 1.82%
+  k | 1.61%
+  c | 1.47%
+  s | 1.41%
+  p | 0.99%
+  e | 0.89%
+  a | 0.49%
+  o | 0.03%
+```
+
+- 根据词典表统计韵母首字母的使用占比
+
+```sql
+attach '/path/to/data/pinyin-word-dict.sqlite' as word;
+
+drop table if exists pinyin_vowel_starts_weight;
+create temp table pinyin_vowel_starts_weight as
+  select
+    (case when substr(t_.chars_, 2, 1) = 'h'
+      then substr(t_.chars_, 3, 1)
+      else substr(t_.chars_, 2, 1)
+    end) as starts_,
+    sum(t_.weight_) as weight_
+  from (
+    select
+      w_.spell_chars_ as chars_,
+      sum(pw_.weight_) as weight_
+    from
+      phrase_word pw_
+      inner join pinyin_word w_ on pw_.word_id_ = w_.id_
+    group by
+      w_.spell_chars_
+  ) t_
+  where
+    starts_ != ''
+    -- 统计指定声母的韵母占比
+    -- and substr(t_.chars_, 1, 1) in ('b','m','f','w','p')
+  group by
+    starts_;
+
+select
+  '  ' || starts_ || ' ',
+  ' ' || (
+    ROUND(weight_ * 100.0 / (
+      select sum(weight_) from pinyin_vowel_starts_weight
+    ), 2)
+  ) || '%'
+from pinyin_vowel_starts_weight
+order by
+  weight_ desc
+;
+```
+
+以上输出结果为：
+
+```
+  i | 29.33%
+  e | 23.58%
+  a | 21.38%
+  u | 18.05%
+  o | 6.51%
+  r | 0.78%
+  ü | 0.2%
+  n | 0.19%
+  g | 0.0%
 ```
 
 ### 按表情查询
