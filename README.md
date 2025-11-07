@@ -83,6 +83,10 @@ git submodule update --init android
 | -- | -- |
 | <img src="./docs/donate/alipay.jpg?raw=true" width="200px"/> | <img src="./docs/donate/wechat.png?raw=true" width="200px"/> |
 
+## 待办
+
+- [ ] 以**词组**为单位做词频统计和输入预测
+
 ## 功能特性
 
 - 以连续滑屏方式录入拼音，且单次录入最多仅需滑屏两次
