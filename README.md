@@ -79,9 +79,9 @@ git submodule update --init android
 
 详细的赞助清单请查看[《友情赞助清单》](./docs/donate/index.md)。
 
-| 支付宝 | 微信支付 |
-| -- | -- |
-| <img src="./docs/donate/alipay.jpg?raw=true" width="200px"/> | <img src="./docs/donate/wechat.png?raw=true" width="200px"/> |
+| 支付宝 | 微信支付 | PayPal |
+| -- | -- | -- |
+| <img src="https://studio.crazydan.org/donate/alipay.jpg" width="200px"/> | <img src="https://studio.crazydan.org/donate/wechat.png" width="200px"/> | <img src="https://studio.crazydan.org/donate/kuaizi-ime.png" width="200px"/> |
 
 ## 待办
 

@@ -90,9 +90,9 @@ git submodule update --init android
 **Note**：Please add the remark `筷字输入法` when donating.
 For a complete list of donations, please check the [Donation list](./docs/donate/index.md)。
 
-| 支付宝 (Alipay) | 微信支付 (WeChat Pay) |
-| -- | -- |
-| <img src="./docs/donate/alipay.jpg?raw=true" width="200px"/> | <img src="./docs/donate/wechat.png?raw=true" width="200px"/> |
+| 支付宝 (Alipay) | 微信支付 (WeChat Pay) | PayPal |
+| -- | -- | -- |
+| <img src="https://studio.crazydan.org/donate/alipay.jpg" width="200px"/> | <img src="https://studio.crazydan.org/donate/wechat.png" width="200px"/> | <img src="https://studio.crazydan.org/donate/kuaizi-ime.png" width="200px"/> |
 
 ## Feature Highlights
 
