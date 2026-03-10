@@ -1,6 +1,10 @@
 拼音字典数据采集和校正程序
 =========================
 
+## 运行需求
+
+- [pnpm](https://pnpm.io/installation): NPM 依赖管理工具，其比官方 `npm` 安装依赖的速度更快且更节省磁盘空间
+
 ## 快速开始
 
 - 拉取外部仓库代码
@@ -11,14 +15,15 @@ git submodule \
   update --init \
   android \
   thirdparty/OpenCC \
-  thirdparty/pinyin-data
+  thirdparty/pinyin-data \
+  thirdparty/rime_wanxiang
 ```
 
 - 构建字/词典库
 
 ```bash
 # 安装依赖
-npm install
+pnpm install
 
 # 解压原始数据
 unzip data/pinyin-dict-data-word.zip -d data
@@ -26,24 +31,24 @@ unzip data/pinyin-dict-data-phrase.zip -d data
 unzip data/pinyin-dict-db.zip -d data
 
 # 更新/生成全量字典库
-npm run generate:sqlite:word
+pnpm run generate:sqlite:word
 
 # 构建 HMM 词典库
-npm run generate:sqlite:phrase:hmm:trans_kewen \
+pnpm run generate:sqlite:phrase:hmm:trans_kewen \
   -- -f data/pinyin-dict-kewen.raw.txt \
-&& npm run generate:sqlite:phrase:hmm
+&& pnpm run generate:sqlite:phrase:hmm
 ```
 
 - 功能本地验证
 
 ```bash
-npm run app:shell
+pnpm run app:shell
 ```
 
 - 为客户端生成专用的字/词典库
 
 ```bash
-npm run generate:sqlite:ime
+pnpm run generate:sqlite:ime
 ```
 
 ## 数据处理
@@ -52,7 +57,7 @@ npm run generate:sqlite:ime
   并生成有效的字数据至 `data/pinyin-dict.valid.txt`：
 
 ```bash
-npm run generate:raw
+pnpm run generate:raw
 ```
 
 > - 完整的字数据放在 `data/pinyin-dict.raw.txt` 中，
@@ -66,7 +71,7 @@ npm run generate:raw
   并将 json 数据存放在 `data/emotions.json` 中：
 
 ```bash
-npm run generate:emotion
+pnpm run generate:emotion
 ```
 
 - 根据 `data/pinyin-dict.valid.txt` 和 `data/emotions.json`
@@ -74,7 +79,7 @@ npm run generate:emotion
   `data/pinyin-word-dict.sqlite`：
 
 ```bash
-npm run generate:sqlite:word
+pnpm run generate:sqlite:word
 ```
 
 > 全新生成的 `pinyin-word-dict.sqlite` 中的汉字 id 会随机发生变化，
@@ -88,7 +93,7 @@ npm run generate:sqlite:word
 - 从[古文之家](https://www.cngwzj.com)抓取带拼音的古诗词和小学课文
 
 ```bash
-npm run generate:phrase
+pnpm run generate:phrase
 ```
 
 > 拉取到的课文分别保存在文件
@@ -105,7 +110,7 @@ npm run generate:phrase
 - 生成 HMM 训练数据
 
 ```bash
-npm run generate:sqlite:phrase:hmm:trans_kewen \
+pnpm run generate:sqlite:phrase:hmm:trans_kewen \
   -- -f data/pinyin-dict-kewen.raw.txt \
   -f data/pinyin-dict-gushi.raw.txt \
   -f data/pinyin-dict-guci.raw.txt
@@ -117,7 +122,7 @@ npm run generate:sqlite:phrase:hmm:trans_kewen \
 - 创建词典库
 
 ```bash
-npm run generate:sqlite:phrase:hmm
+pnpm run generate:sqlite:phrase:hmm
 ```
 
 > 生成的 SQLite 词典库放在 `data/pinyin-phrase-dict.sqlite` 中
@@ -127,7 +132,7 @@ npm run generate:sqlite:phrase:hmm
 ### 词组输入功能验证
 
 ```bash
-npm run app:shell
+pnpm run app:shell
 ```
 
 ### 生成 Android 字/词典库
@@ -137,7 +142,7 @@ npm run app:shell
   向 Android 客户端生成`筷字输入法`专用的 SQLite 字典和词典库：
 
 ```bash
-npm run generate:sqlite:ime
+pnpm run generate:sqlite:ime
 ```
 
 > - 以上字典库生成命令将自动对多余数据做删除，对新增数据做插入，
