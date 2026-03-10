@@ -1,5 +1,4 @@
 import { hasGlyphFontForCodePoint } from '#utils/utils.mjs';
-import { fetchWordMetas } from '#utils/zdic.mjs';
 
 const unicodes = [
   'U+20C43' /* 𠱃 */,

@@ -10,7 +10,6 @@
   "scripts": {
     "app:shell": "node src/app/shell.mjs",
     "app:shell:debug": "node --inspect-brk src/app/shell.mjs",
-    "generate:test": "node src/generate/test.mjs",
     "generate:raw": "node src/generate/raw/index.mjs",
     "generate:raw:debug": "node --inspect-brk src/generate/raw/index.mjs",
     "generate:emoji": "node src/generate/emoji/index.mjs",
