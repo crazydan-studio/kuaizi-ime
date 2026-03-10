@@ -57,7 +57,7 @@ pnpm run generate:sqlite:ime
   并生成有效的字数据至 `data/pinyin-dict.valid.txt`：
 
 ```bash
-pnpm run generate:raw
+pnpm run data:zi
 ```
 
 > - 完整的字数据放在 `data/pinyin-dict.raw.txt` 中，

@@ -10,8 +10,8 @@
   "scripts": {
     "app:shell": "node src/app/shell.mjs",
     "app:shell:debug": "node --inspect-brk src/app/shell.mjs",
-    "generate:raw": "node src/generate/raw/index.mjs",
-    "generate:raw:debug": "node --inspect-brk src/generate/raw/index.mjs",
+    "data:zi": "node src/data/zi/index.mjs",
+    "data:zi:debug": "node --inspect-brk src/data/zi/index.mjs",
     "generate:emoji": "node src/generate/emoji/index.mjs",
     "generate:phrase": "node src/generate/phrase/index.mjs",
     "generate:phrase:debug": "node --inspect-brk src/generate/phrase/index.mjs",
