@@ -2,11 +2,10 @@ import got from 'got';
 import { JSDOM } from 'jsdom';
 
 import {
-  sleep,
   splitChars,
   hasGlyphFontForCodePoint,
   naiveHTMLNodeInnerText
-} from './utils.mjs';
+} from '#utils/utils.mjs';
 
 // 根据 zdic.net 获取字的详细数据
 const baseUrl = 'https://www.zdic.net/hans/';
@@ -35,8 +34,8 @@ async function fetchWordMeta(word) {
     glyph_struct: '',
     glyph_font_exists: true,
     // 注音与拼音的区别和历史: https://sspai.com/post/75248
-    pinyins: [],
-    zhuyins: [],
+    pinyins: {},
+    zhuyins: {},
     radical: '',
     stroke_order: '',
     total_stroke_count: 0,
@@ -48,8 +47,7 @@ async function fetchWordMeta(word) {
     wubi_codes: [],
     cangjie_codes: [],
     zhengma_codes: [],
-    sijiao_codes: [],
-    phrases: []
+    sijiao_codes: []
   };
 
   // 字形图片和笔顺动画
@@ -69,10 +67,10 @@ async function fetchWordMeta(word) {
     const $audio = $el.querySelector('a[data-src-mp3]');
     const audio = ($audio && $audio.getAttribute('data-src-mp3')) || '';
 
-    wordMeta.pinyins.push({
+    wordMeta.pinyins[value] = {
       value,
       audio_url: audio ? 'https:' + audio : ''
-    });
+    };
   });
 
   // 注音，与拼音按顺序对应
@@ -82,10 +80,10 @@ async function fetchWordMeta(word) {
     const $audio = $el.querySelector('a[data-src-mp3]');
     const audio = ($audio && $audio.getAttribute('data-src-mp3')) || '';
 
-    wordMeta.zhuyins.push({
+    wordMeta.zhuyins[value] = {
       value,
       audio_url: audio ? 'https:' + audio : ''
-    });
+    };
   });
 
   // 总笔画数
@@ -185,28 +183,6 @@ async function fetchWordMeta(word) {
   }
 
   wordMeta.glyph_font_exists = hasGlyphFontForCodePoint(wordMeta.unicode);
-
-  // 词组、短语
-  const phrases = [];
-  const $phrase = $doc.querySelectorAll('.crefe');
-  $phrase.forEach((el) => {
-    const text = naiveHTMLNodeInnerText(el).trim();
-
-    phrases.push(text);
-  });
-
-  const batchSize = 10;
-  for (let i = 0; i < phrases.length; i += batchSize) {
-    const phraseMetas = await Promise.all(
-      phrases.slice(i, i + batchSize).map(fetchPhraseMeta)
-    );
-
-    phraseMetas.forEach((phrase) => {
-      wordMeta.phrases.push(...phrase);
-    });
-
-    await sleep(1500);
-  }
 
   return wordMeta;
 }

@@ -3,7 +3,7 @@ import {
   fetchAndSaveAllKeWen,
   fetchAndSaveAllGushi,
   fetchAndSaveAllGuci
-} from './phrase.mjs';
+} from '#data/provider/cngwzj.com.mjs';
 
 // 采集 古文之家(https://www.cngwzj.com) 的数据
 // 语文课文

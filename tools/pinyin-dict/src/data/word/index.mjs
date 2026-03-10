@@ -1,63 +1,61 @@
 import { fromRootPath } from '#utils/utils.mjs';
+
+import pinyinData from '#data/provider/pinyin-data.mjs';
+import opencc from '#data/provider/opencc.mjs';
+import wanxiang from '#data/provider/wanxiang.mjs';
+
 import {
-  readZDicWordsFromPinyinData,
-  readTraditionalWordsFromOpenCC,
-  patchAndSaveZDicWordsToFile,
+  patchMetaAndSaveToFile,
   saveWordMetasToFile,
   calculateWordWeightByGlyph,
-  plusWordUsageWeight,
-  plusPhraseUsageWeight,
-  readWordUsage,
-  readPhraseUsage
-} from './raw.mjs';
+  patchWordPinyinWeight
+} from './meta.mjs';
 
-// 采用 汉典网(http://zdic.net/) 的数据
-// https://github.com/mozillazg/pinyin-data/blob/master/zdic.txt
-const pinyinDataFile = fromRootPath('../..', 'thirdparty/pinyin-data/zdic.txt');
-// 繁->简 转换数据，用于确定繁体字
-// https://github.com/BYVoid/OpenCC/blob/master/data/dictionary/TSCharacters.txt
-const tradToSimpleDataFile = fromRootPath(
-  '../..',
-  'thirdparty/OpenCC/data/dictionary/TSCharacters.txt'
-);
-// 字/词的使用权重
-const wordUsageDataFile = fromRootPath('../..', 'thirdparty/hanzi-weight.txt');
-const phraseUsageDataFile = fromRootPath('../..', 'thirdparty/hanzi-weight.ciyu.txt');
+// 采用 [汉典网](http://zdic.net/) 的单字数据、万象拼音的字词权重数据、OpenCC 的繁简转换数据
+// Note: OpenCC 中的繁简信息比万象拼音的更全面、更准确
 
 // 包含完整拼音和字信息的文本文件
-const dictDataRawFile = fromRootPath('data', 'pinyin-dict.raw.txt');
-const dictDataValidFile = fromRootPath('data', 'pinyin-dict.valid.txt');
+const wordDataRawFile = fromRootPath('data', 'pinyin-dict.raw.txt');
+const wordDataValidFile = fromRootPath('data', 'pinyin-dict.valid.txt');
 
+// -----------------------------------------------------------------------
 console.log();
 console.log('读取 OpenCC 数据 ...');
-const traditionalWords = await readTraditionalWordsFromOpenCC(
-  tradToSimpleDataFile
-);
+const tradWords = await opencc.readTrad2SimpChars();
+
 console.log('已读取 OpenCC 数据：');
-console.log('- 繁体字数：' + Object.keys(traditionalWords).length);
+console.log('- 繁体字数：' + Object.keys(tradWords).length);
 console.log();
 
+// -----------------------------------------------------------------------
 console.log();
 console.log('读取 pinyin-data 数据 ...');
-const zdicWords = await readZDicWordsFromPinyinData(pinyinDataFile);
-zdicWords.forEach((word) => {
-  word.traditional = !!traditionalWords[word.value];
-});
+const zdicWords = await pinyinData.readZdicWords();
+const zdicWordKeys = Object.keys(zdicWords);
+
 console.log('已读取 pinyin-data 数据：');
-console.log('- 总字数：' + zdicWords.length);
-console.log('- 繁体字数：' + zdicWords.filter((w) => w.traditional).length);
-console.log('- 简体字数：' + zdicWords.filter((w) => !w.traditional).length);
+console.log('- 总字数：' + zdicWordKeys.length);
+console.log('- 繁体字数：' + zdicWordKeys.filter((w) => !!tradWords[w]).length);
+console.log('- 简体字数：' + zdicWordKeys.filter((w) => !tradWords[w]).length);
 console.log();
 
+// -----------------------------------------------------------------------
 console.log();
 console.log('读取 zdic.net 数据 ...');
-const wordMetas = await patchAndSaveZDicWordsToFile(dictDataRawFile, zdicWords);
-const wordMetasWithPinyin = wordMetas.filter((w) => w.pinyins.length > 0);
-const wordMetasWithoutPinyin = wordMetas.filter((w) => w.pinyins.length === 0);
+const wordMetas = await patchMetaAndSaveToFile(zdicWords, wordDataRawFile);
+wordMetas.forEach((meta) => {
+  meta.traditional = !!tradWords[meta.value];
+});
+
+const hasPinyin = (w) => Object.keys(w.pinyins).length > 0;
+const hasNotPinyin = (w) => !hasPinyin(w);
+const wordMetasWithPinyin = wordMetas.filter(hasPinyin);
+const wordMetasWithoutPinyin = wordMetas.filter(hasNotPinyin);
 const wordMetasWithGlyph = wordMetas.filter((w) => w.glyph_font_exists);
 const wordMetasWithoutGlyph = wordMetas.filter((w) => !w.glyph_font_exists);
 const wordMetasWithStrokeOrder = wordMetas.filter((w) => !!w.stroke_order);
 const wordMetasWithoutStrokeOrder = wordMetas.filter((w) => !w.stroke_order);
+
 console.log('已读取 zdic.net 数据：');
 console.log('- 总字数：' + wordMetas.length);
 console.log('- 繁体字数：' + wordMetas.filter((w) => w.traditional).length);
@@ -106,14 +104,14 @@ console.log(
 console.log(
   '- 有字形无拼音字列表：' +
     wordMetasWithGlyph
-      .filter((w) => w.pinyins.length === 0)
+      .filter(hasNotPinyin)
       .map((meta) => meta.value)
       .join(', ')
 );
 console.log(
   '- 有字形无拼音无笔顺字列表：' +
     wordMetasWithGlyph
-      .filter((w) => w.pinyins.length === 0 && !w.stroke_order)
+      .filter((w) => hasNotPinyin(w) && !w.stroke_order)
       .map((meta) => meta.value)
       .join(', ')
 );
@@ -124,7 +122,7 @@ console.log(
 // console.log(
 //   '- 无字形有拼音字列表：' +
 //     wordMetasWithoutGlyph
-//       .filter((w) => w.pinyins.length !== 0)
+//       .filter(hasPinyin)
 //       .map((meta) => `${meta.value}(${meta.unicode})`)
 //       .join(', ')
 // );
@@ -138,7 +136,7 @@ console.log(
 // console.log(
 //   '- 无字形有拼音有笔顺字列表：' +
 //     wordMetasWithoutGlyph
-//       .filter((w) => w.pinyins.length !== 0 && w.stroke_order)
+//       .filter((w) => hasPinyin(w) && w.stroke_order)
 //       .map((meta) => `${meta.value}(${meta.unicode})`)
 //       .join(', ')
 // );
@@ -148,21 +146,23 @@ console.log(
 // );
 console.log();
 
+// -----------------------------------------------------------------------
 console.log();
 console.log('按字形计算字的权重 ...');
 calculateWordWeightByGlyph(wordMetasWithGlyph);
 console.log();
 
 console.log();
-console.log('为字/词增加使用权重 ...');
-const wordUsages = await readWordUsage(wordUsageDataFile);
-const phraseUsages = await readPhraseUsage(phraseUsageDataFile);
-plusWordUsageWeight(wordMetasWithGlyph, wordUsages);
-plusPhraseUsageWeight(wordMetasWithGlyph, phraseUsages);
+console.log('按读音为字补充使用权重 ...');
+const wordPinyinWeightData = await wanxiang.readZiData();
+
+patchWordPinyinWeight(wordMetasWithGlyph, wordPinyinWeightData);
 console.log();
 
+// -----------------------------------------------------------------------
 console.log();
 console.log('保存有字形的字数据 ...');
-saveWordMetasToFile(dictDataValidFile, wordMetasWithGlyph);
-console.log('有字形的字数据已保存至：' + dictDataValidFile);
+saveWordMetasToFile(wordMetasWithGlyph, wordDataValidFile);
+
+console.log('有字形的字数据已保存至：' + wordDataValidFile);
 console.log();

@@ -1,6 +1,6 @@
 import { fromRootPath, appendLineToFile } from '#utils/utils.mjs';
 
-import { fetchEmojis } from './emoji.mjs';
+import { fetchEmojis } from '#data/provider/emojixd.com.mjs';
 
 const emojiDataFile = fromRootPath('data', 'emojis.json');
 

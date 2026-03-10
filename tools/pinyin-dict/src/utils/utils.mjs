@@ -28,6 +28,7 @@ export async function asyncForEach(array, cb) {
   }
 }
 
+/** 当前 node 项目的根目录 */
 export function fromRootPath(...paths) {
   return path.join(__dirname, '../..', ...paths);
 }

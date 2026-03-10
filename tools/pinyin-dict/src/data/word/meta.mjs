@@ -6,134 +6,30 @@ import {
   extractZhuyinChars,
   correctPinyin,
   correctZhuyin,
-  calculateStrokeSimilarity,
-  splitChars
+  calculateStrokeSimilarity
 } from '#utils/utils.mjs';
-import { fetchWordMetas } from '#utils/zdic.mjs';
 
-/** 从 https://github.com/mozillazg/pinyin-data 中读取汉典网的数据 */
-export async function readZDicWordsFromPinyinData(file) {
-  const data = await readLineFromFile(file, (line) => {
-    line = line.trim();
-    if (line.startsWith('#') || line === '') {
-      return;
-    }
-
-    const unicode = line.replaceAll(/^([^:]+):.+/g, '$1');
-    const joinedPinyin = line
-      .replaceAll(/^.+:\s*([^\s]+)\s*#.*/g, '$1')
-      .replaceAll(/["']/g, '');
-    if (joinedPinyin === '') {
-      return;
-    }
-
-    const word = line.replaceAll(/^.+#\s*([^\s]+).*$/g, '$1');
-    const pinyins = joinedPinyin.split(/,/g).map((value) => ({ value }));
-    //console.log('Read ' + line);
-
-    return { value: word, unicode, pinyins };
-  });
-
-  return data;
-}
-
-/** 从 https://github.com/BYVoid/OpenCC 中读取繁体字 */
-export async function readTraditionalWordsFromOpenCC(file) {
-  const data = {};
-
-  await readLineFromFile(file, (line) => {
-    line = line.trim();
-
-    const word = line.replaceAll(/^([^\s]+).+/g, '$1');
-    data[word] = true;
-  });
-
-  return data;
-}
-
-/** 读取字的使用信息 */
-export async function readWordUsage(file) {
-  const data = {};
-
-  await readLineFromFile(file, (line) => {
-    line = line.trim();
-    if (line.startsWith('#')) {
-      return;
-    }
-
-    const splits = line.split(/\s*,\s*/g);
-    const value = splits[0];
-
-    let weight = Math.round(parseFloat(splits[1]) * 10000);
-    weight = weight < 1 ? 1 : weight > 40000 ? weight - 30000 : weight;
-
-    data[value] = (data[value] || 0) + weight;
-  });
-
-  return data;
-}
-
-/** 读取词的使用信息 */
-export async function readPhraseUsage(file) {
-  const data = {};
-
-  await readLineFromFile(file, (line) => {
-    line = line.trim();
-    if (line.startsWith('#')) {
-      return;
-    }
-
-    const splits = line.split(/\s*,\s*/g);
-    const value = splits[0];
-    if (splitChars(value).length < 2) {
-      return;
-    }
-
-    let weight = Math.round(parseFloat(splits[1]) * 10000);
-    weight = weight < 1 ? 1 : weight;
-
-    data[value] = (data[value] || 0) + weight;
-  });
-
-  return data;
-}
-
-/** 获取 汉典网 中的字信息 */
-export async function getWordMetasFromZDic(words) {
-  const wordMap = words.reduce((map, word) => {
-    map[word.value] = word;
-    return map;
-  }, {});
-  const wordMetas = await fetchWordMetas(words.map((w) => w.value));
-
-  wordMetas.forEach((meta) => {
-    const word = wordMap[meta.value];
-    if (!word) {
-      return;
-    }
-
-    meta.traditional ||= word.traditional;
-    if (meta.pinyins.length === 0 && word.pinyins.length > 0) {
-      meta.pinyins = word.pinyins;
-    }
-  });
-
-  return wordMetas;
-}
+import { fetchWordMetas } from '#data/provider/zdic.net.mjs';
 
 /**
- * 补充 汉典网 中的字信息并按行保存为 json 数组数据，
- * 返回全部字信息
+ * 补充字信息并按行保存为 json 数组数据，返回全部字信息
+ *
+ * @return ```json
+ * [{
+ *    value: '㑟', unicode: 'U+345F',
+ *    pinyins: {
+ *      'běng': {value: 'běng'},
+ *      'bó': {value: 'bó'},
+ *      'pěng': {value: 'pěng'}
+ *    }, ...
+ * }, ...]
+ * ```
  */
-export async function patchAndSaveZDicWordsToFile(file, zdicWords) {
+export async function patchMetaAndSaveToFile(thinWords, file) {
   const batchSize = 20;
-
-  const zdicWordMap = zdicWords.reduce((map, word) => {
-    map[word.value] = word;
-    return map;
-  }, {});
-
   const savedWordMetas = [];
+
+  const savedWords = {};
   await readLineFromFile(file, (line) => {
     if (!line || !line.trim()) {
       return;
@@ -142,52 +38,41 @@ export async function patchAndSaveZDicWordsToFile(file, zdicWords) {
     const metas = JSON.parse(line);
     metas.forEach((meta) => {
       if (shouldBeExcluded(meta)) {
-        console.log(
-          `忽略字：${meta.value} - ${meta.pinyins
-            .map((p) => p.value)
-            .join(',')}`
-        );
-        delete zdicWordMap[meta.value];
+        savedWords[meta.value] = true;
+        console.log(`忽略字：${wordMetaToString(meta)}`);
 
         return;
       }
 
-      const zdicWord = zdicWordMap[meta.value];
-      if (zdicWord) {
-        if (meta.pinyins.length === 0) {
-          meta.pinyins = zdicWord.pinyins;
-        }
-
-        delete zdicWordMap[meta.value];
-      } else {
-        console.log(
-          `多余字：${meta.value} - ${meta.pinyins
-            .map((p) => p.value)
-            .join(',')}`
-        );
+      const word = thinWords[meta.value];
+      if (!word) {
+        console.log(`多余字：${wordMetaToString(meta)}`);
+        return;
       }
+
+      meta.pinyins = word.pinyins;
+      savedWords[meta.value] = true;
 
       correctWordMeta(meta);
       savedWordMetas.push(meta);
     });
   });
 
-  const missingWords = Object.keys(zdicWordMap).map((k) => zdicWordMap[k]);
+  const missingWordKeys = Object.keys(thinWords).filter(
+    (key) => !savedWords[key]
+  );
   console.log(
-    `已抓取到 ${savedWordMetas.length} 条数据，继续抓取剩余的 ${missingWords.length} 条数据 ...`
+    `已抓取到 ${savedWordMetas.length} 条数据，继续抓取剩余的 ${missingWordKeys.length} 条数据 ...`
   );
 
-  for (let i = 0; i < missingWords.length; i += batchSize) {
-    const words = missingWords.slice(i, i + batchSize);
-    const metas = await getWordMetasFromZDic(words);
+  for (let i = 0; i < missingWordKeys.length; i += batchSize) {
+    const keys = missingWordKeys.slice(i, i + batchSize);
+    const metas = await getWordMetas(keys, thinWords);
 
-    metas.forEach((meta) => {
-      correctWordMeta(meta);
-      savedWordMetas.push(meta);
-    });
     appendLineToFile(file, JSON.stringify(metas));
-
     console.log(`已抓取到第 ${i + 1} 到 ${i + 1 + batchSize} 之间的数据.`);
+
+    savedWordMetas = savedWordMetas.concat(metas);
 
     await sleep(3000);
   }
@@ -195,8 +80,29 @@ export async function patchAndSaveZDicWordsToFile(file, zdicWords) {
   return savedWordMetas;
 }
 
+/** 获取 汉典网 中的字信息 */
+async function getWordMetas(wordKeys, thinWords) {
+  const wordMetas = [];
+
+  (await fetchWordMetas(wordKeys)).forEach((meta) => {
+    if (!meta.src_url) {
+      console.log(`缺失字：${wordMetaToString(thinWords[meta.value])}`);
+      return;
+    }
+
+    const word = thinWords[meta.value];
+
+    meta.pinyins = Object.assign({}, word.pinyins, meta.pinyins);
+
+    correctWordMeta(meta);
+    wordMetas.push(meta);
+  });
+
+  return wordMetas;
+}
+
 /** 保存字信息到指定文件 */
-export function saveWordMetasToFile(file, wordMetas) {
+export function saveWordMetasToFile(wordMetas, file) {
   const batchSize = 50;
 
   for (let i = 0; i < wordMetas.length; i += batchSize) {
@@ -207,32 +113,23 @@ export function saveWordMetasToFile(file, wordMetas) {
   }
 }
 
-/** 增加字使用权重 */
-export function plusWordUsageWeight(wordMetas, usages) {
+function wordMetaToString(meta) {
+  const pinyins = Object.keys(meta.pinyins).join(',');
+  return `${meta.value} - ${pinyins}`;
+}
+
+/** 补充字拼音的权重 */
+export function patchWordPinyinWeight(wordMetas, wordPinyinWeightData) {
   wordMetas.forEach((meta) => {
     const word = meta.value;
 
-    let weight = usages[word] || 0;
-    if (weight <= 0) {
+    const pinyinWeights = wordPinyinWeightData[word];
+    if (!pinyinWeights) {
       return;
     }
 
-    meta.used_weight = weight;
-  });
-}
-
-/** 增加词使用权重 */
-export function plusPhraseUsageWeight(wordMetas, usages) {
-  wordMetas.forEach((meta) => {
-    meta.phrases.forEach((phrase) => {
-      const weight = usages[phrase.value.join('')] || 0;
-      if (weight <= 0) {
-        delete phrase.weight;
-        return;
-      }
-
-      phrase.weight ||= 0;
-      phrase.weight += weight + 1000;
+    meta.pinyins.forEach((pinyin) => {
+      pinyin.weight = pinyinWeights[pinyin.value] || 0;
     });
   });
 }
