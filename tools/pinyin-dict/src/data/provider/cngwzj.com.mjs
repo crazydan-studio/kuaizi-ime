@@ -1,4 +1,3 @@
-import got from 'got';
 import { JSDOM } from 'jsdom';
 
 import {
@@ -11,7 +10,6 @@ import {
 // 根据 www.cngwzj.com 拉取带拼音的语文课文
 const gushiBaseUrl = 'https://www.cngwzj.com/tangshi300/78.html';
 const guciBaseUrl = 'https://www.cngwzj.com/tangshi300/2137.html';
-const gotOptions = { timeout: { connect: 50000 } };
 
 /** 拉取所有的课文数据 */
 export async function fetchAndSaveAllKeWen(file, dump) {
@@ -127,7 +125,7 @@ async function fetchAndSaveArticles(file, urls, dump) {
 }
 
 async function fetchAndParsePage(url, defaultVal, parse) {
-  const html = await got(url, gotOptions).text();
+  const html = await (await fetch(url)).text();
   const $dom = new JSDOM(html);
   const $doc = (($dom || {}).window || {}).document;
 

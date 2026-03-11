@@ -227,6 +227,12 @@ export function getPinyin(str) {
 
 /** 修正拼音 */
 export function correctPinyin(str) {
+  switch (str) {
+    case 'yòu ㄧ':
+      str = 'yòu';
+      break;
+  }
+
   return str
     .replaceAll('ā', 'ā')
     .replaceAll('ă', 'ǎ')

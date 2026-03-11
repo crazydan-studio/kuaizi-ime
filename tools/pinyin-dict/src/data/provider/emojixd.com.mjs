@@ -1,13 +1,11 @@
-import got from 'got';
 import { JSDOM } from 'jsdom';
 
 import { sleep } from '#utils/utils.mjs';
 
 const baseUrl = 'https://emojixd.com';
-const gotOptions = { timeout: { connect: 50000 } };
 
 export async function fetchEmojis() {
-  const html = await got(baseUrl, gotOptions).text();
+  const html = await (await fetch(baseUrl)).text();
   const $dom = new JSDOM(html);
   const $doc = (($dom || {}).window || {}).document;
   if (!$doc) {
@@ -37,7 +35,7 @@ export async function fetchEmojis() {
 }
 
 async function fetchGroupEmojis(groupName, groupUrl) {
-  const html = await got(groupUrl, gotOptions).text();
+  const html = await (await fetch(groupUrl)).text();
   const $dom = new JSDOM(html);
   const $doc = (($dom || {}).window || {}).document;
   if (!$doc) {
@@ -73,7 +71,7 @@ async function fetchGroupEmojis(groupName, groupUrl) {
 }
 
 async function fetchEmoji(emojiUrl) {
-  const html = await got(emojiUrl, gotOptions).text();
+  const html = await (await fetch(emojiUrl)).text();
   const $dom = new JSDOM(html);
   const $doc = (($dom || {}).window || {}).document;
   if (!$doc) {

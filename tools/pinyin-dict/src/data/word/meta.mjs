@@ -3,13 +3,12 @@ import {
   readLineFromFile,
   appendLineToFile,
   extractPinyinChars,
-  extractZhuyinChars,
   correctPinyin,
   correctZhuyin,
   calculateStrokeSimilarity
 } from '#utils/utils.mjs';
 
-import { fetchWordMetas } from '#data/provider/zdic.net.mjs';
+import { fetchWordMeta } from '#data/provider/zdic.net.mjs';
 
 /**
  * 补充字信息并按行保存为 json 数组数据，返回全部字信息
@@ -17,18 +16,15 @@ import { fetchWordMetas } from '#data/provider/zdic.net.mjs';
  * @return ```json
  * [{
  *    value: '㑟', unicode: 'U+345F',
- *    pinyins: {
- *      'běng': {value: 'běng'},
- *      'bó': {value: 'bó'},
- *      'pěng': {value: 'pěng'}
- *    }, ...
+ *    pinyins: [{value: 'běng'}, {value: 'bó'}, {value: 'pěng'}],
+ *    ...
  * }, ...]
  * ```
  */
-export async function patchMetaAndSaveToFile(thinWords, file) {
+export async function patchWordMetaAndSaveToFile(thinWords, file) {
   const batchSize = 20;
-  const savedWordMetas = [];
 
+  let savedWordMetas = [];
   const savedWords = {};
   await readLineFromFile(file, (line) => {
     if (!line || !line.trim()) {
@@ -39,8 +35,8 @@ export async function patchMetaAndSaveToFile(thinWords, file) {
     metas.forEach((meta) => {
       if (shouldBeExcluded(meta)) {
         savedWords[meta.value] = true;
-        console.log(`忽略字：${wordMetaToString(meta)}`);
 
+        console.log(`忽略字：${wordMetaToString(meta)}`);
         return;
       }
 
@@ -50,7 +46,6 @@ export async function patchMetaAndSaveToFile(thinWords, file) {
         return;
       }
 
-      meta.pinyins = word.pinyins;
       savedWords[meta.value] = true;
 
       correctWordMeta(meta);
@@ -70,11 +65,9 @@ export async function patchMetaAndSaveToFile(thinWords, file) {
     const metas = await getWordMetas(keys, thinWords);
 
     appendLineToFile(file, JSON.stringify(metas));
-    console.log(`已抓取到第 ${i + 1} 到 ${i + 1 + batchSize} 之间的数据.`);
+    console.log(`已抓取到第 ${i + 1} 到 ${i + batchSize} 之间的数据.`);
 
     savedWordMetas = savedWordMetas.concat(metas);
-
-    await sleep(3000);
   }
 
   return savedWordMetas;
@@ -84,19 +77,25 @@ export async function patchMetaAndSaveToFile(thinWords, file) {
 async function getWordMetas(wordKeys, thinWords) {
   const wordMetas = [];
 
-  (await fetchWordMetas(wordKeys)).forEach((meta) => {
+  // Note: 挨个获取以避免 "429 Too Many Requests"
+  for (let wordKey of wordKeys) {
+    const word = thinWords[wordKey];
+    const meta = await fetchWordMeta(wordKey);
+
     if (!meta.src_url) {
-      console.log(`缺失字：${wordMetaToString(thinWords[meta.value])}`);
+      console.log(`缺失字：${wordMetaToString(word)}`);
       return;
     }
 
-    const word = thinWords[meta.value];
-
-    meta.pinyins = Object.assign({}, word.pinyins, meta.pinyins);
+    if (meta.pinyins.length == 0) {
+      meta.pinyins = word.pinyins || [];
+    }
 
     correctWordMeta(meta);
     wordMetas.push(meta);
-  });
+
+    await sleep(100);
+  }
 
   return wordMetas;
 }
@@ -114,12 +113,12 @@ export function saveWordMetasToFile(wordMetas, file) {
 }
 
 function wordMetaToString(meta) {
-  const pinyins = Object.keys(meta.pinyins).join(',');
+  const pinyins = meta.pinyins.map((py) => py.value).join(',');
   return `${meta.value} - ${pinyins}`;
 }
 
-/** 补充字拼音的权重 */
-export function patchWordPinyinWeight(wordMetas, wordPinyinWeightData) {
+/** 补充字拼音的使用权重 */
+export function patchWordPinyinUsedWeight(wordMetas, wordPinyinWeightData) {
   wordMetas.forEach((meta) => {
     const word = meta.value;
 
@@ -129,7 +128,7 @@ export function patchWordPinyinWeight(wordMetas, wordPinyinWeightData) {
     }
 
     meta.pinyins.forEach((pinyin) => {
-      pinyin.weight = pinyinWeights[pinyin.value] || 0;
+      pinyin.used_weight = pinyinWeights[pinyin.value] || 0;
     });
   });
 }
@@ -181,8 +180,9 @@ export function calculateWordWeightByGlyph(wordMetas) {
 
   // 按拼音分组，再按相似性计算字形权重
   const pinyinCharsGroups = wordMetas.reduce((map, meta) => {
-    meta.pinyins.forEach((spell) => {
-      (map[spell.chars] ||= []).push(meta);
+    meta.pinyins.forEach((pinyin) => {
+      const chars = extractPinyinChars(pinyin.value);
+      (map[chars] ||= []).push(meta);
     });
 
     return map;
@@ -209,9 +209,10 @@ export function calculateWordWeightByGlyph(wordMetas) {
       const meta = metas[i];
       const weight = pinyinBaseWeight - i;
 
-      meta.pinyins.forEach((spell) => {
-        if (spell.chars === chars) {
-          spell.glyph_weight = weight;
+      meta.pinyins.forEach((pinyin) => {
+        const pych = extractPinyinChars(pinyin.value);
+        if (pych === chars) {
+          pinyin.glyph_weight = weight;
         }
       });
     }
@@ -449,28 +450,10 @@ function correctWordMeta(wordMeta) {
       wordMeta.glyph_struct = '左右结构';
       break;
     case '㣫': // ㄓㄨㄥˇㄉㄨㄥˋ
-      wordMeta.zhuyins = [
-        {
-          value: 'ㄓㄨㄥˇ',
-          audio_url: 'https://img.zdic.net/audio/zd/zy/ㄓㄨㄥˇ.mp3'
-        },
-        {
-          value: 'ㄉㄨㄥˋ',
-          audio_url: 'https://img.zdic.net/audio/zd/zy/ㄉㄨㄥˋ.mp3'
-        }
-      ];
+      wordMeta.zhuyins = [{ value: 'ㄓㄨㄥˇ' }, { value: 'ㄉㄨㄥˋ' }];
       break;
     case '頁': // ㄧㄝˋ，ㄒ〡ㄝˊ
-      wordMeta.zhuyins = [
-        {
-          value: 'ㄧㄝˋ',
-          audio_url: 'https://img.zdic.net/audio/zd/zy/ㄧㄝˋ.mp3'
-        },
-        {
-          value: 'ㄒ〡ㄝˊ',
-          audio_url: 'https://img.zdic.net/audio/zd/zy/ㄒ〡ㄝˊ.mp3'
-        }
-      ];
+      wordMeta.zhuyins = [{ value: 'ㄧㄝˋ' }, { value: 'ㄒ〡ㄝˊ' }];
       break;
   }
 
@@ -494,38 +477,14 @@ function correctWordMeta(wordMeta) {
   addMissingPinyin(wordMeta);
 
   wordMeta.pinyins.forEach((data) => {
-    switch (data.value) {
-      case 'yòu ㄧ':
-        data.value = 'yòu';
-        break;
-    }
-
     data.value = correctPinyin(data.value);
-    data.audio_url && (data.audio_url = correctPinyin(data.audio_url));
-    data.chars = extractPinyinChars(data.value);
   });
   wordMeta.zhuyins.forEach((data) => {
     data.value = correctZhuyin(data.value);
-    data.chars = extractZhuyinChars(data.value);
 
-    if (data.chars === 'ㄏπ') {
+    if (data.value === 'ㄏπ') {
       console.log(wordMeta.value, data);
     }
-  });
-
-  wordMeta.phrases = wordMeta.phrases.filter(
-    (phrase) =>
-      phrase.value &&
-      phrase.value.length > 1 &&
-      !phrase.value.includes('…') &&
-      phrase.pinyins.filter((p) => !!p).length > 0
-  );
-  wordMeta.phrases.forEach((phrase) => {
-    phrase.pinyins.forEach((data) => {
-      data.value = data.value.map(correctPinyin);
-    });
-
-    correctPhrasePinyin(phrase);
   });
 }
 
@@ -682,77 +641,12 @@ function addMissingPinyin(wordMeta) {
   }
 }
 
-function correctPhrasePinyin(phrase) {
-  const replacements = {
-    '不:bu': 'bù',
-    '不:bū': 'bù',
-    '不:bǔ': 'bù',
-    '不:bú': 'bù',
-    '作:zuó': 'zuò',
-    '帆:fán': 'fān',
-    '一:yí': 'yī',
-    '一:yì': 'yī',
-    '溜:liú': 'liù',
-    '归:huī': 'guī',
-    '观:guāng': 'guān',
-    '民:rén': 'mín',
-    '偏:piāng': 'piān',
-    '內:nà': 'nèi',
-    '外:wai': 'wài',
-    '訌:hóng': 'hòng',
-    '長:zhàng': 'cháng',
-    '教:jiàn': 'jiào',
-    '寻:xín': 'xún',
-    '将:qiāng': 'jiāng',
-    '寸:cù': 'cùn',
-    '傅:fū': 'fu',
-    '练:zh': 'liàn',
-    '穴:xuè': 'xué',
-    '野:yiě': 'yě',
-    '子:zī': 'zi',
-    '家:ji': 'jiā',
-    '手:shǒ': 'shǒu',
-    '瘩:dā': 'da',
-    '度:duò': 'duó',
-    '进:lián': 'jìn',
-    '扬:yán': 'yáng',
-    '期:qí': 'qī',
-    '骨:gú': 'gǔ',
-    '实:shi': 'shí',
-    '衣:yì': 'yī',
-    '縱:zōng': 'zòng',
-    '魄:tuò': 'pò',
-    '首:shǒ': 'shǒu',
-    '三:sā': 'sān',
-    '個:ge': 'gè',
-    '业:yiè': 'yè',
-    '行:héng': 'háng',
-    '歸:huī': 'guī'
-  };
-
-  phrase.pinyins.forEach((pinyin) => {
-    if (phrase.value.length !== pinyin.value.length) {
-      return;
-    }
-
-    for (let i = 0; i < phrase.value.length; i++) {
-      const code = `${phrase.value[i]}:${pinyin.value[i]}`;
-      const replacement = replacements[code];
-
-      if (replacement) {
-        pinyin.value.splice(i, 1, replacement);
-      }
-    }
-  });
-}
-
 function removeDuplicateSpell(spells) {
-  const map = spells.reduce((map, spell) => {
-    if (!map[spell.value]) {
-      map[spell.value] = spell;
-    }
-    return map;
-  }, {});
+  const map = {};
+  spells.forEach((spell) => {
+    const old = map[spell.value] || {};
+    map[spell.value] = Object.assign(old, spell);
+  });
 
   return Object.values(map);
 }

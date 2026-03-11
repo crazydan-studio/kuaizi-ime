@@ -6,11 +6,7 @@ import { fromRootPath, readLineFromFile } from '#utils/utils.mjs';
  * @return ```json
  * {'㑟': {
  *    value: '㑟', unicode: 'U+345F',
- *    pinyins: {
- *      'běng': {value: 'běng'},
- *      'bó': {value: 'bó'},
- *      'pěng': {value: 'pěng'}
- *    }
+ *    pinyins: [{value: 'běng'}, {value: 'bó'}, {value: 'pěng'}]
  * }, ...}
  * ```
  */
@@ -34,10 +30,7 @@ export async function readZdicWords() {
     }
 
     const word = line.replaceAll(/^.+#\s*([^\s]+).*$/g, '$1');
-    const pinyins = {};
-    joinedPinyin.split(/,/g).forEach((value) => {
-      pinyins[value] = { value };
-    });
+    const pinyins = joinedPinyin.split(/,/g).map((value) => ({ value }));
 
     data[word] = { value: word, unicode, pinyins };
   });

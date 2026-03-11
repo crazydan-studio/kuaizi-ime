@@ -1,14 +1,14 @@
 import { fromRootPath } from '#utils/utils.mjs';
 
-import pinyinData from '#data/provider/pinyin-data.mjs';
-import opencc from '#data/provider/opencc.mjs';
-import wanxiang from '#data/provider/wanxiang.mjs';
+import * as pinyinData from '#data/provider/pinyin-data.mjs';
+import * as opencc from '#data/provider/opencc.mjs';
+import * as wanxiang from '#data/provider/wanxiang.mjs';
 
 import {
-  patchMetaAndSaveToFile,
+  patchWordMetaAndSaveToFile,
   saveWordMetasToFile,
   calculateWordWeightByGlyph,
-  patchWordPinyinWeight
+  patchWordPinyinUsedWeight
 } from './meta.mjs';
 
 // 采用 [汉典网](http://zdic.net/) 的单字数据、万象拼音的字词权重数据、OpenCC 的繁简转换数据
@@ -42,12 +42,12 @@ console.log();
 // -----------------------------------------------------------------------
 console.log();
 console.log('读取 zdic.net 数据 ...');
-const wordMetas = await patchMetaAndSaveToFile(zdicWords, wordDataRawFile);
+const wordMetas = await patchWordMetaAndSaveToFile(zdicWords, wordDataRawFile);
 wordMetas.forEach((meta) => {
   meta.traditional = !!tradWords[meta.value];
 });
 
-const hasPinyin = (w) => Object.keys(w.pinyins).length > 0;
+const hasPinyin = (w) => w.pinyins.length > 0;
 const hasNotPinyin = (w) => !hasPinyin(w);
 const wordMetasWithPinyin = wordMetas.filter(hasPinyin);
 const wordMetasWithoutPinyin = wordMetas.filter(hasNotPinyin);
@@ -66,7 +66,6 @@ console.log('- 有字形字数：' + wordMetasWithGlyph.length);
 console.log('- 无字形字数：' + wordMetasWithoutGlyph.length);
 console.log('- 有笔顺字数：' + wordMetasWithStrokeOrder.length);
 console.log('- 无笔顺字数：' + wordMetasWithoutStrokeOrder.length);
-console.log('- 短语数：' + wordMetas.reduce((r, w) => r + w.phrases.length, 0));
 console.log();
 console.log(
   '- 无拼音字列表：' +
@@ -153,10 +152,10 @@ calculateWordWeightByGlyph(wordMetasWithGlyph);
 console.log();
 
 console.log();
-console.log('按读音为字补充使用权重 ...');
+console.log('按拼音为字补充使用权重 ...');
 const wordPinyinWeightData = await wanxiang.readZiData();
 
-patchWordPinyinWeight(wordMetasWithGlyph, wordPinyinWeightData);
+patchWordPinyinUsedWeight(wordMetasWithGlyph, wordPinyinWeightData);
 console.log();
 
 // -----------------------------------------------------------------------

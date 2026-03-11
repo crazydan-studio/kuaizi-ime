@@ -1,4 +1,3 @@
-import got from 'got';
 import { JSDOM } from 'jsdom';
 
 import {
@@ -9,19 +8,26 @@ import {
 
 // 根据 zdic.net 获取字的详细数据
 const baseUrl = 'https://www.zdic.net/hans/';
-const gotOptions = { timeout: { connect: 50000 } };
 
+/** 同时获取多个字信息。Note: 部分字信息可能未提供读音 */
 export async function fetchWordMetas(words) {
   return await Promise.all(words.map(fetchWordMeta));
 }
 
-async function fetchWordMeta(word) {
+/** 获取单个字信息。Note: 部分字信息可能未提供读音 */
+export async function fetchWordMeta(word) {
   const srcUrl = baseUrl + word;
-  // const html = await (await fetch(srcUrl)).text();
-  const html = await got(srcUrl, gotOptions).text();
+  const html = await (await fetch(srcUrl)).text();
   const $dom = new JSDOM(html);
   const $doc = (($dom || {}).window || {}).document;
   if (!$doc) {
+    return { value: word };
+  }
+
+  const title = $doc.title;
+  if (!title.includes(word)) {
+    console.error('Error when got "' + word + '": ' + title);
+
     return { value: word };
   }
 
@@ -34,8 +40,8 @@ async function fetchWordMeta(word) {
     glyph_struct: '',
     glyph_font_exists: true,
     // 注音与拼音的区别和历史: https://sspai.com/post/75248
-    pinyins: {},
-    zhuyins: {},
+    pinyins: [],
+    zhuyins: [],
     radical: '',
     stroke_order: '',
     total_stroke_count: 0,
@@ -64,26 +70,28 @@ async function fetchWordMeta(word) {
   const $pinyin = $doc.querySelectorAll('.ziif .dsk .z_py .z_d');
   $pinyin.forEach(($el) => {
     const value = naiveHTMLNodeInnerText($el).trim();
-    const $audio = $el.querySelector('a[data-src-mp3]');
-    const audio = ($audio && $audio.getAttribute('data-src-mp3')) || '';
+    // const $audio = $el.querySelector('a[data-src-mp3]');
+    // const audio = ($audio && $audio.getAttribute('data-src-mp3')) || '';
 
-    wordMeta.pinyins[value] = {
-      value,
-      audio_url: audio ? 'https:' + audio : ''
-    };
+    // Note: 音频地址始终为 https://img.zdic.net/audio/zd/py/${value}.mp3 形式
+    wordMeta.pinyins.push({
+      value
+      // audio_url: audio ? 'https:' + audio : ''
+    });
   });
 
   // 注音，与拼音按顺序对应
   const $zhuyin = $doc.querySelectorAll('.ziif .dsk .z_zy .z_d');
   $zhuyin.forEach(($el) => {
     const value = naiveHTMLNodeInnerText($el).trim();
-    const $audio = $el.querySelector('a[data-src-mp3]');
-    const audio = ($audio && $audio.getAttribute('data-src-mp3')) || '';
+    // const $audio = $el.querySelector('a[data-src-mp3]');
+    // const audio = ($audio && $audio.getAttribute('data-src-mp3')) || '';
 
-    wordMeta.zhuyins[value] = {
-      value,
-      audio_url: audio ? 'https:' + audio : ''
-    };
+    // Note: 音频地址始终为 https://img.zdic.net/audio/zd/zy/${value}.mp3 形式
+    wordMeta.zhuyins.push({
+      value
+      // audio_url: audio ? 'https:' + audio : ''
+    });
   });
 
   // 总笔画数
@@ -189,8 +197,7 @@ async function fetchWordMeta(word) {
 
 async function fetchPhraseMeta(phrase) {
   const srcUrl = baseUrl + phrase;
-  // const html = await (await fetch(srcUrl)).text();
-  const html = await got(srcUrl, gotOptions).text();
+  const html = await (await fetch(srcUrl)).text();
   const $dom = new JSDOM(html);
   const $doc = (($dom || {}).window || {}).document;
 
