@@ -14,7 +14,7 @@
     "data:word:debug": "node --inspect-brk src/data/word/index.mjs",
     "data:phrase": "node src/data/phrase/index.mjs",
     "data:phrase:debug": "node --inspect-brk src/data/phrase/index.mjs",
-    "generate:emoji": "node src/generate/emoji/index.mjs",
+    "data:emoji": "node src/data/emoji/index.mjs",
     "generate:sqlite:ime": "node src/generate/sqlite/ime/index.mjs",
     "generate:sqlite:ime:debug": "node --inspect-brk src/generate/sqlite/ime/index.mjs",
     "generate:sqlite:word": "node src/generate/sqlite/word/index.mjs",
