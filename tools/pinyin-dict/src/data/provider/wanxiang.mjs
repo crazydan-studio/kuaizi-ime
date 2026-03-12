@@ -1,10 +1,8 @@
 import { fromRootPath, readLineFromFile } from '#utils/utils.mjs';
 
+const data_path = () => fromRootPath('../..', 'thirdparty/rime_wanxiang');
 function getDictPath(dict) {
-  return fromRootPath(
-    '../..',
-    'thirdparty/rime_wanxiang/dicts/' + dict + '.dict.yaml'
-  );
+  return fromRootPath(data_path(), 'dicts/' + dict + '.dict.yaml');
 }
 
 /**
@@ -51,6 +49,92 @@ export async function readOtherPhrases() {
   ];
 
   return await readMappingsFromFiles(files);
+}
+
+/**
+ * 从 https://github.com/amzxyz/rime_wanxiang 中读取标点符号
+ *
+ * @return `{'星座': [{value: '♈', name: '白羊座'}, ...], ...}`
+ */
+export async function readSymbols() {
+  const file = fromRootPath(data_path(), 'wanxiang_symbols.yaml');
+  const lineSymbols = {};
+  await readLineFromFile(file, (line) => {
+    line = line.trim();
+    if (!line.startsWith("'/")) {
+      return;
+    }
+
+    const name = line.replace(/:.+/g, '').replace(/'/g, '');
+    const segs = line
+      .replace(/^.+:\s+/g, '')
+      .replace(/\[\s+|\s+\]/g, '')
+      .split(/,\s+/);
+
+    lineSymbols[name] = segs;
+  });
+
+  const symbolGroups = {
+    电脑: ['/dn'],
+    棋牌: ['/xq', '/mj', '/sz', '/pk'],
+    音乐: ['/yy'],
+    两性: ['/lx'],
+    八卦: [{ '/bg': '/bgm' }, { '/lssg': '/lssgm' }, '/txj'],
+    天体: ['/tt'],
+    星座: [{ '/xz': '/xzm' }],
+    星号: ['/wjx', '/xh'],
+    方块: ['/fk'],
+    几何: ['/jh'],
+    箭头: ['/jt'],
+    数学: ['/sx', '/dy', '/xy', '/yw', '/sy', '/lm', '/lmd', '/xl', '/xld'],
+    分数: ['/fs'],
+    序号: [
+      '/szq',
+      '/szh',
+      '/szd',
+      '/uzq',
+      '/uzh',
+      '/uzd',
+      '/zmq',
+      '/zmh',
+      '/hzq',
+      '/hzh',
+      '/jmq',
+      '/hwq',
+      '/hwh'
+    ],
+    计数: ['/szm', '/scsz', '/sch', '/scz', '/xxtj', '/xftj'],
+    单位: ['/dw'],
+    货币: ['/hb'],
+    上下标: ['/sb', '/xb'],
+    其他: ['/fh', '/aj', '/tsfh', '/jg']
+  };
+
+  Object.keys(symbolGroups).forEach((groupName) => {
+    const symbols = [];
+
+    symbolGroups[groupName].forEach((code) => {
+      let names = [];
+      let values = [];
+
+      if (typeof code != 'string') {
+        names = lineSymbols[Object.values(code)[0]];
+        values = lineSymbols[Object.keys(code)[0]];
+      } else {
+        values = lineSymbols[code];
+      }
+
+      values.forEach((value, i) => {
+        const name = names[i];
+
+        symbols.push(name ? { value, name } : { value });
+      });
+    });
+
+    symbolGroups[groupName] = symbols;
+  });
+
+  return symbolGroups;
 }
 
 async function readMappingsFromFiles(files) {

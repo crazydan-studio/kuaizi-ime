@@ -1,5 +1,7 @@
 import { fromRootPath, readLineFromFile } from '#utils/utils.mjs';
 
+const data_path = () => fromRootPath('../..', 'thirdparty/pinyin-data');
+
 /**
  * 从 https://github.com/mozillazg/pinyin-data 中读取汉典网的数据
  *
@@ -12,7 +14,7 @@ import { fromRootPath, readLineFromFile } from '#utils/utils.mjs';
  */
 export async function readZdicWords() {
   // https://github.com/mozillazg/pinyin-data/blob/master/zdic.txt
-  const file = fromRootPath('../..', 'thirdparty/pinyin-data/zdic.txt');
+  const file = fromRootPath(data_path(), 'zdic.txt');
 
   const data = {};
   await readLineFromFile(file, (line) => {

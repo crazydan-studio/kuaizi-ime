@@ -1,10 +1,9 @@
 import { fromRootPath, readLineFromFile } from '#utils/utils.mjs';
 
+const data_path = () =>
+  fromRootPath('../..', 'thirdparty/OpenCC/data/dictionary');
 function getDictPath(dict) {
-  return fromRootPath(
-    '../..',
-    'thirdparty/OpenCC/data/dictionary/' + dict + '.txt'
-  );
+  return fromRootPath(data_path(), dict + '.txt');
 }
 
 /**
