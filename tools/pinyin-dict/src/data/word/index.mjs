@@ -7,7 +7,7 @@ import * as wanxiang from '#data/provider/wanxiang.mjs';
 import {
   patchWordMetaAndSaveToFile,
   saveWordMetasToFile,
-  calculateWordWeightByGlyph,
+  calculateWordGlyphWeight,
   patchWordPinyinUsedWeight
 } from './meta.mjs';
 
@@ -60,95 +60,102 @@ console.log('已读取 zdic.net 数据：');
 console.log('- 总字数：' + wordMetas.length);
 console.log('- 繁体字数：' + wordMetas.filter((w) => w.traditional).length);
 console.log('- 简体字数：' + wordMetas.filter((w) => !w.traditional).length);
+console.log();
 console.log('- 有拼音字数：' + wordMetasWithPinyin.length);
-console.log('- 无拼音字数：' + wordMetasWithoutPinyin.length);
 console.log('- 有字形字数：' + wordMetasWithGlyph.length);
-console.log('- 无字形字数：' + wordMetasWithoutGlyph.length);
 console.log('- 有笔顺字数：' + wordMetasWithStrokeOrder.length);
+console.log();
+console.log('- 无拼音字数：' + wordMetasWithoutPinyin.length);
+console.log('- 无字形字数：' + wordMetasWithoutGlyph.length);
 console.log('- 无笔顺字数：' + wordMetasWithoutStrokeOrder.length);
 console.log();
 console.log(
-  '- 无拼音字列表：' +
+  '- 无拼音的字列表：' +
     wordMetasWithoutPinyin.map((meta) => meta.value).join(', ')
 );
 console.log(
-  '- 无拼音无笔顺无字形字列表：' +
+  '- 无拼音无笔顺无字形的字列表：' +
     wordMetasWithoutPinyin
       .filter((w) => !w.stroke_order && !w.glyph_font_exists)
       .map((meta) => meta.value)
       .join(', ')
 );
 console.log(
-  '- 无拼音有笔顺无字形字列表：' +
+  '- 无拼音有笔顺无字形的字列表：' +
     wordMetasWithoutPinyin
       .filter((w) => w.stroke_order && !w.glyph_font_exists)
       .map((meta) => meta.value)
       .join(', ')
 );
 console.log(
-  '- 无拼音无笔顺有字形字列表：' +
+  '- 无拼音无笔顺有字形的字列表：' +
     wordMetasWithoutPinyin
       .filter((w) => !w.stroke_order && w.glyph_font_exists)
       .map((meta) => meta.value)
       .join(', ')
 );
 
+console.log();
 console.log(
-  '- 有字形无笔顺字列表：' +
+  '- 有字形无笔顺的字列表：' +
     wordMetasWithGlyph
       .filter((w) => !w.stroke_order)
       .map((meta) => meta.value)
       .join(', ')
 );
 console.log(
-  '- 有字形无拼音字列表：' +
+  '- 有字形无结构的字列表：' +
+    wordMetasWithGlyph
+      .filter((w) => !w.glyph_struct)
+      .map((meta) => meta.value)
+      .join(', ')
+);
+console.log(
+  '- 有字形无部首的字列表：' +
+    wordMetasWithGlyph
+      .filter((w) => !w.radical)
+      .map((meta) => meta.value)
+      .join(', ')
+);
+console.log();
+console.log(
+  '- 有字形无拼音的字列表：' +
     wordMetasWithGlyph
       .filter(hasNotPinyin)
       .map((meta) => meta.value)
       .join(', ')
 );
 console.log(
-  '- 有字形无拼音无笔顺字列表：' +
+  '- 有字形无拼音无笔顺的字列表：' +
     wordMetasWithGlyph
       .filter((w) => hasNotPinyin(w) && !w.stroke_order)
       .map((meta) => meta.value)
       .join(', ')
 );
-// console.log(
-//   '- 有字形字列表：' + wordMetasWithGlyph.map((meta) => meta.value).join(', ')
-// );
-
-// console.log(
-//   '- 无字形有拼音字列表：' +
-//     wordMetasWithoutGlyph
-//       .filter(hasPinyin)
-//       .map((meta) => `${meta.value}(${meta.unicode})`)
-//       .join(', ')
-// );
-// console.log(
-//   '- 无字形有笔顺字列表：' +
-//     wordMetasWithoutGlyph
-//       .filter((w) => w.stroke_order)
-//       .map((meta) => `${meta.value}(${meta.unicode})`)
-//       .join(', ')
-// );
-// console.log(
-//   '- 无字形有拼音有笔顺字列表：' +
-//     wordMetasWithoutGlyph
-//       .filter((w) => hasPinyin(w) && w.stroke_order)
-//       .map((meta) => `${meta.value}(${meta.unicode})`)
-//       .join(', ')
-// );
-// console.log(
-//   '- 无字形字列表：' +
-//     wordMetasWithoutGlyph.map((meta) => meta.value).join(', ')
-// );
 console.log();
+console.log(
+  '- 有字形的结构列表：' +
+    Object.keys(
+      wordMetasWithGlyph.reduce((r, w) => {
+        r[w.glyph_struct || '未知'] = true;
+        return r;
+      }, {})
+    ).join(', ')
+);
+console.log(
+  '- 有字形的部首列表：' +
+    Object.keys(
+      wordMetasWithGlyph.reduce((r, w) => {
+        r[w.radical || '未知'] = true;
+        return r;
+      }, {})
+    ).join(', ')
+);
 
 // -----------------------------------------------------------------------
 console.log();
 console.log('按字形计算字的权重 ...');
-calculateWordWeightByGlyph(wordMetasWithGlyph);
+calculateWordGlyphWeight(wordMetasWithGlyph);
 console.log();
 
 console.log();

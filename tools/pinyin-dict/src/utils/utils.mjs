@@ -231,6 +231,39 @@ export function correctPinyin(str) {
     case 'yòu ㄧ':
       str = 'yòu';
       break;
+    case 'ka1':
+      str = 'kā';
+      break;
+    case 'mò qí':
+      str = 'mò';
+      break;
+    case 'no4u':
+      str = 'nòu';
+      break;
+    case 'so4u':
+      str = 'sòu';
+      break;
+    case 'ê1/ei1':
+      str = 'ēi';
+      break;
+    case 'ê2/ei2':
+      str = 'éi';
+      break;
+    case 'ê3/ei3':
+      str = 'ěi';
+      break;
+    case 'ê4/ei4':
+      str = 'èi';
+      break;
+    case 'ê̌̌':
+      str = 'ê̌';
+      break;
+    case 'jǔ yǔ':
+      str = 'jǔ';
+      break;
+    case 'zheng1':
+      str = 'zhēng';
+      break;
   }
 
   return str
