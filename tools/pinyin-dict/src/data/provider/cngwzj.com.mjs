@@ -11,7 +11,20 @@ import {
 const gushiBaseUrl = 'https://www.cngwzj.com/tangshi300/78.html';
 const guciBaseUrl = 'https://www.cngwzj.com/tangshi300/2137.html';
 
-/** 拉取所有的课文数据 */
+/**
+ * 拉取所有的课文数据
+ *
+ * @return ```json
+ * [{
+ *    title: [{"zi":"五","py":"wǔ"}, ...],
+ *    subtitle: [{"zi":"小","py":"xiǎo"}, ...],
+ *    pargraphs: [
+ *      [{"zi":"三","py":"sān"}, ...],
+ *      ...
+ *    ]
+ * }, ...]
+ * ```
+ */
 export async function fetchAndSaveAllKeWen(file, dump) {
   const pageUrls = [
     // 课文
@@ -39,7 +52,20 @@ export async function fetchAndSaveAllKeWen(file, dump) {
   await fetchAndSaveArticles(file, urls, dump);
 }
 
-/** 拉取所有的古诗数据 */
+/**
+ * 拉取所有的古诗数据
+ *
+ * @return ```json
+ * [{
+ *    title: [{"zi":"五","py":"wǔ"}, ...],
+ *    subtitle: [{"zi":"小","py":"xiǎo"}, ...],
+ *    pargraphs: [
+ *      [{"zi":"三","py":"sān"}, ...],
+ *      ...
+ *    ]
+ * }, ...]
+ * ```
+ */
 export async function fetchAndSaveAllGushi(file, dump) {
   const urls = await fetchGushiciUrls(gushiBaseUrl);
 
@@ -47,7 +73,20 @@ export async function fetchAndSaveAllGushi(file, dump) {
   await fetchAndSaveArticles(file, urls, dump);
 }
 
-/** 拉取所有的古词数据 */
+/**
+ * 拉取所有的古词数据
+ *
+ * @return ```json
+ * [{
+ *    title: [{"zi":"五","py":"wǔ"}, ...],
+ *    subtitle: [{"zi":"小","py":"xiǎo"}, ...],
+ *    pargraphs: [
+ *      [{"zi":"三","py":"sān"}, ...],
+ *      ...
+ *    ]
+ * }, ...]
+ * ```
+ */
 export async function fetchAndSaveAllGuci(file, dump) {
   const urls = await fetchGushiciUrls(guciBaseUrl);
 
