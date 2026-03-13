@@ -1,11 +1,30 @@
-import { extractPinyinChars } from '#utils/utils.mjs';
-
 /** 修正输入数据 */
-export function patch(meta) {
+export function patchWordMeta(meta) {
+  // 先增改，
+  const addedPinyin = getAddedWordPinyin()[meta.value];
+  if (
+    addedPinyin &&
+    meta.pinyins.filter(({ value }) => value == addedPinyin).length == 0
+  ) {
+    meta.pinyins.push({ value: addedPinyin });
+  }
+
+  // 再删除，以避免自增 id 发生较大变动
+  const deletedPinyin = getDeletedWordPinyin()[meta.value];
+  if (deletedPinyin) {
+    meta.pinyins = meta.pinyins.filter(({ value }) => value !== deletedPinyin);
+  }
+}
+
+function getDeletedWordPinyin() {
   const deleted = [
     '虾:hā' // -> 虾:há
   ];
 
+  return pinyinWordToMap(deleted);
+}
+
+function getAddedWordPinyin() {
   const added = [
     // “一”和“不”变调有规律：https://www.chinanews.com.cn/hwjy/news/2010/04-15/2228742.shtml
     '不:bú',
@@ -100,29 +119,19 @@ export function patch(meta) {
     '舍:shì'
   ];
 
-  // 先增改，
-  extraWords(added).forEach(({ value, pinyin, chars }) => {
-    if (
-      meta.value == value &&
-      meta.pinyins.filter(({ value }) => value == pinyin).length == 0
-    ) {
-      meta.pinyins.push({ value: pinyin, chars });
-    }
-  });
-  // 再删除，以避免自增 id 发生较大变动
-  extraWords(deleted).forEach(({ value, pinyin }) => {
-    if (meta.value == value) {
-      meta.pinyins = meta.pinyins.filter((py) => py.value !== pinyin);
-    }
-  });
+  return pinyinWordToMap(added);
 }
 
-function extraWords(words) {
-  return words
+function pinyinWordToMap(words) {
+  const map = {};
+  words
     .map((w) => w.split(':'))
-    .map((s) => ({
-      value: s[0],
-      pinyin: s[1],
-      chars: extractPinyinChars(s[1])
-    }));
+    .forEach((s) => {
+      const w = s[0];
+      const py = s[1];
+
+      map[w] = py;
+    });
+
+  return map;
 }

@@ -1,22 +1,18 @@
 // https://www.sqlitetutorial.net/sqlite-nodejs/connect/
-// https://github.com/TryGhost/node-sqlite3/wiki/API
-import sqlite3 from 'sqlite3';
-// https://www.npmjs.com/package/sqlite
-import * as sqlite from 'sqlite';
+import { DatabaseSync } from 'node:sqlite';
 
-import { splitChars, extractPinyinChars, asyncForEach } from './utils.mjs';
+import {
+  splitChars,
+  extractPinyinChars,
+  readFile,
+  existFile
+} from './utils.mjs';
 
-export async function openDB(file, readonly) {
-  const db = await sqlite.open({
-    filename: file,
-    mode: readonly
-      ? sqlite3.OPEN_READONLY
-      : sqlite3.OPEN_CREATE | sqlite3.OPEN_READWRITE,
-    driver: sqlite3.Database
-  });
+export function openDB(file, { readonly, ignoreCheckConstraints }) {
+  const db = new DatabaseSync(file, { readOnly: readonly === true });
 
   // 提升批量写入性能: https://avi.im/blag/2021/fast-sqlite-inserts/
-  await execSQL(
+  execSQL(
     db,
     `
 pragma journal_mode = off;
@@ -27,12 +23,22 @@ pragma temp_store = memory;
   `
   );
 
+  if (ignoreCheckConstraints) {
+    execSQL(
+      db,
+      `
+pragma foreign_keys = 0;
+pragma ignore_check_constraints = 1;
+    `
+    );
+  }
+
   return db;
 }
 
-export async function attachDB(db, sources) {
+export function attachDB(db, sources) {
   // 附加数据库（连接期内有效）: https://www.sqlite.org/lang_attach.html
-  await execSQL(
+  execSQL(
     db,
     Object.keys(sources)
       .map((name) => `attach database '${sources[name]}' as ${name}`)
@@ -42,27 +48,21 @@ export async function attachDB(db, sources) {
   return db;
 }
 
-export async function closeDB(db, skipClean) {
+export function closeDB(db, skipClean) {
   try {
-    if (db.config.mode != sqlite3.OPEN_READONLY && !skipClean) {
+    if (!db.readonly && !skipClean) {
       // 数据库无用空间回收
-      await execSQL(db, 'vacuum');
+      execSQL(db, 'vacuum');
     }
 
-    await db.close();
+    db.close();
   } catch (e) {
     console.error(e);
   }
 }
 
 /** 新增或更新数据 */
-export async function saveToDB(
-  db,
-  table,
-  dataMap,
-  disableSorting,
-  primaryKeys
-) {
+export function saveToDB(db, table, dataMap, disableSorting, primaryKeys) {
   const dataArray = mapToArray(dataMap, disableSorting);
   if (dataArray.length === 0) {
     return;
@@ -80,18 +80,18 @@ export async function saveToDB(
     ', '
   )}) values (${columnsWithPrimaryKey.map(() => '?').join(', ')})
   `;
-  const insertWithIdStatement = await db.prepare(insertWithIdSql);
+  const insertWithIdStatement = db.prepare(insertWithIdSql);
   const insertStatement = hasOnlyIdKey
-    ? await db.prepare(
+    ? db.prepare(
         `insert into ${table} (${columns.join(', ')}) values (${columns
           .map(() => '?')
           .join(', ')})
           `
       )
-    : await db.prepare(insertWithIdSql);
+    : db.prepare(insertWithIdSql);
   const updateStatement =
     columns.length > 0
-      ? await db.prepare(
+      ? db.prepare(
           `update ${table} set ${columns
             .map((c) => c + ' = ?')
             .join(', ')} where ${primaryKeys
@@ -103,70 +103,74 @@ export async function saveToDB(
         null;
 
   const getId = (d) => primaryKeys.map((k) => d[k]).join('');
-  await asyncForEach(dataArray, async (data) => {
+  dataArray.forEach((data) => {
     if (getId(data)) {
       const needToUpdate =
         data.__exist__ &&
         columns.reduce((r, c) => r || data[c] !== data.__exist__[c], false);
 
       if (needToUpdate) {
-        await updateStatement.run(
-          ...columns.concat(primaryKeys).map((c) => data[c])
-        );
+        updateStatement.run(...columns.concat(primaryKeys).map((c) => data[c]));
       }
       // 新增包含 id 的数据
       else if (!data.__exist__) {
-        await insertWithIdStatement.run(
-          ...columnsWithPrimaryKey.map((c) => data[c])
-        );
+        insertWithIdStatement.run(...columnsWithPrimaryKey.map((c) => data[c]));
       }
     } else {
       const params = (hasOnlyIdKey ? columns : columnsWithPrimaryKey).map(
         (c) => data[c]
       );
-      await insertStatement.run(...params);
+      insertStatement.run(...params);
     }
   });
-
-  await insertStatement.finalize();
-  await insertWithIdStatement.finalize();
-  updateStatement && (await updateStatement.finalize());
 }
 
 /** 删除数据 */
-export async function removeFromDB(db, table, data, primaryKeys) {
+export function removeFromDB(db, table, data, primaryKeys) {
   if (data.length === 0) {
     return;
   }
 
   primaryKeys = primaryKeys || ['id_'];
 
-  const deleteStatement = await db.prepare(
+  const deleteStatement = db.prepare(
     `delete from ${table} where ${primaryKeys
       .map((key) => key + ' = ?')
       .join(' and ')}
     `
   );
 
-  await asyncForEach(data, async (d) => {
+  data.forEach((d) => {
     const params = typeof d == 'object' ? primaryKeys.map((c) => d[c]) : [d];
-    await deleteStatement.run(...params);
+    deleteStatement.run(...params);
   });
-
-  await deleteStatement.finalize();
 }
 
-export async function hasTable(db, table) {
-  const result = await db.get(
-    `select count(*) as total from sqlite_master where type='table' and name='${table}'`
-  );
+export function hasTable(db, table) {
+  const result = db
+    .prepare(
+      `select count(*) as total from sqlite_master where type='table' and name='${table}'`
+    )
+    .get();
+
   return result.total == 1;
 }
 
-export async function execSQL(db, sqls) {
-  await asyncForEach(sqls.split(/;/g), async (sql) => {
-    await db.exec(sql);
-  });
+export function execSQL(db, sqls) {
+  sqls.split(/;/g).forEach((sql) => db.exec(sql));
+}
+
+export function execSQLFile(db, file) {
+  if (!existFile(file)) {
+    return;
+  }
+
+  const sqls = readFile(file);
+  execSQL(db, sqls);
+}
+
+export function queryAll(db, sql, ...args) {
+  return db.prepare(sql).all(...args);
 }
 
 function mapToArray(obj, disableSorting) {
@@ -226,8 +230,8 @@ function mapToArray(obj, disableSorting) {
     return a_without_special > b_without_special
       ? 1
       : a_without_special < b_without_special
-      ? -1
-      : 0;
+        ? -1
+        : 0;
   });
 
   return keys.map((k) => obj[k]);

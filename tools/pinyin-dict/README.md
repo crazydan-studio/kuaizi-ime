@@ -818,12 +818,15 @@ drop table meta_word_zhengma_code;
 drop table meta_zhuyin;
 drop table meta_zhuyin_chars;
 drop table meta_phrase;
-drop table link_phrase_with_pinyin_word;
-drop table link_phrase_with_zhuyin_word;
+drop table meta_phrase_with_pinyin_word;
+drop table meta_phrase_with_zhuyin_word;
 drop table link_word_with_simple_word;
 drop table link_word_with_traditional_word ;
 drop table link_word_with_variant_word;
-drop table link_word_with_zhuyin;
+drop view link_word_with_pinyin;
+drop view link_word_with_zhuyin;
+drop view link_phrase_with_pinyin_word;
+drop view link_phrase_with_zhuyin_word;
 drop view pinyin_phrase;
 drop view pinyin_word;
 drop view simple_word;
@@ -834,6 +837,7 @@ drop view zhuyin_word;
 -- 对核心的元数据表进行结构变更，直接变更为新版本的表结构
 -- Note：新增的非空列，只能设置为 default null，完整性由代码检查
 alter table meta_pinyin add column chars_id_ integer default null references meta_pinyin_chars (id_);
+-- 查看表结构：.schema meta_word
 alter table meta_word drop column radical_;
 alter table meta_word drop column radical_stroke_count_;
 alter table meta_word add column radical_id_ integer default null references meta_word_radical (id_);

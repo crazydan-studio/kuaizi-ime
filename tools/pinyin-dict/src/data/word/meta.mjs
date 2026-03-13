@@ -312,7 +312,7 @@ function shouldBeExcludedPinyin(pinyin) {
     case 'lan2':
       return true;
   }
-  return false;
+  return !pinyin.value;
 }
 
 function shouldBeExcludedWord(wordMeta) {

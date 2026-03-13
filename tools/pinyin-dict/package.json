@@ -16,16 +16,19 @@
     "data:phrase": "node src/data/phrase/index.mjs",
     "data:phrase:debug": "node --inspect-brk src/data/phrase/index.mjs",
     "data:phrase:cngwzj": "node src/data/phrase/cngwzj.mjs",
+    "db:raw:word": "node src/db/raw/word/index.mjs",
+    "db:raw:word:debug": "node --inspect-brk src/db/raw/word/index.mjs",
+    "db:raw:word:diff": "node src/db/raw/word/diff.mjs",
     "generate:sqlite:ime": "node src/generate/sqlite/ime/index.mjs",
     "generate:sqlite:ime:debug": "node --inspect-brk src/generate/sqlite/ime/index.mjs",
-    "generate:sqlite:word": "node src/generate/sqlite/word/index.mjs",
-    "generate:sqlite:word:debug": "node --inspect-brk src/generate/sqlite/word/index.mjs",
-    "generate:sqlite:word:diff": "node src/generate/sqlite/word/diff.mjs",
     "generate:sqlite:phrase:hmm": "node src/generate/sqlite/phrase/hmm/index.mjs",
     "generate:sqlite:phrase:hmm:debug": "node --inspect-brk src/generate/sqlite/phrase/hmm/index.mjs",
     "generate:sqlite:phrase:hmm:trans": "node src/generate/sqlite/phrase/hmm/trans/index.mjs",
     "generate:sqlite:phrase:hmm:trans:debug": "node --inspect-brk src/generate/sqlite/phrase/hmm/trans/index.mjs",
     "generate:sqlite:phrase:hmm:trans_kewen": "node src/generate/sqlite/phrase/hmm/trans_kewen/index.mjs"
+  },
+  "engines": {
+    "node": ">=22.5.0"
   },
   "dependencies": {
     "@inquirer/prompts": "^3.3.0",
@@ -34,8 +37,6 @@
     "get-system-fonts": "^2.0.2",
     "grapheme-splitter": "^1.0.4",
     "jsdom": "^22.1.0",
-    "pinyin-pro": "^3.25.0",
-    "sqlite": "^5.0.1",
-    "sqlite3": "^5.1.6"
+    "pinyin-pro": "^3.25.0"
   }
 }
