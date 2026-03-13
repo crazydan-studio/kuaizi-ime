@@ -70,6 +70,10 @@ export async function fetchWordMeta(word) {
   const $pinyin = $doc.querySelectorAll('.ziif .dsk .z_py .z_d');
   $pinyin.forEach(($el) => {
     const value = naiveHTMLNodeInnerText($el).trim();
+    if (!value) {
+      return;
+    }
+
     // const $audio = $el.querySelector('a[data-src-mp3]');
     // const audio = ($audio && $audio.getAttribute('data-src-mp3')) || '';
 
@@ -84,6 +88,10 @@ export async function fetchWordMeta(word) {
   const $zhuyin = $doc.querySelectorAll('.ziif .dsk .z_zy .z_d');
   $zhuyin.forEach(($el) => {
     const value = naiveHTMLNodeInnerText($el).trim();
+    if (!value) {
+      return;
+    }
+
     // const $audio = $el.querySelector('a[data-src-mp3]');
     // const audio = ($audio && $audio.getAttribute('data-src-mp3')) || '';
 

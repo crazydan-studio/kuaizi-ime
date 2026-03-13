@@ -1,9 +1,8 @@
 import { fromRootPath, readLineFromFile } from '#utils/utils.mjs';
 
-const data_path = () => fromRootPath('../..', 'thirdparty/rime_wanxiang');
-function getDictPath(dict) {
-  return fromRootPath(data_path(), 'dicts/' + dict + '.dict.yaml');
-}
+const data_path = (...paths) =>
+  fromRootPath('../..', 'thirdparty/rime_wanxiang', ...paths);
+const dict_path = (dict) => data_path('dicts/' + dict + '.dict.yaml');
 
 /**
  * 从 https://github.com/amzxyz/rime_wanxiang 中读取字数据
@@ -12,7 +11,7 @@ function getDictPath(dict) {
  */
 export async function readZiData() {
   // https://github.com/amzxyz/rime_wanxiang/blob/wanxiang/dicts/zi.dict.yaml
-  const file = getDictPath('zi');
+  const file = dict_path('zi');
 
   return await readMappings(file);
 }
@@ -25,7 +24,7 @@ export async function readZiData() {
 export async function readBasicPhrases() {
   // https://github.com/amzxyz/rime_wanxiang/blob/wanxiang/dicts/jichu.dict.yaml
   // https://github.com/amzxyz/rime_wanxiang/blob/wanxiang/dicts/duoyin.dict.yaml
-  const files = [getDictPath('jichu'), getDictPath('duoyin')];
+  const files = [dict_path('jichu'), dict_path('duoyin')];
 
   return await readMappingsFromFiles(files);
 }
@@ -41,11 +40,11 @@ export async function readOtherPhrases() {
   // https://github.com/amzxyz/rime_wanxiang/blob/wanxiang/dicts/lianxiang.dict.yaml
   // https://github.com/amzxyz/rime_wanxiang/blob/wanxiang/dicts/shici.dict.yaml
   const files = [
-    getDictPath('diming'),
-    getDictPath('wuzhong'),
+    dict_path('diming'),
+    dict_path('wuzhong'),
     //
-    getDictPath('lianxiang'),
-    getDictPath('shici')
+    dict_path('lianxiang'),
+    dict_path('shici')
   ];
 
   return await readMappingsFromFiles(files);
@@ -57,7 +56,8 @@ export async function readOtherPhrases() {
  * @return `{'星座': [{value: '♈', name: '白羊座'}, ...], ...}`
  */
 export async function readSymbols() {
-  const file = fromRootPath(data_path(), 'wanxiang_symbols.yaml');
+  const file = data_path('wanxiang_symbols.yaml');
+
   const lineSymbols = {};
   await readLineFromFile(file, (line) => {
     line = line.trim();
