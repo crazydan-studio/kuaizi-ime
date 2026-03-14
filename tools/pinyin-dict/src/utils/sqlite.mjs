@@ -9,7 +9,9 @@ import {
 } from './utils.mjs';
 
 export function openDB(file, { readonly, ignoreCheckConstraints }) {
-  const db = new DatabaseSync(file, { readOnly: readonly === true });
+  const options = { readOnly: readonly === true };
+  const db = new DatabaseSync(file, options);
+  db.opts = options;
 
   // 提升批量写入性能: https://avi.im/blag/2021/fast-sqlite-inserts/
   execSQL(
@@ -50,7 +52,7 @@ export function attachDB(db, sources) {
 
 export function closeDB(db, skipClean) {
   try {
-    if (!db.readonly && !skipClean) {
+    if (!db.opts.readOnly && !skipClean) {
       // 数据库无用空间回收
       execSQL(db, 'vacuum');
     }
@@ -103,25 +105,34 @@ export function saveToDB(db, table, dataMap, disableSorting, primaryKeys) {
         null;
 
   const getId = (d) => primaryKeys.map((k) => d[k]).join('');
-  dataArray.forEach((data) => {
-    if (getId(data)) {
-      const needToUpdate =
-        data.__exist__ &&
-        columns.reduce((r, c) => r || data[c] !== data.__exist__[c], false);
+  //
+  withTransaction(db, () => {
+    //
+    dataArray.forEach((data) => {
+      //
+      if (getId(data)) {
+        const needToUpdate =
+          data.__exist__ &&
+          columns.reduce((r, c) => r || data[c] !== data.__exist__[c], false);
 
-      if (needToUpdate) {
-        updateStatement.run(...columns.concat(primaryKeys).map((c) => data[c]));
+        if (needToUpdate) {
+          updateStatement.run(
+            ...columns.concat(primaryKeys).map((c) => data[c])
+          );
+        }
+        // 新增包含 id 的数据
+        else if (!data.__exist__) {
+          insertWithIdStatement.run(
+            ...columnsWithPrimaryKey.map((c) => data[c])
+          );
+        }
+      } else {
+        const params = (hasOnlyIdKey ? columns : columnsWithPrimaryKey).map(
+          (c) => data[c]
+        );
+        insertStatement.run(...params);
       }
-      // 新增包含 id 的数据
-      else if (!data.__exist__) {
-        insertWithIdStatement.run(...columnsWithPrimaryKey.map((c) => data[c]));
-      }
-    } else {
-      const params = (hasOnlyIdKey ? columns : columnsWithPrimaryKey).map(
-        (c) => data[c]
-      );
-      insertStatement.run(...params);
-    }
+    });
   });
 }
 
@@ -140,9 +151,11 @@ export function removeFromDB(db, table, data, primaryKeys) {
     `
   );
 
-  data.forEach((d) => {
-    const params = typeof d == 'object' ? primaryKeys.map((c) => d[c]) : [d];
-    deleteStatement.run(...params);
+  withTransaction(db, () => {
+    data.forEach((d) => {
+      const params = typeof d == 'object' ? primaryKeys.map((c) => d[c]) : [d];
+      deleteStatement.run(...params);
+    });
   });
 }
 
@@ -171,6 +184,19 @@ export function execSQLFile(db, file) {
 
 export function queryAll(db, sql, ...args) {
   return db.prepare(sql).all(...args);
+}
+
+export function withTransaction(db, cb) {
+  db.exec('BEGIN TRANSACTION');
+
+  try {
+    cb();
+
+    db.exec('COMMIT');
+  } catch (e) {
+    db.exec('ROLLBACK');
+    throw e;
+  }
 }
 
 function mapToArray(obj, disableSorting) {

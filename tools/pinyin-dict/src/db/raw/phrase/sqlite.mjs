@@ -8,13 +8,12 @@ import {
 
 export { openDB as open, closeDB as close } from '#utils/sqlite.mjs';
 
-function getTableCreateSQLFile(name) {
-  return fromRootPath('src', 'db/raw/phrase/' + name + '.create.sql');
-}
+const sql_file_path = (name) =>
+  fromRootPath('src', 'db/raw/phrase/' + name + '.create.sql');
 
 /** 保存词组信息 */
 export function savePhrases(db, wordMetas) {
-  const sqlFile = getTableCreateSQLFile('table-phrase');
+  const sqlFile = sql_file_path('table-phrase');
   execSQLFile(db, sqlFile);
 
   // ================================================================

@@ -22,6 +22,7 @@ const wordDataValidFile = fromRootPath('data', 'pinyin-dict.valid.txt');
 console.log();
 console.log('读取 OpenCC 数据 ...');
 const tradWords = await opencc.readTrad2SimpChars();
+const simpWords = await opencc.readSimp2TradChars();
 
 console.log('已读取 OpenCC 数据：');
 console.log('- 繁体字数：' + Object.keys(tradWords).length);
@@ -44,7 +45,12 @@ console.log();
 console.log('读取 zdic.net 数据 ...');
 const wordMetas = await patchWordMetaAndSaveToFile(zdicWords, wordDataRawFile);
 wordMetas.forEach((meta) => {
-  meta.traditional = !!tradWords[meta.value];
+  const simps = tradWords[meta.value] || [];
+  const trads = simpWords[meta.value] || [];
+
+  meta.traditional = simps.length > 0;
+  meta.simple_words = simps;
+  meta.traditional_words = trads;
 });
 
 const hasPinyin = (w) => w.pinyins.length > 0;

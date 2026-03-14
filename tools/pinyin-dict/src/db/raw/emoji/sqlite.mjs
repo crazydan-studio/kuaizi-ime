@@ -8,15 +8,14 @@ import {
 
 export { openDB as open, closeDB as close } from '#utils/sqlite.mjs';
 
-function getTableCreateSQLFile(name) {
-  return fromRootPath('src', 'db/raw/emoji/' + name + '.create.sql');
-}
+const sql_file_path = (name) =>
+  fromRootPath('src', 'db/raw/emoji/' + name + '.create.sql');
 
 /** 保存表情符号 */
 export function saveEmojis(db, groupEmojiMetas) {
   // 对表情关键字采取按字（非拼音）匹配策略，
   // 仅关键字与查询字相同时才视为匹配上，可做单字或多字匹配
-  const sqlFile = getTableCreateSQLFile('table-emoji');
+  const sqlFile = sql_file_path('table-emoji');
   execSQLFile(db, sqlFile);
 
   const keywordWordData = {};

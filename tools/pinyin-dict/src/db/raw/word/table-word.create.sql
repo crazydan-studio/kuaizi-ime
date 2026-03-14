@@ -63,7 +63,7 @@ create table
 
 -- --------------------------------------------------------------
 create table
-  if not exists link_word_with_simple_word (
+  if not exists meta_word_simple (
     -- 源字 id
     source_id_ integer not null,
     -- 简体字 id
@@ -73,7 +73,7 @@ create table
   );
 
 create table
-  if not exists link_word_with_traditional_word (
+  if not exists meta_word_traditional (
     -- 源字 id
     source_id_ integer not null,
     -- 繁体字 id
@@ -83,7 +83,7 @@ create table
   );
 
 create table
-  if not exists link_word_with_variant_word (
+  if not exists meta_word_variant (
     -- 源字 id
     source_id_ integer not null,
     -- 变体字 id
@@ -219,11 +219,11 @@ from
   left join meta_pinyin spell_ on spell_.id_ = word_lnk_.spell_id_
   left join meta_pinyin_chars spell_ch_ on spell_ch_.id_ = spell_.chars_id_
   --
-  left join link_word_with_simple_word sw_lnk_ on sw_lnk_.source_id_ = word_.id_
+  left join meta_word_simple sw_lnk_ on sw_lnk_.source_id_ = word_.id_
   left join meta_word sw_ on sw_.id_ = sw_lnk_.target_id_
-  left join link_word_with_traditional_word tw_lnk_ on tw_lnk_.source_id_ = word_.id_
+  left join meta_word_traditional tw_lnk_ on tw_lnk_.source_id_ = word_.id_
   left join meta_word tw_ on tw_.id_ = tw_lnk_.target_id_
-  left join link_word_with_variant_word vw_lnk_ on vw_lnk_.source_id_ = word_.id_
+  left join meta_word_variant vw_lnk_ on vw_lnk_.source_id_ = word_.id_
   left join meta_word vw_ on vw_.id_ = vw_lnk_.target_id_;
 
 -- 字及其注音
@@ -276,11 +276,11 @@ from
   left join meta_zhuyin spell_ on spell_.id_ = word_lnk_.spell_id_
   left join meta_zhuyin_chars spell_ch_ on spell_ch_.id_ = spell_.chars_id_
   --
-  left join link_word_with_simple_word sw_lnk_ on sw_lnk_.source_id_ = word_.id_
+  left join meta_word_simple sw_lnk_ on sw_lnk_.source_id_ = word_.id_
   left join meta_word sw_ on sw_.id_ = sw_lnk_.target_id_
-  left join link_word_with_traditional_word tw_lnk_ on tw_lnk_.source_id_ = word_.id_
+  left join meta_word_traditional tw_lnk_ on tw_lnk_.source_id_ = word_.id_
   left join meta_word tw_ on tw_.id_ = tw_lnk_.target_id_
-  left join link_word_with_variant_word vw_lnk_ on vw_lnk_.source_id_ = word_.id_
+  left join meta_word_variant vw_lnk_ on vw_lnk_.source_id_ = word_.id_
   left join meta_word vw_ on vw_.id_ = vw_lnk_.target_id_;
 
 -- --------------------------------------------------------------
@@ -302,7 +302,7 @@ select
   target_.id_,
   target_.value_
 from
-  link_word_with_simple_word lnk_
+  meta_word_simple lnk_
   inner join meta_word source_ on source_.id_ = lnk_.source_id_
   inner join meta_word target_ on target_.id_ = lnk_.target_id_;
 
@@ -324,6 +324,6 @@ select
   target_.id_,
   target_.value_
 from
-  link_word_with_traditional_word lnk_
+  meta_word_traditional lnk_
   inner join meta_word source_ on source_.id_ = lnk_.source_id_
   inner join meta_word target_ on target_.id_ = lnk_.target_id_;

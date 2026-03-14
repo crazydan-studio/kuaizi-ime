@@ -14,13 +14,12 @@ import {
 
 export { openDB as open, closeDB as close } from '#utils/sqlite.mjs';
 
-function getTableCreateSQLFile(name) {
-  return fromRootPath('src', 'db/raw/word/' + name + '.create.sql');
-}
+const sql_file_path = (name) =>
+  fromRootPath('src', 'db/raw/word/' + name + '.create.sql');
 
 /** 保存拼音和注音信息 */
 export function saveSpells(db, wordMetas) {
-  const sqlFile = getTableCreateSQLFile('table-spell');
+  const sqlFile = sql_file_path('table-spell');
   execSQLFile(db, sqlFile);
 
   [
@@ -41,7 +40,7 @@ export function saveSpells(db, wordMetas) {
 
 /** 保存字信息 */
 export function saveWords(db, wordMetas) {
-  const sqlFile = getTableCreateSQLFile('table-word');
+  const sqlFile = sql_file_path('table-word');
   execSQLFile(db, sqlFile);
 
   // ----------------------------------------------------------------
@@ -146,119 +145,24 @@ export function saveWords(db, wordMetas) {
       spell_meta_table: 'meta_zhuyin',
       has_weight: false
     }
-  ].forEach(({ prop, table, spell_meta_table, has_weight }) => {
-    const spellMetaMap = {};
-    queryAll(db, `select id_, value_ from ${spell_meta_table}`).forEach(
-      (row) => {
-        spellMetaMap[row.value_] = row.id_;
-      }
-    );
-
-    const spellType = has_weight ? '拼音' : '注音';
-    const linkDataMap = {};
-    Object.keys(wordMetaData).forEach((k) => {
-      const word = wordMetaData[k];
-      const spells = word.__meta__[prop];
-
-      spells.forEach((spell) => {
-        const word_id_ = word.id_;
-        const spell_id_ = spellMetaMap[spell.value];
-
-        const code = word_id_ + ':' + spell_id_;
-        const data = (linkDataMap[code] = {
-          word_id_,
-          spell_id_
-        });
-
-        if (has_weight) {
-          data.used_weight_ = spell.used_weight || 0;
-        }
-      });
-    });
-
-    const missingLinks = [];
-    queryAll(db, `select * from ${table}`).forEach((row) => {
-      const id = row.id_;
-      const code = row.word_id_ + ':' + row.spell_id_;
-
-      if (linkDataMap[code]) {
-        linkDataMap[code].id_ = id;
-        linkDataMap[code].__exist__ = row;
-      } else {
-        // 在库中已存在，但已不再被使用
-        missingLinks.push(id);
-        console.log(spellType + '字已被废弃：', code);
-      }
-    });
-
-    saveToDB(db, table, linkDataMap);
-    removeFromDB(db, table, missingLinks);
-  });
+  ].forEach((options) => linkWordSpells(db, wordMetaData, options));
 
   // ----------------------------------------------------------------
-  // // 绑定字与字的关联
-  // [
-  //   {
-  //     prop: 'simple_words',
-  //     table: 'link_word_with_simple_word'
-  //   },
-  //   {
-  //     prop: 'variant_words',
-  //     table: 'link_word_with_variant_word'
-  //   },
-  //   {
-  //     prop: 'traditional_words',
-  //     table: 'link_word_with_traditional_word'
-  //   }
-  // ].forEach(({ prop, table }) => {
-  //   const primaryKeys = ['source_id_', 'target_id_'];
-
-  //   const linkData = {};
-  //   queryAll(db, `select * from ${table}`).forEach((row) => {
-  //     const code = row.source_id_ + ':' + row.target_id_;
-  //     linkData[code] = {
-  //       ...row,
-  //       __exist__: row
-  //     };
-  //   });
-
-  //   Object.values(wordMetaData).forEach((source) => {
-  //     source.__meta__[prop].forEach((target) => {
-  //       const source_id_ = source.id_;
-  //       const target_id_ = (wordMetaData[target] || {}).id_;
-  //       if (!target_id_) {
-  //         return;
-  //       }
-
-  //       const code = source_id_ + ':' + target_id_;
-  //       if (!linkData[code]) {
-  //         // 新增关联
-  //         linkData[code] = {
-  //           source_id_,
-  //           target_id_
-  //         };
-  //       } else {
-  //         // 关联无需更新
-  //         delete linkData[code];
-  //       }
-  //     });
-  //   });
-
-  //   const missingLinks = [];
-  //   Object.keys(linkData).forEach((code) => {
-  //     const data = linkData[code];
-
-  //     if (data.__exist__) {
-  //       // 关联在库中已存在，但已不再被使用
-  //       missingLinks.push(data);
-
-  //       delete linkData[code];
-  //     }
-  //   });
-
-  //   saveToDB(db, table, linkData, true, primaryKeys);
-  //   removeFromDB(db, table, missingLinks, primaryKeys);
-  // });
+  // 绑定字与字的关联
+  [
+    {
+      prop: 'simple_words',
+      table: 'meta_word_simple'
+    },
+    {
+      prop: 'traditional_words',
+      table: 'meta_word_traditional'
+    },
+    {
+      prop: 'variant_words',
+      table: 'meta_word_variant'
+    }
+  ].forEach((options) => linkWordVariants(db, wordMetaData, options));
 
   // ----------------------------------------------------------------
   // 绑定字与编码的关联
@@ -279,57 +183,14 @@ export function saveWords(db, wordMetas) {
       prop: 'sijiao_codes',
       table: 'meta_word_sijiao_code'
     }
-  ].forEach(({ prop, table }) => {
-    const linkData = {};
-    queryAll(db, `select * from ${table}`).forEach((row) => {
-      const code = row.value_ + ':' + row.word_id_;
-      linkData[code] = {
-        ...row,
-        __exist__: row
-      };
-    });
-
-    Object.values(wordMetaData).forEach((word) => {
-      const codes = word.__meta__[prop];
-
-      codes.forEach((value_) => {
-        const word_id_ = word.id_;
-        const code = value_ + ':' + word_id_;
-
-        if (!linkData[code]) {
-          // 新增关联
-          linkData[code] = {
-            value_,
-            word_id_
-          };
-        } else {
-          // 关联无需更新
-          delete linkData[code];
-        }
-      });
-    });
-
-    const missingLinks = [];
-    Object.keys(linkData).forEach((code) => {
-      const id = linkData[code].id_;
-
-      if (id) {
-        // 关联在库中已存在，但已不再被使用
-        missingLinks.push(id);
-
-        delete linkData[code];
-      }
-    });
-
-    saveToDB(db, table, linkData);
-    removeFromDB(db, table, missingLinks);
-  });
+  ].forEach((options) => linkWordCodes(db, wordMetaData, options));
 }
 
 /** 生成拼音字母组合数据 */
 export function generatePinyinChars(db, file) {
   const values = [];
   const nextCharsMap = {};
+
   queryAll(db, 'select value_ from meta_pinyin_chars order by value_').forEach(
     (row) => {
       const value = row.value_;
@@ -349,7 +210,7 @@ export function generatePinyinChars(db, file) {
   appendLineToFile(file, values.join('\n'), true);
 }
 
-/** 生成拼音字母组合数据 */
+/** 生成拼音字母的连接数据 */
 export function generatePinyinCharLinks(db, file) {
   const links = {};
   queryAll(db, 'select value_ from meta_pinyin_chars order by value_').forEach(
@@ -546,4 +407,166 @@ function doSaveSpells(db, wordMetas, { prop, table, chars_table, chars_fn }) {
 
   saveToDB(db, table, spellMetaData);
   removeFromDB(db, table, missingSpellMetas);
+}
+
+function linkWordSpells(
+  db,
+  wordMetaData,
+  { prop, table, spell_meta_table, has_weight }
+) {
+  const spellMetaMap = {};
+  queryAll(db, `select id_, value_ from ${spell_meta_table}`).forEach((row) => {
+    spellMetaMap[row.value_] = row.id_;
+  });
+
+  const wordIdMap = {};
+  const spellIdMap = {};
+
+  const spellType = has_weight ? '拼音' : '注音';
+  const linkDataMap = {};
+  Object.keys(wordMetaData).forEach((k) => {
+    const word = wordMetaData[k];
+    const spells = word.__meta__[prop];
+
+    const word_id_ = word.id_;
+    wordIdMap[word_id_] = k;
+
+    spells.forEach((spell) => {
+      const spell_id_ = spellMetaMap[spell.value];
+      spellIdMap[spell_id_] = spell.value;
+
+      const code = word_id_ + ':' + spell_id_;
+      const data = (linkDataMap[code] = {
+        word_id_,
+        spell_id_
+      });
+
+      if (has_weight) {
+        data.used_weight_ = spell.used_weight || 0;
+      }
+    });
+  });
+
+  const missingLinks = [];
+  queryAll(db, `select * from ${table}`).forEach((row) => {
+    const id = row.id_;
+    const code = row.word_id_ + ':' + row.spell_id_;
+
+    if (linkDataMap[code]) {
+      linkDataMap[code].id_ = id;
+      linkDataMap[code].__exist__ = row;
+    } else {
+      // 在库中已存在，但已不再被使用
+      missingLinks.push(id);
+      console.log(
+        spellType + '字已被废弃：',
+        id,
+        wordIdMap[row.word_id_] || '',
+        spellIdMap[row.spell_id_] || ''
+      );
+    }
+  });
+
+  saveToDB(db, table, linkDataMap);
+  removeFromDB(db, table, missingLinks);
+}
+
+function linkWordVariants(db, wordMetaData, { prop, table }) {
+  const primaryKeys = ['source_id_', 'target_id_'];
+
+  const linkData = {};
+  queryAll(db, `select * from ${table}`).forEach((row) => {
+    const code = row.source_id_ + ':' + row.target_id_;
+    linkData[code] = {
+      ...row,
+      __exist__: row
+    };
+  });
+
+  Object.keys(wordMetaData).forEach((k) => {
+    const word = wordMetaData[k];
+    const variants = word.__meta__[prop];
+
+    variants.forEach((variant) => {
+      const source_id_ = word.id_;
+      const target_id_ = (wordMetaData[variant] || {}).id_;
+      if (!target_id_) {
+        return;
+      }
+
+      const code = source_id_ + ':' + target_id_;
+      if (!linkData[code]) {
+        // 新增关联
+        linkData[code] = {
+          source_id_,
+          target_id_
+        };
+      } else {
+        // 关联无需更新
+        delete linkData[code];
+      }
+    });
+  });
+
+  const missingLinks = [];
+  Object.keys(linkData).forEach((code) => {
+    const data = linkData[code];
+
+    if (data.__exist__) {
+      // 关联在库中已存在，但已不再被使用
+      missingLinks.push(data);
+
+      delete linkData[code];
+    }
+  });
+
+  saveToDB(db, table, linkData, true, primaryKeys);
+  removeFromDB(db, table, missingLinks, primaryKeys);
+}
+
+function linkWordCodes(db, wordMetaData, { prop, table }) {
+  const linkData = {};
+  queryAll(db, `select * from ${table}`).forEach((row) => {
+    const code = row.value_ + ':' + row.word_id_;
+    linkData[code] = {
+      ...row,
+      __exist__: row
+    };
+  });
+
+  Object.keys(wordMetaData).forEach((k) => {
+    const word = wordMetaData[k];
+    const codes = word.__meta__[prop];
+
+    codes.forEach((value_) => {
+      const word_id_ = word.id_;
+      const code = value_ + ':' + word_id_;
+
+      if (!linkData[code]) {
+        // 新增关联
+        linkData[code] = {
+          value_,
+          word_id_
+        };
+      } else {
+        // 关联无需更新
+        delete linkData[code];
+      }
+    });
+  });
+
+  const missingLinks = [];
+  Object.keys(linkData).forEach((code) => {
+    const id = linkData[code].id_;
+
+    if (id) {
+      // 关联在库中已存在，但已不再被使用
+      missingLinks.push(id);
+
+      delete linkData[code];
+    }
+  });
+
+  saveToDB(db, table, linkData);
+  removeFromDB(db, table, missingLinks);
 }

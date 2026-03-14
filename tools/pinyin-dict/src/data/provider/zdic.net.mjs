@@ -70,36 +70,30 @@ export async function fetchWordMeta(word) {
   const $pinyin = $doc.querySelectorAll('.ziif .dsk .z_py .z_d');
   $pinyin.forEach(($el) => {
     const value = naiveHTMLNodeInnerText($el).trim();
-    if (!value) {
-      return;
-    }
-
     // const $audio = $el.querySelector('a[data-src-mp3]');
     // const audio = ($audio && $audio.getAttribute('data-src-mp3')) || '';
 
     // Note: 音频地址始终为 https://img.zdic.net/audio/zd/py/${value}.mp3 形式
-    wordMeta.pinyins.push({
-      value
-      // audio_url: audio ? 'https:' + audio : ''
-    });
+    value &&
+      wordMeta.pinyins.push({
+        value
+        // audio_url: audio ? 'https:' + audio : ''
+      });
   });
 
   // 注音，与拼音按顺序对应
   const $zhuyin = $doc.querySelectorAll('.ziif .dsk .z_zy .z_d');
   $zhuyin.forEach(($el) => {
     const value = naiveHTMLNodeInnerText($el).trim();
-    if (!value) {
-      return;
-    }
-
     // const $audio = $el.querySelector('a[data-src-mp3]');
     // const audio = ($audio && $audio.getAttribute('data-src-mp3')) || '';
 
     // Note: 音频地址始终为 https://img.zdic.net/audio/zd/zy/${value}.mp3 形式
-    wordMeta.zhuyins.push({
-      value
-      // audio_url: audio ? 'https:' + audio : ''
-    });
+    value &&
+      wordMeta.zhuyins.push({
+        value
+        // audio_url: audio ? 'https:' + audio : ''
+      });
   });
 
   // 总笔画数
@@ -154,7 +148,7 @@ export async function fetchWordMeta(word) {
     }
 
     const value = naiveHTMLNodeInnerText($el).trim();
-    wordMeta.variant_words.push(value);
+    value && wordMeta.variant_words.push(value);
   });
 
   // 笔顺

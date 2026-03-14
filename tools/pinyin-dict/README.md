@@ -836,36 +836,11 @@ drop view zhuyin_word;
 
 -- 对核心的元数据表进行结构变更，直接变更为新版本的表结构
 -- Note：新增的非空列，只能设置为 default null，完整性由代码检查
-alter table meta_pinyin add column chars_id_ integer default null references meta_pinyin_chars (id_);
 -- 查看表结构：.schema meta_word
-alter table meta_word drop column radical_;
-alter table meta_word drop column radical_stroke_count_;
-alter table meta_word add column radical_id_ integer default null references meta_word_radical (id_);
-
--- 添加新表，并从原始表中迁移元数据，以确核型元数据的 id 和相互间的关联不变
-create table meta_word_with_pinyin (
-  id_ integer not null primary key,
-  -- 字 id
-  word_id_ integer not null,
-  -- 拼音 id
-  spell_id_ integer not null,
-  -- 字形权重：用于对相同拼音字母组合的字按字形相似性排序
-  glyph_weight_ integer default 0,
-  -- 按使用频率等排序的权重
-  weight_ integer default 0,
-  unique (word_id_, spell_id_),
-  foreign key (word_id_) references meta_word (id_),
-  foreign key (spell_id_) references meta_pinyin (id_)
-);
-
-insert into
-  meta_word_with_pinyin (id_, word_id_, spell_id_, glyph_weight_, weight_)
-select
-  id_, source_id_, target_id_, glyph_weight_, weight_
-from link_word_with_pinyin;
-
--- 删除旧表
-drop table link_word_with_pinyin;
+alter table meta_word drop column used_weight_;
+alter table meta_word_with_pinyin drop column glyph_weight_;
+alter table meta_word_with_pinyin add used_weight_ integer default 0;
+alter table meta_word_with_zhuyin drop column glyph_weight_;
 
 pragma foreign_keys = 1;
 pragma ignore_check_constraints = 1;
@@ -873,8 +848,8 @@ pragma ignore_check_constraints = 1;
 -- 数据库无用空间回收
 vacuum;
 
--- 执行数据更新/升级脚本: npm run generate:sqlite:word
--- 检查新旧版本数据是否存在差异（注意修改新旧数据库文件名）: npm run generate:sqlite:word:diff
+-- 执行数据更新/升级脚本: npm run db:raw:word
+-- 检查新旧版本数据是否存在差异（注意修改新旧数据库文件名）: npm run db:raw:word:diff
 ```
 
 ## 参考资料

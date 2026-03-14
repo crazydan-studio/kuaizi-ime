@@ -4,8 +4,7 @@ import {
   appendLineToFile,
   extractPinyinChars,
   correctPinyin,
-  correctZhuyin,
-  calculateStrokeSimilarity
+  correctZhuyin
 } from '#utils/utils.mjs';
 
 import { fetchWordMeta } from '#data/provider/zdic.net.mjs';
