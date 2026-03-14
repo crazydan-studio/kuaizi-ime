@@ -152,7 +152,6 @@ kan
 kang
 kao
 ke
-kei
 ken
 keng
 kong
@@ -182,7 +181,6 @@ lie
 lin
 ling
 liu
-lo
 long
 lou
 lu
@@ -327,6 +325,7 @@ tan
 tang
 tao
 te
+tei
 teng
 ti
 tian

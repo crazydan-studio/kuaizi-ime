@@ -4,3 +4,7 @@ import { fromRootPath } from '#utils/utils.mjs';
 export function getWordDictSQLiteFile() {
   return fromRootPath('data', 'pinyin-word-dict.sqlite');
 }
+
+export function getWordDictSQLiteVersionFile(version) {
+  return fromRootPath('data', 'pinyin-word-dict.' + version + '.sqlite');
+}

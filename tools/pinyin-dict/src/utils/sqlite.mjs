@@ -8,7 +8,7 @@ import {
   existFile
 } from './utils.mjs';
 
-export function openDB(file, { readonly, ignoreCheckConstraints }) {
+export function openDB(file, { readonly, ignoreCheckConstraints } = {}) {
   const options = { readOnly: readonly === true };
   const db = new DatabaseSync(file, options);
   db.opts = options;
@@ -25,7 +25,7 @@ pragma temp_store = memory;
   `
   );
 
-  if (ignoreCheckConstraints) {
+  if (ignoreCheckConstraints === true) {
     execSQL(
       db,
       `

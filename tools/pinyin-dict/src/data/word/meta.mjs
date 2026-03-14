@@ -295,7 +295,6 @@ function shouldBeExcludedPinyin(pinyin) {
     case 'mu4':
     case 'yu2':
     case 'kam4':
-    case 'zhēi':
     case 'uo˥':
     case 'təp˥':
     case 'yīngmǔ':
@@ -330,8 +329,6 @@ function shouldBeExcludedWord(wordMeta) {
     case '兝': // gōngfēn
     case '兣': // gōnglǐ
     case '嗧': // jiālún
-    case '𧟰': // fiào
-    case '覅': // fiào
     // 外文汉字
     case '怾': // gi
     case '兺': // būn
