@@ -5,6 +5,7 @@ import * as opencc from '#data/provider/opencc.mjs';
 import * as wanxiang from '#data/provider/wanxiang.mjs';
 
 import {
+  getWordMetasSavedFile,
   patchWordMetaAndSaveToFile,
   saveWordMetasToFile,
   calculateWordGlyphWeight,
@@ -16,7 +17,7 @@ import {
 
 // 包含完整拼音和字信息的文本文件
 const wordDataRawFile = fromRootPath('data', 'pinyin-dict.raw.txt');
-const wordDataValidFile = fromRootPath('data', 'pinyin-dict.valid.txt');
+const wordDataValidFile = getWordMetasSavedFile();
 
 // -----------------------------------------------------------------------
 console.log();

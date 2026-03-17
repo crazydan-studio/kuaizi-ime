@@ -1,12 +1,9 @@
 import { JSDOM } from 'jsdom';
 
-import {
-  splitChars,
-  hasGlyphFontForCodePoint,
-  naiveHTMLNodeInnerText
-} from '#utils/utils.mjs';
+import { naiveHTMLNodeInnerText } from '#utils/utils.mjs';
+import { hasGlyphFontForCodePoint } from '#utils/word.mjs';
 
-// 根据 zdic.net 获取字的详细数据
+// 从 zdic.net 获取字的详细数据
 const baseUrl = 'https://www.zdic.net/hans/';
 
 /** 同时获取多个字信息。Note: 部分字信息可能未提供读音 */
@@ -26,7 +23,7 @@ export async function fetchWordMeta(word) {
 
   const title = $doc.title;
   if (!title.includes(word)) {
-    console.error('Error when got "' + word + '": ' + title);
+    console.error('获取 "' + word + '" 的字信息存在异常: ' + title);
 
     return { value: word };
   }

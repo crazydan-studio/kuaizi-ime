@@ -59,7 +59,9 @@ export function saveEmojis(db, groupEmojiMetas) {
 
   const emojiMetaMap = {};
   Object.keys(groupEmojiMetas).forEach((group) => {
-    groupEmojiMetas[group].forEach((meta) => {
+    const metas = groupEmojiMetas[group];
+
+    metas.forEach((meta) => {
       meta.keywords = meta.keywords.sort();
 
       const keyword_ids_list = [];
@@ -113,11 +115,4 @@ export function saveEmojis(db, groupEmojiMetas) {
   });
   saveToDB(db, 'meta_emoji', emojiMetaMap, true);
   removeFromDB(db, 'meta_emoji', missingEmojis);
-
-  // 获取新增表情 id
-  queryAll(db, 'select * from meta_emoji').forEach((row) => {
-    const code = row.value_;
-
-    emojiMetaMap[code].id_ = row.id_;
-  });
 }

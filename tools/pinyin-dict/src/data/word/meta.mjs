@@ -1,5 +1,6 @@
 import {
   sleep,
+  fromRootPath,
   readLineFromFile,
   appendLineToFile,
   extractPinyinChars,
@@ -8,6 +9,29 @@ import {
 } from '#utils/utils.mjs';
 
 import { fetchWordMeta } from '#data/provider/zdic.net.mjs';
+
+/** 获取字信息的存储文件 */
+export function getWordMetasSavedFile() {
+  return fromRootPath('data', 'pinyin-dict.valid.txt');
+}
+
+/** 读取所有已保存的字信息 */
+export async function readAllSavedWordMetas() {
+  const wordMetas = [];
+
+  const file = getWordMetasSavedFile();
+  await readLineFromFile(file, (line) => {
+    if (!line || !line.trim()) {
+      return;
+    }
+
+    const metas = JSON.parse(line);
+    metas.forEach((meta) => {
+      wordMetas.push(meta);
+    });
+  });
+  return wordMetas;
+}
 
 /**
  * 补充字信息并按行保存为 json 数组数据，返回全部字信息
@@ -24,6 +48,7 @@ export async function patchWordMetaAndSaveToFile(thinWords, file) {
   const batchSize = 20;
 
   let savedWordMetas = [];
+
   const savedWords = {};
   await readLineFromFile(file, (line) => {
     if (!line || !line.trim()) {

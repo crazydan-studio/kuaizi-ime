@@ -1,12 +1,10 @@
 /* SQLite 字典库 */
-import { fromRootPath, readLineFromFile } from '#utils/utils.mjs';
 import { getWordDictSQLiteFile } from '#db/utils.mjs';
+
+import { readAllSavedWordMetas } from '#data/word/meta.mjs';
 
 import { patchWordMeta } from './patch.mjs';
 import * as sqlite from './sqlite.mjs';
-
-// 收集数据
-const wordDataValidFile = fromRootPath('data', 'pinyin-dict.valid.txt');
 
 // SQLite 字典库
 const wordDictSQLiteFile = getWordDictSQLiteFile();
@@ -15,18 +13,9 @@ const wordDictSQLiteFile = getWordDictSQLiteFile();
 console.log();
 console.log('读取已收集的有效字信息 ...');
 
-const wordMetas = [];
-await readLineFromFile(wordDataValidFile, (line) => {
-  if (!line || !line.trim()) {
-    return;
-  }
-
-  const metas = JSON.parse(line);
-  metas.forEach((meta) => {
-    wordMetas.push(meta);
-
-    patchWordMeta(meta);
-  });
+const wordMetas = await readAllSavedWordMetas();
+wordMetas.forEach((meta) => {
+  patchWordMeta(meta);
 });
 
 console.log('- 有效字信息总数：' + wordMetas.length);

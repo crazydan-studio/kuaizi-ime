@@ -12,6 +12,7 @@
     "app:shell:debug": "node --inspect-brk src/app/shell.mjs",
     "data:word": "node src/data/word/index.mjs",
     "data:word:debug": "node --inspect-brk src/data/word/index.mjs",
+    "data:word:media": "node src/data/word/media/index.mjs",
     "data:emoji": "node src/data/emoji/index.mjs",
     "data:phrase": "node src/data/phrase/index.mjs",
     "data:phrase:debug": "node --inspect-brk src/data/phrase/index.mjs",
@@ -28,6 +29,7 @@
     "generate:sqlite:phrase:hmm:trans:debug": "node --inspect-brk src/generate/sqlite/phrase/hmm/trans/index.mjs",
     "generate:sqlite:phrase:hmm:trans_kewen": "node src/generate/sqlite/phrase/hmm/trans_kewen/index.mjs"
   },
+  "packageManager": "pnpm@10.28.0",
   "engines": {
     "node": ">=22.5.0"
   },
