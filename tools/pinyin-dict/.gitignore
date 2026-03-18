@@ -1,5 +1,6 @@
 node_modules/
 *.log
+data/medias/
 data/pinyin-dict.*.txt
 data/pinyin-dict-*.*.txt
 data/pinyin-*.sqlite
