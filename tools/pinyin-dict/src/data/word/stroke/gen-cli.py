@@ -14,9 +14,9 @@ from scipy.ndimage import gaussian_filter1d
 # - pip install opencv
 # - pip install scipy
 # 对于 bishun.net 的笔画图片，由于其田字格和笔画都采用红色系，为得到较好的结果，需配置参数
-# --stroke-hsv-range 0,50,50,10,255,255 --grid-scale 1 --stroke-mask-sigma 1 --stroke-contour-sigma 0
+# --grid-scale 1 --stroke-hsv-range 0,50,50,10,255,255 --stroke-mask-sigma 1 --stroke-contour-sigma 0
 # 对于 strokeorder.com 的笔画图片，则仅需配置参数
-# --stroke-hsv-range 0,50,50,10,255,255 --stroke-mask-sigma 0 --stroke-contour-sigma 1 --grid-scale 8 --stroke-simplify 2.5
+# --grid-scale 8 --stroke-hsv-range 0,50,50,10,255,255 --stroke-mask-sigma 0 --stroke-contour-sigma 1 --stroke-simplify 2.5
 
 # ---------- 辅助函数 ----------
 def smooth_mask(mask, sigma=1.0):
@@ -272,18 +272,10 @@ def process_image(image_path, output_svg, stroke_hsv_lower, stroke_hsv_upper,
         # 笔画点平滑
         if stroke_contour_sigma > 0:
             main_cnt = smooth_contour(main_cnt, stroke_contour_sigma)
-            if debug_dir:
-                x, y, w, h = cv2.boundingRect(main_cnt)
-                cropped = valid_mask[y:y+h, x:x+w]
-                cv2.imwrite(os.path.join(debug_dir, f'60.stroke_smoooth_{idx:03d}.png'), cropped)
 
         # 笔画简化（减少顶点）
         if stroke_simplify_tolerance > 0:
             approx = cv2.approxPolyDP(main_cnt, stroke_simplify_tolerance, True)
-            if debug_dir:
-                x, y, w, h = cv2.boundingRect(approx)
-                cropped = valid_mask[y:y+h, x:x+w]
-                cv2.imwrite(os.path.join(debug_dir, f'70.stroke_simplified_{idx:03d}.png'), cropped)
         else:
             approx = main_cnt
 
