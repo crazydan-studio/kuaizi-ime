@@ -14,9 +14,11 @@ from scipy.ndimage import gaussian_filter1d
 # - pip install opencv
 # - pip install scipy
 # 对于 bishun.net 的笔画图片，由于其田字格和笔画都采用红色系，为得到较好的结果，需配置参数
-# --grid-scale 1 --stroke-hsv-range 0,50,50,10,255,255 --stroke-mask-sigma 1 --stroke-contour-sigma 0
+# --grid-scale 1 --stroke-hsv-range 0,50,50,10,255,255 --stroke-mask-sigma 1
 # 对于 strokeorder.com 的笔画图片，则仅需配置参数
-# --grid-scale 8 --stroke-hsv-range 0,50,50,10,255,255 --stroke-mask-sigma 0 --stroke-contour-sigma 1 --stroke-simplify 2.5
+# --grid-scale 8 --stroke-hsv-range 0,50,50,10,255,255
+# --stroke-contour-sigma 1 --stroke-simplify 2.5
+# --grid-min-area $((150*150))
 
 # ---------- 辅助函数 ----------
 def smooth_mask(mask, sigma=1.0):
@@ -31,7 +33,7 @@ def smooth_mask(mask, sigma=1.0):
     return smoothed.astype(np.uint8)
 
 def smooth_contour(contour, sigma=1.0):
-    """对闭合轮廓点进行高斯滤波（通过周期延拓处理边界）"""
+    """对闭合笔画点进行高斯滤波（通过周期延拓处理边界）"""
     if sigma <= 0 or len(contour) < 4:
         return contour
 
@@ -58,7 +60,7 @@ def catmull_rom_to_bezier(p0, p1, p2, p3):
 
 def contour_to_bezier_path_all_curves(pts):
     """
-    将闭合轮廓的顶点列表 (N,2) 转换为全部为三次贝塞尔曲线的路径命令。
+    将闭合笔画的顶点列表 (N,2) 转换为全部为三次贝塞尔曲线的路径命令。
     返回命令列表，每个元素为 ('C', c1, c2, end)。
     注意：该函数不包含起始移动命令，也不包含闭合命令。
     """
@@ -82,7 +84,7 @@ def contour_to_bezier_path_all_curves(pts):
 # ---------- 正方形区域检测 ----------
 def detect_same_size_squares(image, min_area=100, size_cluster_threshold=0.2):
     """
-    通过边缘检测和轮廓分析，检测图像中大小相同、无旋转的轴对齐正方形区域。
+    通过边缘检测和笔画分析，检测图像中大小相同、无旋转的轴对齐正方形区域。
     返回统一的边长 L 和每个正方形的中心坐标列表 [(cx, cy)]。
     """
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -92,7 +94,7 @@ def detect_same_size_squares(image, min_area=100, size_cluster_threshold=0.2):
     thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                   cv2.THRESH_BINARY_INV, 11, 2)
 
-    # 查找轮廓
+    # 查找笔画
     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     rects = []  # 存储 (cx, cy, w, h)
@@ -214,8 +216,8 @@ def process_image(image_path, output_svg, stroke_hsv_lower, stroke_hsv_upper,
         # 放大正方形区域
         square_scaled = cv2.resize(square, None, fx=grid_scale_factor, fy=grid_scale_factor,
                                       interpolation=cv2.INTER_CUBIC)
-        if debug_dir:
-            cv2.imwrite(os.path.join(debug_dir, f'10.grid_scaled_{idx:03d}.png'), square_scaled)
+        # if debug_dir:
+        #     cv2.imwrite(os.path.join(debug_dir, f'10.grid_scaled_{idx:03d}.png'), square_scaled)
 
         h_up, w_up = square_scaled.shape[:2]
 
@@ -360,7 +362,7 @@ def main():
                         help="田字格最小的有效面积（像素），默认 100")
     parser.add_argument("--grid-border-margin", type=int, default=4,
                         help="田字格的边框宽度（像素），只有在边框以内的笔画才是有效的，默认 4")
-    parser.add_argument("--stroke-hsv-range", type=str, required=True, help="所要提取的笔画颜色的 HSV 范围，格式：h_min,s_min,v_min,h_max,s_max,v_max，如 0,50,50,10,255,255")
+    parser.add_argument("--stroke-hsv-range", type=str, required=True, help="所要提取的笔画颜色的 HSV 范围（0-179,0-255,0-255），格式：h_min,s_min,v_min,h_max,s_max,v_max，如 0,50,50,10,255,255")
     parser.add_argument("--stroke-simplify", type=float, default=0.5,
                         help="笔画简化容差（像素），<=0 时不简化，默认 0.5。直接影响笔画的顶点数量（即曲线段数）。若希望笔画非常光滑且保留细节，可减小简化容差（如 0.1），但可能生成较多曲线段")
     parser.add_argument("--stroke-mask-sigma", type=float, default=0.0,
