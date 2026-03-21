@@ -31,6 +31,25 @@ def smooth_contour(contour, sigma=1.0):
 
     return filtered[:, np.newaxis, :].astype(np.int32)
 
+def is_extend_from(img, source):
+    """
+    检查 img 是否是在 source 的基础上延伸。也即，二者重叠的部分是否与 source 本身相同。
+
+    注意，该检查仅针对二值掩码图。
+
+    :return: img/source 任何为 None，均返回 False
+    """
+    if img is None or source is None:
+        return False
+
+    overlap = cv2.bitwise_and(img, source)
+
+    # 完全相同：np.array_equal(overlap, source)
+    if abs(cv2.countNonZero(source) - cv2.countNonZero(overlap)) < 100:
+        return True
+
+    return False
+
 def create_matting_mask(target, mask_path, mask_scale, overlap_hsv_lower, overlap_hsv_upper):
     """
     创建抠图遮罩。首先得到按指定比例缩放后的遮罩原始图像，

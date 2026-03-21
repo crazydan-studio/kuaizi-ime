@@ -9,7 +9,7 @@ import sys
 import os
 import textwrap
 from lib.cli import parse_hsv_range, StrokeOption, GridOption
-from lib.image import smooth_mask, smooth_contour, create_matting_mask
+from lib.image import smooth_mask, smooth_contour, is_extend_from, create_matting_mask
 from lib.svg import contour_to_bezier_path
 
 # Note: 以下代码核心逻辑由 DeepSeek 生成，并由 flytreeleft@crazydan.org 改进
@@ -52,6 +52,7 @@ def find_stroke_from_grid(
         debug_stage, debug_dir=None,
 ):
     """
+    :return: (笔画轮廓点, 笔画掩码图)。通过相邻两个笔画掩码图的笔画重叠区域面积来判断是否为新笔画，若为同一笔画，则重叠区域应该与前一张图相等
     """
     # 放大田字格
     if grid_opt.scale_factor > 1:
@@ -65,42 +66,44 @@ def find_stroke_from_grid(
     # if debug_dir:
     #     cv2.imwrite(os.path.join(debug_dir, f'{debug_stage}0.grid_scaled_{grid_opt.idx:03d}.png'), grid_scaled)
 
-    # 在放大后的区域中提取红色掩膜
+    # 在放大后的区域中提取指定色系的掩膜
     lower = np.array(stroke_opt.hsv_lower, dtype=np.uint8)
     upper = np.array(stroke_opt.hsv_upper, dtype=np.uint8)
 
     grid_hsv = cv2.cvtColor(grid_scaled, cv2.COLOR_BGR2HSV)
     # 得到单通道的二值图，白色为在范围内的像素，黑色为不在范围内的像素
-    grid_red_mask = cv2.inRange(grid_hsv, lower, upper)
+    grid_mask = cv2.inRange(grid_hsv, lower, upper)
     if debug_dir:
-        cv2.imwrite(os.path.join(debug_dir, f'{debug_stage}1.grid_masked_{grid_opt.idx:03d}.png'), grid_red_mask)
+        cv2.imwrite(os.path.join(debug_dir, f'{debug_stage}1.grid_masked_{grid_opt.idx:03d}.png'), grid_mask)
 
+    # 抠图，去掉无关位置的像素
     if grid_opt.matting_mask is not None:
-        # 从 grid_red_mask 中抠图，去掉无关位置的像素
-        grid_red_mask = cv2.bitwise_and(grid_red_mask, grid_opt.matting_mask)
+        grid_mask = cv2.bitwise_and(grid_mask, grid_opt.matting_mask)
         if debug_dir:
-            cv2.imwrite(os.path.join(debug_dir, f'{debug_stage}2.grid_masked_matting_{grid_opt.idx:03d}.png'), grid_red_mask)
+            cv2.imwrite(os.path.join(debug_dir, f'{debug_stage}2.grid_masked_matting_{grid_opt.idx:03d}.png'), grid_mask)
 
+    # 平滑笔画
+    grid_smooth_mask = grid_mask
     if stroke_opt.mask_sigma > 0:
-        grid_red_mask = smooth_mask(grid_red_mask, stroke_opt.mask_sigma)
+        grid_smooth_mask = smooth_mask(grid_mask, stroke_opt.mask_sigma)
         if debug_dir:
-            cv2.imwrite(os.path.join(debug_dir, f'{debug_stage}3.grid_masked_smooth_{grid_opt.idx:03d}.png'), grid_red_mask)
+            cv2.imwrite(os.path.join(debug_dir, f'{debug_stage}3.grid_masked_smooth_{grid_opt.idx:03d}.png'), grid_smooth_mask)
 
     # 查找笔画
-    stroke_contours, _ = cv2.findContours(grid_red_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    stroke_contours, _ = cv2.findContours(grid_smooth_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     if not stroke_contours:
-        return None
+        return None, None
 
     # 取面积最大的笔画
     stroke_main_contour = max(stroke_contours, key=cv2.contourArea)
     cnt_area = cv2.contourArea(stroke_main_contour) / (grid_opt.scale_factor * grid_opt.scale_factor)  # 换算回原始尺寸面积
     # 检查是否满足远小于方形区域的条件
     if cnt_area < stroke_opt.min_area:
-        return None
+        return None, None
 
     if debug_dir:
         x, y, w, h = cv2.boundingRect(stroke_main_contour)
-        cropped = grid_red_mask[y:y+h, x:x+w]
+        cropped = grid_smooth_mask[y:y+h, x:x+w]
         cv2.imwrite(os.path.join(debug_dir, f'{debug_stage}4.stroke_{grid_opt.idx:03d}.png'), cropped)
 
     # 笔画点平滑
@@ -116,12 +119,12 @@ def find_stroke_from_grid(
     # 将坐标从放大区域转换回原始田字格坐标系（除以放大倍数）
     pts = approx.squeeze().astype(np.float64)
     if len(pts) < 3:
-        return None
+        return None, None
 
     pts[:, 0] = pts[:, 0] / grid_opt.scale_factor
     pts[:, 1] = pts[:, 1] / grid_opt.scale_factor
 
-    return pts
+    return pts, grid_mask
 
 def extract_frame_strokes_from_gif(
         gif_path, grid_matting_mask_path,
@@ -148,11 +151,12 @@ def extract_frame_strokes_from_gif(
 
     strokes = []
     frame_strokes = []
+    prev_grid_mask = None
     for idx, grid in enumerate(grids):
         if debug_dir:
             cv2.imwrite(os.path.join(debug_dir, f'00.grid_{idx:03d}.png'), grid)
 
-        stroke = find_stroke_from_grid(
+        stroke, grid_mask = find_stroke_from_grid(
             grid,
             grid_opt=GridOption(
                 idx=idx,
@@ -163,18 +167,21 @@ def extract_frame_strokes_from_gif(
             debug_stage="1", debug_dir=debug_dir,
         )
 
-        if stroke is None:
-            if len(strokes) > 0:
-                frame_strokes.append(strokes)
+        # stroke 为 None 时，grid_mask 也为 None，从而 is_extend_from 始终返回 False
+        if not is_extend_from(grid_mask, prev_grid_mask) and len(strokes) > 0:
+            # 记录当前笔画的全部动画帧
+            frame_strokes.append(strokes)
+            # 开始记录新的动画帧
+            strokes = []
 
-                strokes = []
+            if debug_dir is not None:
+                i = idx - 1
+                cv2.imwrite(os.path.join(debug_dir, f'20.stroke_full_{i:03d}.png'), grids[i])
 
-                if debug_dir is not None:
-                    i = idx - 1
-                    cv2.imwrite(os.path.join(debug_dir, f'20.stroke_full_{i:03d}.png'), grids[i])
-            continue
+        if stroke is not None:
+            strokes.append(stroke)
 
-        strokes.append(stroke)
+        prev_grid_mask = grid_mask
 
     return frame_strokes, width, height
 
@@ -182,9 +189,8 @@ def save_full_strokes_to_svg(svg_path, frame_strokes, width, height):
     """
     """
     svg_lines = [
-        textwrap.dedent(
-            f"""<?xml version="1.0" encoding="UTF-8"?>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}">""")
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}">',
     ]
 
     for idx, strokes in enumerate(frame_strokes):
@@ -255,18 +261,20 @@ def save_stroke_anim_to_svg(svg_path, frame_strokes, width, height, anim_duratio
     if anim_enabled:
         svg_opts += f' style="--d:{anim_duration}s"'
     svg_lines = [
-        textwrap.dedent(
-            f"""<?xml version="1.0" encoding="UTF-8"?>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}"{svg_opts}>""")
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}"{svg_opts}>',
     ]
 
     if anim_enabled:
-        svg_lines.append(textwrap.dedent(
-            f"""<style>
-            @keyframes appear{{from{{opacity:var(--o,0);}} to{{opacity:1;}}}}
-            path{{animation:appear ease-in-out forwards;animation-duration:var(--d);animation-delay:calc(var(--d)*var(--g));opacity:var(--o,0);fill:black;}}
-            use[href$="-f-0"]{{--o:0.03;}}
-            </style>""")
+        svg_lines.append(
+            textwrap.dedent(
+                f"""
+                <style>
+                @keyframes appear{{from{{opacity:var(--o,0);}} to{{opacity:1;}}}}
+                path{{animation:appear ease-in-out forwards;animation-duration:var(--d);animation-delay:calc(var(--d)*var(--g));opacity:var(--o,0);fill:black;}}
+                use[href$="-f-0"]{{--o:0.03;}}
+                </style>"""
+            )
         )
 
     svg_lines.append('<defs>')
