@@ -7,6 +7,7 @@ import numpy as np
 import argparse
 import sys
 import os
+import textwrap
 from lib.cli import parse_hsv_range, StrokeOption, GridOption
 from lib.image import smooth_mask, smooth_contour, read_matting_mask
 from lib.svg import contour_to_bezier_path
@@ -28,7 +29,7 @@ def extract_grids_from_gif(gif_path):
     从 GIF 各帧中提取田字格。
 
     :param gif_path: GIF 文件路径
-    :return: 田字格（BGR 颜色格式）列表, 田字格宽度, 田字格高度
+    :return: (田字格（BGR 颜色格式）列表, 田字格宽度, 田字格高度)
     """
     gif = Image.open(gif_path)
 
@@ -124,23 +125,24 @@ def find_stroke_from_grid(
 
     return pts
 
-def extract_strokes_from_gif(
+def extract_frame_strokes_from_gif(
         gif_path, grid_matting_mask_path,
         stroke_opt,
         grid_scale_factor=1.0,
         debug_dir=None,
 ):
     """
+    :return: (笔画帧列表（二维数组）, 田字格宽度, 田字格高度)。笔画帧列表的第一维为笔画，第二维为该笔画的动画帧轮廓点，且该维数组的最后一个为该笔画的完整轮廓
     """
     grids, width, height = extract_grids_from_gif(gif_path)
     if len(grids) == 0:
         print(f"未在 GIF 图像中找到图像帧。")
-        return None, None, width, height
+        return None, width, height
 
     grid_matting_mask = read_matting_mask(grid_matting_mask_path, grid_scale_factor)
 
-    full_strokes = []
-    partial_strokes = []
+    strokes = []
+    frame_strokes = []
     for idx, grid in enumerate(grids):
         if debug_dir:
             cv2.imwrite(os.path.join(debug_dir, f'00.grid_{idx:03d}.png'), grid)
@@ -157,35 +159,35 @@ def extract_strokes_from_gif(
         )
 
         if stroke is None:
-            if len(partial_strokes) > 0:
-                # 当前无笔画的图像帧的前一帧图像为完整的笔画
-                last = partial_strokes[-1]
-                full_strokes.append(last)
+            if len(strokes) > 0:
+                frame_strokes.append(strokes)
+
+                strokes = []
 
                 if debug_dir is not None:
                     i = idx - 1
                     cv2.imwrite(os.path.join(debug_dir, f'20.stroke_full_{i:03d}.png'), grids[i])
             continue
 
-        partial_strokes.append(stroke)
+        strokes.append(stroke)
 
-    return full_strokes, partial_strokes, width, height
+    return frame_strokes, width, height
 
-def save_full_strokes_to_svg(svg_path, strokes, width, height):
+def save_full_strokes_to_svg(svg_path, frame_strokes, width, height):
     """
     """
     svg_lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}">'
     ]
-    for idx, pts in enumerate(strokes):
-        pid = f"s-{idx+1:03d}"
 
-        path = contour_to_bezier_path(pts, {
-            'id': pid, 'fill': 'black', 'stroke': 'none'
+    for idx, strokes in enumerate(frame_strokes):
+        # 取最后一帧的笔画完整轮廓
+        stroke = strokes[-1]
+
+        path = contour_to_bezier_path(stroke, {
+            'id': f"s-{idx}",
         })
-        if not path:
-            continue
 
         svg_lines.append(path)
 
@@ -194,52 +196,79 @@ def save_full_strokes_to_svg(svg_path, strokes, width, height):
     with open(svg_path, 'w', encoding='utf-8') as f:
         f.write('\n'.join(svg_lines))
 
-    print(f"成功生成笔画 SVG 图像，包含 {len(strokes)} 个笔画，田字格尺寸为 {width}x{height} 像素")
+    print(f"成功生成笔画 SVG 图像，包含 {len(frame_strokes)} 个笔画，田字格尺寸为 {width}x{height} 像素")
 
-def save_stroke_anim_to_svg(svg_path, strokes, width, height, anim_duration=0.5):
+def save_stroke_anim_to_svg(svg_path, frame_strokes, width, height, anim_duration=0.5):
     """
     """
-    # SVG头部，包含CSS动画定义
+    anim_enabled = anim_duration > 0
+    svg_defs = []
+    svg_groups = []
+
+    anim_gap = 0
+    for idx, strokes in enumerate(frame_strokes):
+        frame_count = len(strokes)
+
+        gid = f's-{idx}'
+        clip_id = f'c-{gid}'
+
+        svg_groups.append(f'<g id="{gid}" clip-path="url(#{clip_id})">')
+
+        # 帧动画需等待多少个延迟
+        anim_gap += frame_count
+        # Note: 倒序排列笔画轮廓，确保最早的动画帧在最上层
+        for i, stroke in enumerate(reversed(strokes)):
+            gap = anim_gap - i
+
+            pid = f"{gid}-f-{i}"
+
+            # 以笔画完整轮廓作为裁剪路径，确保笔画帧的多余部分不会显示
+            if i == 0:
+                path = contour_to_bezier_path(stroke, {'id': pid})
+
+                svg_defs.append(path)
+                svg_defs.append(f'<clipPath id="{clip_id}"><use href="#{pid}"/></clipPath>')
+
+                opts = ""
+                if anim_enabled:
+                    opts += f' style="--g:{gap}"'
+                svg_groups.append(f'<use href="#{pid}"{opts}/>')
+            else:
+                opts = { 'id': pid, }
+                if anim_enabled:
+                    opts['style'] = f'--g:{gap}'
+
+                path = contour_to_bezier_path(stroke, opts)
+
+                svg_groups.append(path)
+
+        svg_groups.append('</g>')
+
+    # --------------------------------------------------------------------------
+    svg_opts = ""
+    if anim_enabled:
+        svg_opts += f' style="--d:{anim_duration}s"'
     svg_lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
-        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}">'
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}"{svg_opts}>',
     ]
 
-    svg_lines.append("""
-<style>
-@keyframes appear {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-.contour-group {
-    animation: appear {duration}s ease-in-out forwards;
-    opacity: 0;
-}
-</style>
-""".replace("{duration}", str(anim_duration)))
+    if anim_enabled:
+        svg_lines.append(textwrap.dedent(
+            f"""
+            <style>
+            @keyframes appear{{from{{opacity:var(--o,0);}} to{{opacity:1;}}}}
+            path{{animation:appear ease-in-out forwards;animation-duration:var(--d);animation-delay:calc(var(--d)*var(--g));opacity:var(--o,0);fill:black;}}
+            use[href$="-f-0"]{{--o:0.03;}}
+            </style>
+            """)
+        )
 
-    # 逐个帧添加笔画组
-    for idx, pts in enumerate(strokes):
-        color = [0, 0, 0]
-        fill_color = f"rgba({color[0]},{color[1]},{color[2]},1)"
+    svg_lines.append('<defs>')
+    svg_lines += svg_defs
+    svg_lines.append('</defs>')
 
-        # 组属性：类名 + 动画延迟
-        group_attrs = 'class="contour-group"'
-        delay = idx * anim_duration
-        group_attrs += f' style="animation-delay: {delay}s;"'
-
-        svg_lines.append(f'<g {group_attrs}>')
-
-        # ---------------------------------------------------------------
-        path = contour_to_bezier_path(pts, {
-            'fill': fill_color, 'stroke': 'none'
-        })
-        if not path:
-            continue
-
-        svg_lines.append(path)
-
-        svg_lines.append('</g>')
+    svg_lines += svg_groups
 
     svg_lines.append('</svg>')
 
@@ -255,7 +284,7 @@ def parse_args():
     parser.add_argument("--input", type=str, required=True, help="笔画 GIF 动图的文件路径")
     parser.add_argument("--output", type=str, required=True, help="提取的笔画所保存的 SVG 文件路径")
     parser.add_argument("--anim-output", type=str, help="提取的笔画动画所保存的 SVG 文件路径")
-    parser.add_argument('--anim-duration', type=float, default=0.5, help='每帧笔画组的动画持续时间（秒），默认 0.5')
+    parser.add_argument('--anim-duration', type=float, default=0.5, help='每帧笔画组的动画持续时间（秒），默认 0.5。若小于等于 0，则禁用动画')
     parser.add_argument("--grid-matting-mask", type=str,
                         help="田字格抠图遮罩图像。黑白图像，用于从田字格中扣去相同位置的白色区域像素，以避免干扰笔画的提取")
     parser.add_argument("--grid-scale", type=float, default=2.0,
@@ -282,7 +311,7 @@ def main():
         print(f"所要提取的笔画颜色的 HSV 范围解析发生错误：{e}")
         sys.exit(1)
 
-    full_strokes, partial_strokes, width, height = extract_strokes_from_gif(
+    frame_strokes, width, height = extract_frame_strokes_from_gif(
         gif_path=args.input,
         grid_scale_factor=args.grid_scale,
         grid_matting_mask_path=args.grid_matting_mask,
@@ -297,20 +326,20 @@ def main():
         debug_dir=args.debug_dir,
     )
 
-    if not full_strokes:
+    if not frame_strokes or len(frame_strokes) == 0:
         print("未提取到任何有效笔画。")
         sys.exit(1)
 
     save_full_strokes_to_svg(
         svg_path=args.output,
-        strokes=full_strokes,
+        frame_strokes=frame_strokes,
         width=width, height=height,
     )
 
     if args.anim_output:
         save_stroke_anim_to_svg(
             svg_path=args.anim_output,
-            strokes=partial_strokes,
+            frame_strokes=frame_strokes,
             width=width, height=height,
             anim_duration=args.anim_duration,
         )
