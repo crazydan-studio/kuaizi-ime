@@ -9,7 +9,7 @@ import sys
 import os
 import textwrap
 from lib.cli import parse_hsv_range, StrokeOption, GridOption
-from lib.image import smooth_mask, smooth_contour, read_matting_mask
+from lib.image import smooth_mask, smooth_contour, create_matting_mask
 from lib.svg import contour_to_bezier_path
 
 # Note: 以下代码核心逻辑由 DeepSeek 生成，并由 flytreeleft@crazydan.org 改进
@@ -52,8 +52,6 @@ def find_stroke_from_grid(
         debug_stage, debug_dir=None,
 ):
     """
-    :param matting_mask: 抠图图像（黑白色），从 grid 中去掉该图像中的白色区域
-    :return:
     """
     # 放大田字格
     if grid_opt.scale_factor > 1:
@@ -139,7 +137,14 @@ def extract_frame_strokes_from_gif(
         print(f"未在 GIF 图像中找到图像帧。")
         return None, width, height
 
-    grid_matting_mask = read_matting_mask(grid_matting_mask_path, grid_scale_factor)
+    grid_matting_mask = create_matting_mask(
+        grids[0],
+        grid_matting_mask_path, grid_scale_factor,
+        # 保留原图中与抠图遮罩重叠的白色系区域，
+        # 也就是 gif 第一帧图中在需要被抠去区域的有效笔画的颜色，
+        # 从而确保有效笔画不会被抠去
+        overlap_hsv_lower=[0, 0, 221], overlap_hsv_upper=[180, 30, 255]
+    )
 
     strokes = []
     frame_strokes = []
@@ -177,8 +182,9 @@ def save_full_strokes_to_svg(svg_path, frame_strokes, width, height):
     """
     """
     svg_lines = [
-        '<?xml version="1.0" encoding="UTF-8"?>',
-        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}">'
+        textwrap.dedent(
+            f"""<?xml version="1.0" encoding="UTF-8"?>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}">""")
     ]
 
     for idx, strokes in enumerate(frame_strokes):
@@ -249,19 +255,18 @@ def save_stroke_anim_to_svg(svg_path, frame_strokes, width, height, anim_duratio
     if anim_enabled:
         svg_opts += f' style="--d:{anim_duration}s"'
     svg_lines = [
-        '<?xml version="1.0" encoding="UTF-8"?>',
-        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}"{svg_opts}>',
+        textwrap.dedent(
+            f"""<?xml version="1.0" encoding="UTF-8"?>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}"{svg_opts}>""")
     ]
 
     if anim_enabled:
         svg_lines.append(textwrap.dedent(
-            f"""
-            <style>
+            f"""<style>
             @keyframes appear{{from{{opacity:var(--o,0);}} to{{opacity:1;}}}}
             path{{animation:appear ease-in-out forwards;animation-duration:var(--d);animation-delay:calc(var(--d)*var(--g));opacity:var(--o,0);fill:black;}}
             use[href$="-f-0"]{{--o:0.03;}}
-            </style>
-            """)
+            </style>""")
         )
 
     svg_lines.append('<defs>')
