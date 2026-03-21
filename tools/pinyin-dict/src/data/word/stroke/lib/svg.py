@@ -1,5 +1,34 @@
 # Note: 以下代码核心逻辑由 DeepSeek 生成，并由 flytreeleft@crazydan.org 改进
 
+def contour_to_bezier_path(pts, attrs):
+    """
+    """
+    curve_cmds = contour_to_bezier_path_all_curves(pts)
+    if not curve_cmds:
+        return None
+
+    d = ""
+    # 构建完整路径命令：移动起点 + 曲线段 + 闭合
+    cmds = [('M', pts[0])] + curve_cmds + [('Z', None)]
+    for cmd in cmds:
+        if cmd[0] == 'M':
+            xp, yp = cmd[1]
+
+            d += f"M {xp:.2f} {yp:.2f} "
+        elif cmd[0] == 'C':
+            c1, c2, end = cmd[1], cmd[2], cmd[3]
+
+            d += f"C {c1[0]:.2f} {c1[1]:.2f} {c2[0]:.2f} {c2[1]:.2f} {end[0]:.2f} {end[1]:.2f} "
+        elif cmd[0] == 'Z':
+            d += "Z"
+
+    a = ""
+    if attrs:
+        for (k, v) in attrs.items():
+            a += f' {k}="{v}"'
+
+    return f'<path d="{d}"{a}/>'
+
 def catmull_rom_to_bezier(p0, p1, p2, p3):
     """
     给定四个点 p0, p1, p2, p3，计算从 p1 到 p2 的三次贝塞尔曲线控制点。

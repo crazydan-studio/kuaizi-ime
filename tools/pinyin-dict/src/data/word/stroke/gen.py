@@ -6,7 +6,8 @@ import numpy as np
 import argparse
 import sys
 import os
-from scipy.ndimage import gaussian_filter1d
+from lib.image import smooth_mask, smooth_contour
+from lib.svg import contour_to_bezier_path
 
 # Note: 以下代码由 DeepSeek 生成，并由 flytreeleft@crazydan.org 手工调整
 # 需安装依赖：opencv、scipy
@@ -19,67 +20,6 @@ from scipy.ndimage import gaussian_filter1d
 # --grid-scale 8 --stroke-hsv-range 0,50,50,10,255,255
 # --stroke-contour-sigma 1 --stroke-simplify 2.5
 # --grid-min-area $((150*150))
-
-# ---------- 辅助函数 ----------
-def smooth_mask(mask, sigma=1.0):
-    """对二值掩膜进行高斯模糊后重新二值化，使边缘平滑"""
-    if sigma <= 0:
-        return mask
-
-    blurred = cv2.GaussianBlur(mask.astype(np.float32), (0, 0), sigma)
-
-    _, smoothed = cv2.threshold(blurred, 127, 255, cv2.THRESH_BINARY)
-
-    return smoothed.astype(np.uint8)
-
-def smooth_contour(contour, sigma=1.0):
-    """对闭合笔画点进行高斯滤波（通过周期延拓处理边界）"""
-    if sigma <= 0 or len(contour) < 4:
-        return contour
-
-    pts = contour.squeeze().astype(np.float32)
-
-    extend = int(sigma * 3)
-    extended = np.vstack([pts[-extend:], pts, pts[:extend]])
-
-    filtered_x = gaussian_filter1d(extended[:, 0], sigma, mode='wrap')
-    filtered_y = gaussian_filter1d(extended[:, 1], sigma, mode='wrap')
-    filtered = np.stack([filtered_x[extend:-extend], filtered_y[extend:-extend]], axis=1)
-
-    return filtered[:, np.newaxis, :].astype(np.int32)
-
-def catmull_rom_to_bezier(p0, p1, p2, p3):
-    """
-    给定四个点 p0, p1, p2, p3，计算从 p1 到 p2 的三次贝塞尔曲线控制点。
-    返回 (c1, c2, end)，其中 end = p2。
-    """
-    c1 = p1 + (p2 - p0) / 6.0
-    c2 = p2 - (p3 - p1) / 6.0
-
-    return c1, c2, p2
-
-def contour_to_bezier_path_all_curves(pts):
-    """
-    将闭合笔画的顶点列表 (N,2) 转换为全部为三次贝塞尔曲线的路径命令。
-    返回命令列表，每个元素为 ('C', c1, c2, end)。
-    注意：该函数不包含起始移动命令，也不包含闭合命令。
-    """
-    n = len(pts)
-    if n < 3:
-        return None
-
-    commands = []
-    for i in range(n):
-        p_prev = pts[(i - 1) % n]
-        p_curr = pts[i]
-        p_next = pts[(i + 1) % n]
-        p_next2 = pts[(i + 2) % n]
-
-        c1, c2, end = catmull_rom_to_bezier(p_prev, p_curr, p_next, p_next2)
-
-        commands.append(('C', c1, c2, end))
-
-    return commands
 
 # ---------- 正方形区域检测 ----------
 def detect_same_size_squares(image, min_area=100, size_cluster_threshold=0.2):
@@ -202,11 +142,10 @@ def process_image(image_path, output_svg, stroke_hsv_lower, stroke_hsv_upper,
     # 按中心点排序：从上到下（y），从左到右（x）
     centers.sort(key=lambda c: (c[1], c[0]))
 
-    # 遍历每个中心点
-    all_paths = []      # 存储每个笔画的完整路径命令（含 M, C, Z）
-    path_ids = []       # 存储对应的 ID
     square_area = L * L
 
+    # 遍历每个中心点
+    valid_contours = []
     for idx, (cx, cy) in enumerate(centers):
         # 裁剪统一大小的正方形区域
         square = crop_square_from_image(img, (cx, cy), L)
@@ -293,45 +232,35 @@ def process_image(image_path, output_svg, stroke_hsv_lower, stroke_hsv_upper,
         pts[:, 0] = np.clip(pts[:, 0], 0, L)
         pts[:, 1] = np.clip(pts[:, 1], 0, L)
 
-        # 生成全部为曲线的贝塞尔路径命令
-        curve_cmds = contour_to_bezier_path_all_curves(pts)
-        if curve_cmds is None:
-            continue
+        valid_contours.append(pts)
 
-        # 构建完整路径命令：移动起点 + 曲线段 + 闭合
-        full_cmds = [('M', pts[0])] + curve_cmds + [('Z', None)]
-        all_paths.append(full_cmds)
-        path_ids.append(f"so-{idx+1:03d}")   # ID 格式 so-001
-
-    if not all_paths:
+    if not valid_contours:
         print("未提取到任何有效笔画。")
         return False
 
-    # 5. 生成 SVG 文件（尺寸为正方形边长 L）
+    # 生成 SVG 文件（尺寸为正方形边长 L）
     svg_lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {L} {L}">'
     ]
 
-    for i, (cmds, pid) in enumerate(zip(all_paths, path_ids)):
-        d = ""
-        for cmd in cmds:
-            if cmd[0] == 'M':
-                xp, yp = cmd[1]
-                d += f"M {xp:.2f} {yp:.2f} "
-            elif cmd[0] == 'C':
-                c1, c2, end = cmd[1], cmd[2], cmd[3]
-                d += f"C {c1[0]:.2f} {c1[1]:.2f} {c2[0]:.2f} {c2[1]:.2f} {end[0]:.2f} {end[1]:.2f} "
-            elif cmd[0] == 'Z':
-                d += "Z"
-        svg_lines.append(f'  <path id="{pid}" d="{d}" fill="black" stroke="none" />')
+    for idx, pts in enumerate(valid_contours):
+        pid = f"s-{idx+1:03d}"
+
+        path = contour_to_bezier_path(pts, {
+            'id': pid, 'fill': 'black', 'stroke': 'none'
+        })
+        if not path:
+            continue
+
+        svg_lines.append(path)
 
     svg_lines.append('</svg>')
 
     with open(output_svg, 'w', encoding='utf-8') as f:
         f.write('\n'.join(svg_lines))
 
-    print(f"成功生成 SVG，包含 {len(all_paths)} 个笔画，田字格边长为 {L} 像素")
+    print(f"成功生成 SVG，包含 {len(valid_contours)} 个笔画，田字格边长为 {L} 像素")
 
     return True
 

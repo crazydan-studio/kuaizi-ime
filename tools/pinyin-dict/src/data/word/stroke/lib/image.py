@@ -30,3 +30,27 @@ def smooth_contour(contour, sigma=1.0):
     filtered = np.stack([filtered_x[extend:-extend], filtered_y[extend:-extend]], axis=1)
 
     return filtered[:, np.newaxis, :].astype(np.int32)
+
+def read_matting_mask(mask_path, mask_scale):
+    """
+    读取抠图遮罩图像，得到二值化后可直接对目标二值图做 cv2.bitwise_and 抠图的结果
+    """
+    if not mask_path:
+        return None
+
+    mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+    if mask is None:
+        print(f"无法读取抠图图像 {mask_path}")
+        return None
+
+    if mask_scale > 1:
+        mask = cv2.resize(
+            mask, None,
+            fx=mask_scale, fy=mask_scale,
+            interpolation=cv2.INTER_CUBIC
+        )
+
+    # 确保掩膜是二值图（白色为排除区域）
+    _, mask = cv2.threshold(mask, 127, 255, cv2.THRESH_BINARY)
+
+    return cv2.bitwise_not(mask)
