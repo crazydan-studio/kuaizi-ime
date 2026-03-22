@@ -181,7 +181,7 @@ def extract_frame_strokes_from_gif(
         is_same = is_in_same_stroke(
             grid_mask, stroke_contour,
             prev_grid_mask, prev_stroke_contour,
-            delta=10*grid_scale_factor,
+            delta=15*grid_scale_factor,
             idx=idx,
         )
         if not is_same and len(strokes) > 0:
