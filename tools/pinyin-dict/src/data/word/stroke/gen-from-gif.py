@@ -138,7 +138,7 @@ def is_in_same_stroke(cur_grid_mask, cur_stroke_contour, prev_grid_mask, prev_st
 def extract_frame_strokes_from_gif(
         gif_path, grid_matting_mask_path,
         stroke_opt,
-        grid_scale_factor=1.0,
+        grid_scale_factor,
         debug_dir=None,
 ):
     """
@@ -242,14 +242,13 @@ def save_full_strokes_to_svg(svg_path, frame_strokes, width, height):
 
     print(f"成功生成笔画 SVG 图像，包含 {len(frame_strokes)} 个笔画，田字格尺寸为 {width}x{height} 像素")
 
-def save_stroke_anim_to_svg(svg_path, frame_strokes, width, height, anim_duration=0.5):
+def save_stroke_anim_to_svg(svg_path, frame_strokes, width, height, anim_duration):
     """
     """
     anim_enabled = anim_duration > 0
     svg_defs = []
     svg_groups = []
 
-    anim_gap = 0
     for idx, strokes in enumerate(frame_strokes):
         strokes = limit_stroke_frames(strokes, 6)
         frame_count = len(strokes)
@@ -257,14 +256,14 @@ def save_stroke_anim_to_svg(svg_path, frame_strokes, width, height, anim_duratio
         gid = f's-{idx}'
         clip_id = f'c-{gid}'
 
-        svg_groups.append(f'<g id="{gid}" clip-path="url(#{clip_id})">')
+        group_opts = ""
+        if anim_enabled:
+            # css 变量 --s 为当前的笔画序号，--fc 为笔画动画帧的总数
+            group_opts += f' style="--s:{idx};--fc:{frame_count}"'
+        svg_groups.append(f'<g id="{gid}" clip-path="url(#{clip_id})"{group_opts}>')
 
-        # 帧动画需等待多少个延迟
-        anim_gap += frame_count
         # Note: 倒序排列笔画轮廓，确保最早的动画帧在最上层
         for i, stroke in enumerate(reversed(strokes)):
-            gap = anim_gap - i
-
             pid = f"{gid}-f-{i}"
 
             # 以笔画完整轮廓作为裁剪路径，确保笔画帧的多余部分不会显示
@@ -274,16 +273,18 @@ def save_stroke_anim_to_svg(svg_path, frame_strokes, width, height, anim_duratio
                 svg_defs.append(path)
                 svg_defs.append(f'<clipPath id="{clip_id}"><use href="#{pid}"/></clipPath>')
 
-                opts = ""
+                use_opts = ""
                 if anim_enabled:
-                    opts += f' style="--g:{gap}"'
-                svg_groups.append(f'<use href="#{pid}"{opts}/>')
+                    # css 变量 --f 为当前的笔画动画帧的序号
+                    use_opts += f' style="--f:{i}"'
+                svg_groups.append(f'<use href="#{pid}"{use_opts}/>')
             else:
-                opts = { 'id': pid, }
+                path_opts = { 'id': pid, }
                 if anim_enabled:
-                    opts['style'] = f'--g:{gap}'
+                    # css 变量 --f 为当前的笔画动画帧的序号
+                    path_opts['style'] = f'--f:{i}'
 
-                path = contour_to_bezier_path(stroke, opts)
+                path = contour_to_bezier_path(stroke, path_opts)
 
                 svg_groups.append(path)
 
@@ -292,6 +293,7 @@ def save_stroke_anim_to_svg(svg_path, frame_strokes, width, height, anim_duratio
     # --------------------------------------------------------------------------
     svg_opts = ""
     if anim_enabled:
+        # css 变量 --d 为笔画动画的时长
         svg_opts += f' style="--d:{anim_duration}s"'
     svg_lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
@@ -300,11 +302,12 @@ def save_stroke_anim_to_svg(svg_path, frame_strokes, width, height, anim_duratio
 
     if anim_enabled:
         svg_lines.append(
+            # Note: 笔画的动画帧是倒序拼接的 path，每个 path 的动画延迟时间也需要倒序增长
             textwrap.dedent(
                 f"""
                 <style>
                 @keyframes appear{{from{{opacity:var(--o,0);}} to{{opacity:1;}}}}
-                path{{animation:appear ease-in-out forwards;animation-duration:var(--d);animation-delay:calc(var(--d)*var(--g));opacity:var(--o,0);fill:black;}}
+                path{{--t:calc(var(--d)/var(--fc));animation:appear ease-in-out forwards;animation-duration:var(--t);animation-delay:calc((var(--d)*var(--s)) + (var(--t)*(var(--fc) - 1 - var(--f))));opacity:var(--o,0);fill:black;}}
                 use[href$="-f-0"]{{--o:0.03;}}
                 </style>"""
             )
@@ -330,11 +333,10 @@ def parse_args():
     parser.add_argument("--input", type=str, required=True, help="笔画 GIF 动图的文件路径")
     parser.add_argument("--output", type=str, required=True, help="提取的笔画所保存的 SVG 文件路径")
     parser.add_argument("--anim-output", type=str, help="提取的笔画动画所保存的 SVG 文件路径")
-    parser.add_argument('--anim-duration', type=float, default=0.5, help='每帧笔画组的动画持续时间（秒），默认 0.5。若小于等于 0，则禁用动画')
     parser.add_argument("--grid-matting-mask", type=str,
                         help="田字格抠图遮罩图像。黑白图像，用于从田字格中扣去相同位置的白色区域像素，以避免干扰笔画的提取")
     parser.add_argument("--grid-scale", type=float, default=2.0,
-                        help="田字格放大倍数，默认 2.0。提高放大倍数可以提升笔画的精度")
+                        help="田字格放大倍数，默认 2.0。提高放大倍数可以提升笔画的精细度。若小于等于 1,则不放大田字格")
     parser.add_argument("--stroke-hsv-range", type=str, required=True, help="所要提取的笔画颜色的 HSV 范围（0-179,0-255,0-255），格式：h_min,s_min,v_min,h_max,s_max,v_max，如 0,50,50,10,255,255")
     parser.add_argument("--stroke-simplify", type=float, default=0.5,
                         help="笔画简化容差（像素），<=0 时不简化，默认 0.5。直接影响笔画的顶点数量（即曲线段数）。若希望笔画非常光滑且保留细节，可减小简化容差（如 0.1），但可能生成较多曲线段")
@@ -344,6 +346,7 @@ def parse_args():
                         help="笔画点高斯滤波标准差，0 表示不处理，默认 0。用于平滑笔画曲线。建议 0.5~3")
     parser.add_argument("--stroke-min-area", type=float, default=10,
                         help="笔画最小的有效面积（像素），默认 10")
+    parser.add_argument('--stroke-anim-duration', type=float, default=2, help='每笔笔画的书写动画时间（秒），默认 2。若小于等于 0，则禁用动画')
     parser.add_argument('--debug-dir', help='提取过程所生成的中间图片的存放目录，方便调试。若未指定，则不输出过程图片')
 
     return parser.parse_args()
@@ -387,7 +390,7 @@ def main():
             svg_path=args.anim_output,
             frame_strokes=frame_strokes,
             width=width, height=height,
-            anim_duration=args.anim_duration,
+            anim_duration=args.stroke_anim_duration,
         )
 
 if __name__ == "__main__":
