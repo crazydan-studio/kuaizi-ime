@@ -31,9 +31,36 @@ def smooth_contour(contour, sigma=1.0):
 
     return filtered[:, np.newaxis, :].astype(np.int32)
 
-def is_extend_from(img, source):
+def crop_by_contour(img, contour):
     """
-    检查 img 是否是在 source 的基础上延伸。也即，二者重叠的部分是否与 source 本身相同。
+    根据轮廓裁剪图形
+    """
+    x, y, w, h = cv2.boundingRect(contour)
+
+    return img[y:y+h, x:x+w]
+
+def keep_contour_region(image, contour):
+    """
+    保留指定轮廓内部的区域，外部像素全部置为黑色。
+
+    :param image: 输入图像（彩色或灰度）
+    :param contour: 轮廓（OpenCV 格式）
+    :return: 处理后的图像（与原始图像尺寸、通道相同）
+    """
+    if image is None or contour is None:
+        return None
+
+    # 创建一个全零的掩码（单通道）
+    mask = np.zeros(image.shape[:2], dtype=np.uint8)
+
+    cv2.drawContours(mask, [contour], 0, 255, thickness=cv2.FILLED)
+
+    # 将原图与掩码按位与，外部区域变为黑色
+    return cv2.bitwise_and(image, image, mask=mask)
+
+def is_extend_from(img, source, delta, idx=0):
+    """
+    检查 img 是否是在 source 的基础上延伸。也即，二者重叠的部分是否与 source 的差异在 delta 范围内。
 
     注意，该检查仅针对二值掩码图。
 
@@ -44,8 +71,11 @@ def is_extend_from(img, source):
 
     overlap = cv2.bitwise_and(img, source)
 
+    # cv2.imwrite(f'/tmp/stroke-{idx:03d}-0-{cv2.countNonZero(source)}.png', source)
+    # cv2.imwrite(f'/tmp/stroke-{idx:03d}-1-{cv2.countNonZero(overlap)}.png', overlap)
+
     # 完全相同：np.array_equal(overlap, source)
-    if abs(cv2.countNonZero(source) - cv2.countNonZero(overlap)) < 100:
+    if abs(cv2.countNonZero(source) - cv2.countNonZero(overlap)) < delta:
         return True
 
     return False

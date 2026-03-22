@@ -9,7 +9,7 @@ import sys
 import os
 import textwrap
 from lib.cli import parse_hsv_range, StrokeOption, GridOption
-from lib.image import smooth_mask, smooth_contour, is_extend_from, create_matting_mask
+from lib.image import smooth_mask, smooth_contour, crop_by_contour, keep_contour_region, is_extend_from, create_matting_mask
 from lib.svg import contour_to_bezier_path
 
 # Note: 以下代码核心逻辑由 DeepSeek 生成，并由 flytreeleft@crazydan.org 改进
@@ -52,7 +52,7 @@ def find_stroke_from_grid(
         debug_stage, debug_dir=None,
 ):
     """
-    :return: (笔画轮廓点, 笔画掩码图)。通过相邻两个笔画掩码图的笔画重叠区域面积来判断是否为新笔画，若为同一笔画，则重叠区域应该与前一张图相等
+    :return: (笔画轮廓点集, 笔画掩码图, 笔画轮廓)。通过相邻两个笔画掩码图的笔画重叠区域面积来判断是否为新笔画，若为同一笔画，则重叠区域应该与前一张图相等
     """
     # 放大田字格
     if grid_opt.scale_factor > 1:
@@ -92,39 +92,48 @@ def find_stroke_from_grid(
     # 查找笔画
     stroke_contours, _ = cv2.findContours(grid_smooth_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     if not stroke_contours:
-        return None, None
+        return None, None, None
 
     # 取面积最大的笔画
     stroke_main_contour = max(stroke_contours, key=cv2.contourArea)
     cnt_area = cv2.contourArea(stroke_main_contour) / (grid_opt.scale_factor * grid_opt.scale_factor)  # 换算回原始尺寸面积
     # 检查是否满足远小于方形区域的条件
     if cnt_area < stroke_opt.min_area:
-        return None, None
+        return None, None, None
 
     if debug_dir:
-        x, y, w, h = cv2.boundingRect(stroke_main_contour)
-        cropped = grid_smooth_mask[y:y+h, x:x+w]
+        cropped = crop_by_contour(grid_smooth_mask, stroke_main_contour)
         cv2.imwrite(os.path.join(debug_dir, f'{debug_stage}4.stroke_{grid_opt.idx:03d}.png'), cropped)
 
     # 笔画点平滑
+    stroke_smooth_contour = stroke_main_contour
     if stroke_opt.contour_sigma > 0:
-        stroke_main_contour = smooth_contour(stroke_main_contour, stroke_opt.contour_sigma)
+        stroke_smooth_contour = smooth_contour(stroke_main_contour, stroke_opt.contour_sigma)
 
     # 笔画简化（减少顶点）
+    stroke_simplify_contour = stroke_smooth_contour
     if stroke_opt.simplify_tolerance > 0:
-        approx = cv2.approxPolyDP(stroke_main_contour, stroke_opt.simplify_tolerance, True)
-    else:
-        approx = stroke_main_contour
+        stroke_simplify_contour = cv2.approxPolyDP(stroke_smooth_contour, stroke_opt.simplify_tolerance, True)
 
     # 将坐标从放大区域转换回原始田字格坐标系（除以放大倍数）
-    pts = approx.squeeze().astype(np.float64)
+    pts = stroke_simplify_contour.squeeze().astype(np.float64)
     if len(pts) < 3:
-        return None, None
+        return None, None, None
 
     pts[:, 0] = pts[:, 0] / grid_opt.scale_factor
     pts[:, 1] = pts[:, 1] / grid_opt.scale_factor
 
-    return pts, grid_mask
+    return pts, grid_mask, stroke_main_contour
+
+def is_in_same_stroke(cur_grid_mask, cur_stroke_contour, prev_grid_mask, prev_stroke_contour, delta, idx):
+    """
+    通过相邻的田字格掩码图和笔画轮廓判断二者是否属于同一笔画
+    """
+    # 仅保留笔画轮廓范围内的图形
+    cur_stroke = keep_contour_region(cur_grid_mask, cur_stroke_contour)
+    prev_stroke = keep_contour_region(prev_grid_mask, prev_stroke_contour)
+
+    return is_extend_from(cur_stroke, prev_stroke, delta, idx)
 
 def extract_frame_strokes_from_gif(
         gif_path, grid_matting_mask_path,
@@ -152,11 +161,12 @@ def extract_frame_strokes_from_gif(
     strokes = []
     frame_strokes = []
     prev_grid_mask = None
+    prev_stroke_contour = None
     for idx, grid in enumerate(grids):
         if debug_dir:
             cv2.imwrite(os.path.join(debug_dir, f'00.grid_{idx:03d}.png'), grid)
 
-        stroke, grid_mask = find_stroke_from_grid(
+        stroke, grid_mask, stroke_contour = find_stroke_from_grid(
             grid,
             grid_opt=GridOption(
                 idx=idx,
@@ -167,8 +177,14 @@ def extract_frame_strokes_from_gif(
             debug_stage="1", debug_dir=debug_dir,
         )
 
-        # stroke 为 None 时，grid_mask 也为 None，从而 is_extend_from 始终返回 False
-        if not is_extend_from(grid_mask, prev_grid_mask) and len(strokes) > 0:
+        # stroke 为 None 时，grid_mask 和 stroke_contour 也为 None
+        is_same = is_in_same_stroke(
+            grid_mask, stroke_contour,
+            prev_grid_mask, prev_stroke_contour,
+            delta=10*grid_scale_factor,
+            idx=idx,
+        )
+        if not is_same and len(strokes) > 0:
             # 记录当前笔画的全部动画帧
             frame_strokes.append(strokes)
             # 开始记录新的动画帧
@@ -182,6 +198,7 @@ def extract_frame_strokes_from_gif(
             strokes.append(stroke)
 
         prev_grid_mask = grid_mask
+        prev_stroke_contour = stroke_contour
 
     return frame_strokes, width, height
 
