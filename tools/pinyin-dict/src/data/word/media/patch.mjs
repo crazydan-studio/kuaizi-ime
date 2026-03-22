@@ -1,6 +1,4 @@
-import { readJSONFromFile, writeJSONToFile, existFile } from '#utils/utils.mjs';
-
-import { getStrokeOrderUrl } from '#data/provider/strokeorder.com.mjs';
+import { getStrokeImage } from '#data/provider/strokeorder.com.mjs';
 
 /**
  * 向字补充媒体信息并保存到文件
@@ -35,7 +33,7 @@ export async function patchWordMedias(wordMetas) {
       unicode: meta.unicode,
       media: {
         glyph_url: meta.glyph_svg_url,
-        stroke_order_url: getStrokeOrderUrl(meta.value)
+        ...getStrokeImage(meta.value)
       }
     });
   });

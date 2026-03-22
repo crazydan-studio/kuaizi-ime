@@ -32,7 +32,7 @@ async function saveUrl(url, file, force) {
     try {
       await fetchAndWriteFile(url, file);
     } catch (e) {
-      console.log('  - ' + e.message);
+      console.log(`  - ${url} ${e.message}`);
     }
 
     sleep(100);

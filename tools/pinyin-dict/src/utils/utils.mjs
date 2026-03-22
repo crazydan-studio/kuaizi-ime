@@ -82,7 +82,7 @@ export async function fetchAndWriteFile(url, filepath) {
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error(
-      `HTTP Error: ${url} - ${response.status} ${response.statusText}`
+      `HTTP Error: ${response.status} ${response.statusText}`
     );
   }
 
