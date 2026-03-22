@@ -202,6 +202,21 @@ def extract_frame_strokes_from_gif(
 
     return frame_strokes, width, height
 
+def limit_stroke_frames(frames, limit=0):
+    """
+    限定笔画动画帧的个数
+    """
+    s = len(frames)
+    if limit <= 0 or s <= limit:
+        return frames
+
+    if limit == 1:
+        return frames[0]
+
+    indices = np.linspace(0, s - 1, limit, dtype=int)
+
+    return [frames[i] for i in indices]
+
 def save_full_strokes_to_svg(svg_path, frame_strokes, width, height):
     """
     """
@@ -236,6 +251,7 @@ def save_stroke_anim_to_svg(svg_path, frame_strokes, width, height, anim_duratio
 
     anim_gap = 0
     for idx, strokes in enumerate(frame_strokes):
+        strokes = limit_stroke_frames(strokes, 6)
         frame_count = len(strokes)
 
         gid = f's-{idx}'
