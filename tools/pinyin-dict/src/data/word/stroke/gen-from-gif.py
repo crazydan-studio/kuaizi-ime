@@ -66,6 +66,7 @@ def find_stroke_from_grid(
     # if debug_dir:
     #     cv2.imwrite(os.path.join(debug_dir, f'{debug_stage}0.grid_scaled_{grid_opt.idx:03d}.png'), grid_scaled)
 
+    # --------------------------------------------------------------------------
     # 在放大后的区域中提取指定色系的掩膜
     lower = np.array(stroke_opt.hsv_lower, dtype=np.uint8)
     upper = np.array(stroke_opt.hsv_upper, dtype=np.uint8)
@@ -76,12 +77,14 @@ def find_stroke_from_grid(
     if debug_dir:
         cv2.imwrite(os.path.join(debug_dir, f'{debug_stage}1.grid_masked_{grid_opt.idx:03d}.png'), grid_mask)
 
+    # --------------------------------------------------------------------------
     # 抠图，去掉无关位置的像素
     if grid_opt.matting_mask is not None:
         grid_mask = cv2.bitwise_and(grid_mask, grid_opt.matting_mask)
         if debug_dir:
             cv2.imwrite(os.path.join(debug_dir, f'{debug_stage}2.grid_masked_matting_{grid_opt.idx:03d}.png'), grid_mask)
 
+    # --------------------------------------------------------------------------
     # 平滑笔画
     grid_smooth_mask = grid_mask
     if stroke_opt.mask_sigma > 0:
@@ -89,6 +92,7 @@ def find_stroke_from_grid(
         if debug_dir:
             cv2.imwrite(os.path.join(debug_dir, f'{debug_stage}3.grid_masked_smooth_{grid_opt.idx:03d}.png'), grid_smooth_mask)
 
+    # --------------------------------------------------------------------------
     # 查找笔画
     stroke_contours, _ = cv2.findContours(grid_smooth_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     if not stroke_contours:
@@ -105,6 +109,7 @@ def find_stroke_from_grid(
         cropped = crop_by_contour(grid_smooth_mask, stroke_main_contour)
         cv2.imwrite(os.path.join(debug_dir, f'{debug_stage}4.stroke_{grid_opt.idx:03d}.png'), cropped)
 
+    # --------------------------------------------------------------------------
     # 笔画点平滑
     stroke_smooth_contour = stroke_main_contour
     if stroke_opt.contour_sigma > 0:
@@ -115,6 +120,7 @@ def find_stroke_from_grid(
     if stroke_opt.simplify_tolerance > 0:
         stroke_simplify_contour = cv2.approxPolyDP(stroke_smooth_contour, stroke_opt.simplify_tolerance, True)
 
+    # --------------------------------------------------------------------------
     # 将坐标从放大区域转换回原始田字格坐标系（除以放大倍数）
     pts = stroke_simplify_contour.squeeze().astype(np.float64)
     if len(pts) < 3:
@@ -177,6 +183,7 @@ def extract_frame_strokes_from_gif(
             debug_stage="1", debug_dir=debug_dir,
         )
 
+        # --------------------------------------------------------------------------
         # stroke 为 None 时，grid_mask 和 stroke_contour 也为 None
         is_same = is_in_same_stroke(
             grid_mask, stroke_contour,
@@ -194,9 +201,11 @@ def extract_frame_strokes_from_gif(
                 i = idx - 1
                 cv2.imwrite(os.path.join(debug_dir, f'20.stroke_full_{i:03d}.png'), grids[i])
 
+        # --------------------------------------------------------------------------
         if stroke is not None:
             strokes.append(stroke)
 
+        # --------------------------------------------------------------------------
         prev_grid_mask = grid_mask
         prev_stroke_contour = stroke_contour
 
@@ -237,6 +246,7 @@ def save_full_strokes_to_svg(svg_path, frame_strokes, width, height):
 
     svg_lines.append('</svg>')
 
+    # --------------------------------------------------------------------------
     with open(svg_path, 'w', encoding='utf-8') as f:
         f.write('\n'.join(svg_lines))
 
@@ -249,9 +259,14 @@ def save_stroke_anim_to_svg(svg_path, frame_strokes, width, height, anim_duratio
     svg_defs = []
     svg_groups = []
 
+    total_strokes = 0
+    total_stroke_frames = 0
     for idx, strokes in enumerate(frame_strokes):
         strokes = limit_stroke_frames(strokes, 6)
         frame_count = len(strokes)
+
+        total_strokes += 1
+        total_stroke_frames += frame_count
 
         gid = f's-{idx}'
         clip_id = f'c-{gid}'
@@ -262,7 +277,7 @@ def save_stroke_anim_to_svg(svg_path, frame_strokes, width, height, anim_duratio
             group_opts += f' style="--s:{idx};--fc:{frame_count}"'
         svg_groups.append(f'<g id="{gid}" clip-path="url(#{clip_id})"{group_opts}>')
 
-        # Note: 倒序排列笔画轮廓，确保最早的动画帧在最上层
+        # Note: 倒序排列笔画轮廓，确保最早的动画帧在最上层，避免靠后的帧遮住靠前的帧
         for i, stroke in enumerate(reversed(strokes)):
             pid = f"{gid}-f-{i}"
 
@@ -321,9 +336,11 @@ def save_stroke_anim_to_svg(svg_path, frame_strokes, width, height, anim_duratio
 
     svg_lines.append('</svg>')
 
-    # 写入文件
+    # --------------------------------------------------------------------------
     with open(svg_path, 'w', encoding='utf-8') as f:
         f.write('\n'.join(svg_lines))
+
+    print(f"成功生成笔画 SVG 动画，包含 {total_strokes} 个笔画，共计 {total_stroke_frames} 个动画帧")
 
 def parse_args():
     parser = argparse.ArgumentParser(
