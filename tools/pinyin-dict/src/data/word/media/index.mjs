@@ -1,5 +1,5 @@
 // 获取汉字的图片、读音、笔顺动画等多媒体文件资源
-import { fromRootPath } from '#utils/utils.mjs';
+import { fromRootPath } from '#utils/file.mjs';
 
 import { readAllSavedWordMetas } from '#data/word/meta.mjs';
 

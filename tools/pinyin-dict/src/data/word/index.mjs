@@ -1,4 +1,4 @@
-import { fromRootPath } from '#utils/utils.mjs';
+import { fromRootPath } from '#utils/file.mjs';
 
 import * as pinyinData from '#data/provider/pinyin-data.mjs';
 import * as opencc from '#data/provider/opencc.mjs';

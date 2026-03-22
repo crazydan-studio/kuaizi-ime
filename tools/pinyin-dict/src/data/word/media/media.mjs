@@ -1,6 +1,7 @@
 import * as path from 'path';
 
-import { existFile, fetchAndWriteFile, sleep } from '#utils/utils.mjs';
+import { sleep } from '#utils/native.mjs';
+import { existFile, fetchAndWriteFile } from '#utils/file.mjs';
 
 /** 获取并保存与字相关的图片和音频 */
 export async function fetchAndSaveWordMedias(wordMedias, targetDir) {

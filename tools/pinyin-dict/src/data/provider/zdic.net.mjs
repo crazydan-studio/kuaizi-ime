@@ -1,6 +1,6 @@
 import { JSDOM } from 'jsdom';
 
-import { naiveHTMLNodeInnerText } from '#utils/utils.mjs';
+import { naiveHTMLNodeInnerText } from '#utils/html.mjs';
 import { hasGlyphFontForCodePoint } from '#utils/word.mjs';
 
 // 从 zdic.net 获取字的详细数据

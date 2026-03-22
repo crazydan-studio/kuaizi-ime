@@ -1,4 +1,4 @@
-import { fromRootPath, readLineFromFile } from '#utils/utils.mjs';
+import { fromRootPath, readLineFromFile } from '#utils/file.mjs';
 
 const data_path = (...paths) =>
   fromRootPath('../..', 'thirdparty/rime_wanxiang', ...paths);

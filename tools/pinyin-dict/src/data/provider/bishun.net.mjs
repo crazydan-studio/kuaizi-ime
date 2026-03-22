@@ -1,6 +1,6 @@
 import { JSDOM } from 'jsdom';
 
-import { naiveHTMLNodeInnerText, sleep } from '#utils/utils.mjs';
+import { naiveHTMLNodeInnerText, sleep } from '#utils/file.mjs';
 import { getWordCode } from '#utils/word.mjs';
 
 // 从 bishun.net 获取字的笔画演示

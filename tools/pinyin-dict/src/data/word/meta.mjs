@@ -1,12 +1,14 @@
+import { sleep } from '#utils/native.mjs';
 import {
-  sleep,
   fromRootPath,
   readLineFromFile,
-  appendLineToFile,
+  appendLineToFile
+} from '#utils/file.mjs';
+import {
   extractPinyinChars,
   correctPinyin,
   correctZhuyin
-} from '#utils/utils.mjs';
+} from '#utils/spell.mjs';
 
 import { fetchWordMeta } from '#data/provider/zdic.net.mjs';
 
