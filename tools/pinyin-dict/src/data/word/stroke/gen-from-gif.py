@@ -145,6 +145,7 @@ def extract_frame_strokes_from_gif(
         gif_path, grid_matting_mask_path,
         stroke_opt,
         grid_scale_factor,
+        log_label,
         debug_dir=None,
 ):
     """
@@ -152,7 +153,7 @@ def extract_frame_strokes_from_gif(
     """
     grids, width, height = extract_grids_from_gif(gif_path)
     if len(grids) == 0:
-        print(f"未在 GIF 图像中找到图像帧。")
+        print(f"{log_label}未在 GIF 图像中找到图像帧。")
         return None, width, height
 
     grid_matting_mask = create_matting_mask(
@@ -226,7 +227,7 @@ def limit_stroke_frames(frames, limit=0):
 
     return [frames[i] for i in indices]
 
-def save_full_strokes_to_svg(svg_path, frame_strokes, width, height):
+def save_full_strokes_to_svg(svg_path, frame_strokes, width, height, log_label):
     """
     """
     svg_lines = [
@@ -250,9 +251,9 @@ def save_full_strokes_to_svg(svg_path, frame_strokes, width, height):
     with open(svg_path, 'w', encoding='utf-8') as f:
         f.write('\n'.join(svg_lines))
 
-    print(f"成功生成笔画 SVG 图像，包含 {len(frame_strokes)} 个笔画，田字格尺寸为 {width}x{height} 像素")
+    print(f"{log_label}成功生成笔画 SVG 图像，包含 {len(frame_strokes)} 个笔画，田字格尺寸为 {width}x{height} 像素")
 
-def save_stroke_anim_to_svg(svg_path, frame_strokes, width, height, anim_duration, anim_frames):
+def save_stroke_anim_to_svg(svg_path, frame_strokes, width, height, anim_duration, anim_frames, log_label):
     """
     """
     anim_enabled = anim_duration > 0
@@ -340,7 +341,7 @@ def save_stroke_anim_to_svg(svg_path, frame_strokes, width, height, anim_duratio
     with open(svg_path, 'w', encoding='utf-8') as f:
         f.write('\n'.join(svg_lines))
 
-    print(f"成功生成笔画 SVG 动画，包含 {total_strokes} 个笔画，共计 {total_stroke_frames} 个动画帧")
+    print(f"{log_label}成功生成笔画 SVG 动画，包含 {total_strokes} 个笔画，共计 {total_stroke_frames} 个动画帧")
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -365,6 +366,7 @@ def parse_args():
                         help="笔画最小的有效面积（像素），默认 10")
     parser.add_argument('--stroke-anim-duration', type=float, default=2, help='每笔笔画的书写动画时间（秒），默认 2。若小于等于 0，则禁用动画')
     parser.add_argument('--stroke-anim-frames', type=int, default=6, help='每笔笔画的书写动画帧的最大数量，默认 6。若小于等于 0，则不限制笔画的最大动画帧数。注意，帧数越多，则图像文件越大')
+    parser.add_argument('--log-label', help='输出日志的标签，便于识别输出信息')
     parser.add_argument('--debug-dir', help='提取过程所生成的中间图片的存放目录，方便调试。若未指定，则不输出过程图片')
 
     return parser.parse_args()
@@ -372,10 +374,14 @@ def parse_args():
 def main():
     args = parse_args()
 
+    log_label = ''
+    if args.log_label:
+        log_label = f"[{args.log_label}] "
+
     try:
         lower, upper = parse_hsv_range(args.stroke_hsv_range)
     except ValueError as e:
-        print(f"所要提取的笔画颜色的 HSV 范围解析发生错误：{e}")
+        print(f"{log_label}所要提取的笔画颜色的 HSV 范围解析发生错误：{e}")
         sys.exit(1)
 
     frame_strokes, width, height = extract_frame_strokes_from_gif(
@@ -390,11 +396,12 @@ def main():
             mask_sigma=args.stroke_mask_sigma,
             contour_sigma=args.stroke_contour_sigma,
         ),
+        log_label=log_label,
         debug_dir=args.debug_dir,
     )
 
     if not frame_strokes or len(frame_strokes) == 0:
-        print("未提取到任何有效笔画。")
+        print(f"{log_label}未提取到任何有效笔画。")
         sys.exit(1)
 
     if args.output:
@@ -402,6 +409,7 @@ def main():
             svg_path=args.output,
             frame_strokes=frame_strokes,
             width=width, height=height,
+            log_label=log_label,
         )
 
     if args.anim_output:
@@ -411,6 +419,7 @@ def main():
             width=width, height=height,
             anim_duration=args.stroke_anim_duration,
             anim_frames=args.stroke_anim_frames,
+            log_label=log_label,
         )
 
 if __name__ == "__main__":
