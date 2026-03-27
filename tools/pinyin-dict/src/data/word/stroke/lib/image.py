@@ -71,11 +71,16 @@ def is_extend_from(img, source, delta, idx=0):
 
     overlap = cv2.bitwise_and(img, source)
 
-    # cv2.imwrite(f'/tmp/stroke-{idx:03d}-0-{cv2.countNonZero(source)}.png', source)
-    # cv2.imwrite(f'/tmp/stroke-{idx:03d}-1-{cv2.countNonZero(overlap)}.png', overlap)
+    source_count = cv2.countNonZero(source)
+    overlap_count = cv2.countNonZero(overlap)
+
+    diff = abs(source_count - overlap_count) / source_count
+
+    # cv2.imwrite(f'/tmp/stroke-{idx:03d}-0-{source_count}.png', source)
+    # cv2.imwrite(f'/tmp/stroke-{idx:03d}-1-{overlap_count}-{diff:.3f}.png', overlap)
 
     # 完全相同：np.array_equal(overlap, source)
-    if abs(cv2.countNonZero(source) - cv2.countNonZero(overlap)) < delta:
+    if diff < delta:
         return True
 
     return False
