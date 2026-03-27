@@ -348,8 +348,8 @@ def parse_args():
     )
 
     parser.add_argument("--input", type=str, required=True, help="笔画 GIF 动图的文件路径")
-    parser.add_argument("--output", type=str, required=True, help="提取的笔画所保存的 SVG 文件路径")
-    parser.add_argument("--anim-output", type=str, help="提取的笔画动画所保存的 SVG 文件路径")
+    parser.add_argument("--output", type=str, help="提取的笔画所保存的 SVG 文件路径。若未指定，则不输出")
+    parser.add_argument("--anim-output", type=str, help="提取的笔画动画所保存的 SVG 文件路径。若未指定，则不输出")
     parser.add_argument("--grid-matting-mask", type=str,
                         help="田字格抠图遮罩图像。黑白图像，用于从田字格中扣去相同位置的白色区域像素，以避免干扰笔画的提取")
     parser.add_argument("--grid-scale", type=float, default=2.0,
@@ -397,11 +397,12 @@ def main():
         print("未提取到任何有效笔画。")
         sys.exit(1)
 
-    save_full_strokes_to_svg(
-        svg_path=args.output,
-        frame_strokes=frame_strokes,
-        width=width, height=height,
-    )
+    if args.output:
+        save_full_strokes_to_svg(
+            svg_path=args.output,
+            frame_strokes=frame_strokes,
+            width=width, height=height,
+        )
 
     if args.anim_output:
         save_stroke_anim_to_svg(
