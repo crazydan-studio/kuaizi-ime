@@ -38,6 +38,8 @@ export function copyFile(source, target, override) {
     return;
   }
 
+  assureParentDirCreated(target);
+
   fs.copyFileSync(source, target);
 }
 
@@ -49,7 +51,11 @@ export function readJSONFromFile(filepath, defaultValue = {}) {
   return JSON.parse(readFile(filepath));
 }
 
-export function readFile(filepath) {
+export function readFile(filepath, defaultValue = null) {
+  if (!existFile(filepath)) {
+    return defaultValue;
+  }
+
   return fs.readFileSync(filepath, 'utf8');
 }
 
@@ -80,6 +86,7 @@ export function readAllFiles(dir) {
   return getAllFiles(dir).map((file) => readFile(file));
 }
 
+/** 递归获取指定目录内的全部文件，返回文件绝对路径 */
 export function getAllFiles(dir) {
   if (Array.isArray(dir)) {
     return dir.map(getAllFiles).reduce((acc, files) => acc.concat(files), []);

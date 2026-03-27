@@ -11,6 +11,10 @@ export function getWordCode(word) {
   return code;
 }
 
+export function getWordUnicode(word) {
+  return 'U+' + word.codePointAt(0).toString(16).toUpperCase();
+}
+
 /** 判断系统字体中是否存在指定编码的字形，若不存在，则表示该编码的字不可读 */
 export function hasGlyphFontForCodePoint(unicode) {
   const codePoint = parseInt('0x' + unicode.replaceAll(/^U\+/g, ''), 16);
