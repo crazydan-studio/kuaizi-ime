@@ -166,10 +166,9 @@ async function readMappings(file, data = {}) {
     const pinyin = segs.slice(1, lastIndex).join(' ');
     const weight = parseInt(segs[lastIndex]);
 
-    const pinyins = data[key] || { [pinyin]: 0 };
+    const pinyins = (data[key] ||= {});
+    pinyins[pinyin] ||= 0;
     pinyins[pinyin] += weight;
-
-    data[key] = pinyins;
   });
 
   return data;
