@@ -24,32 +24,8 @@ const pinyinAudiosDir = fromRootPath('data', 'medias/pinyin');
 const ziMediasDir = fromRootPath('data', 'medias/zi');
 
 // ---------------------------------------------------------------
-const pinyinSchemaMapping = { audio: 0 };
-
-console.log();
-console.log('复制拼音音频文件到目标站点 ...');
-const pinyinAudios = getAllFiles(pinyinAudiosDir);
-
-const pinyinAudioMap = {};
-pinyinAudios.forEach((file) => {
-  const name = path.basename(file);
-
-  const data = [];
-  data[pinyinSchemaMapping.audio] = name;
-
-  pinyinAudioMap[name.replace(/\.mp3$/g, '')] = data;
-
-  const target = path.join(siteAssetsDir, `audio/pinyin/${name}`);
-  copyFile(file, target, false);
-});
-
-writeJSONToFile(path.join(siteAssetsPinyinDir, 'data.json'), pinyinAudioMap);
-
-console.log('- 已复制音频文件总数：' + pinyinAudios.length);
-console.log();
-
-// ---------------------------------------------------------------
 const wordStructNames = [];
+const pinyinValues = [];
 
 console.log();
 console.log('读取已收集的有效字信息 ...');
@@ -65,6 +41,10 @@ wordMetas.forEach((meta) => {
   const word = meta.value;
 
   meta.pinyins.forEach((py) => {
+    if (!pinyinValues.includes(py.value)) {
+      pinyinValues.push(py.value);
+    }
+
     const weight = (py.used_weight ||= 0);
 
     // Note: 多音字的权重累加
@@ -86,11 +66,8 @@ wordMetas.forEach((meta) => {
   }
 
   const glyph_struct = (meta.glyph_struct || '').replace(/结构$/g, '');
-  let struct = wordStructNames.indexOf(glyph_struct);
-  if (struct < 0 && !!glyph_struct) {
+  if (!!glyph_struct && !wordStructNames.includes(glyph_struct)) {
     wordStructNames.push(glyph_struct);
-
-    struct = wordStructNames.length - 1;
   }
 
   wordMetaMap[word] = {
@@ -99,9 +76,33 @@ wordMetas.forEach((meta) => {
     spells: meta.pinyins.sort((p1, p2) => p2.used_weight - p1.used_weight),
     radical: meta.radical,
     stroke_count: meta.total_stroke_count,
-    struct
+    struct: glyph_struct
   };
 });
+
+// ---------------------------------------------------------------
+console.log();
+console.log('复制拼音音频文件到目标站点 ...');
+const pinyinAudios = getAllFiles(pinyinAudiosDir);
+
+const audioPinyins = [];
+pinyinAudios.forEach((file) => {
+  const name = path.basename(file);
+  const py = name.replace(/\.mp3$/g, '');
+  const pyIdx = pinyinValues.indexOf(py);
+
+  if (pyIdx < 0) {
+    console.log(`- 音频 ${name} 对应的拼音 ${py} 未收录`);
+  } else {
+    audioPinyins.push(pyIdx);
+
+    const target = path.join(siteAssetsDir, `audio/pinyin/${name}`);
+    copyFile(file, target, false);
+  }
+});
+
+console.log('- 已复制音频文件总数：' + pinyinAudios.length);
+console.log();
 
 // ---------------------------------------------------------------
 const pinyinWordSchemaMapping = { value: 0, spell: 1 };
@@ -121,7 +122,7 @@ Object.keys(pinyinWordWeightMap).forEach((pyChar) => {
 
       const data = [];
       data[pinyinWordSchemaMapping.value] = w;
-      data[pinyinWordSchemaMapping.spell] = spells[0];
+      data[pinyinWordSchemaMapping.spell] = pinyinValues.indexOf(spells[0]);
 
       return data;
     });
@@ -136,21 +137,22 @@ Object.keys(pinyinWordWeightMap).forEach((pyChar) => {
 });
 
 // ---------------------------------------------------------------
+const sortedWordsByWeight = Object.keys(wordWeightMap).sort(
+  (w1, w2) => wordWeightMap[w2] - wordWeightMap[w1]
+);
+
 console.log();
 console.log('保存常用字列表 ...');
-const commonWords = Object.keys(wordWeightMap)
-  .sort((w1, w2) => wordWeightMap[w2] - wordWeightMap[w1])
-  .slice(0, 3500)
-  .map((w) => {
-    // Note: 仅取权重最高的拼音
-    const spells = wordMetaMap[w].spells.map((s) => s.value);
+const commonWords = sortedWordsByWeight.slice(0, 3500).map((w) => {
+  // Note: 仅取权重最高的拼音
+  const spells = wordMetaMap[w].spells.map((s) => s.value);
 
-    const data = [];
-    data[pinyinWordSchemaMapping.value] = w;
-    data[pinyinWordSchemaMapping.spell] = spells[0];
+  const data = [];
+  data[pinyinWordSchemaMapping.value] = w;
+  data[pinyinWordSchemaMapping.spell] = pinyinValues.indexOf(spells[0]);
 
-    return data;
-  });
+  return data;
+});
 writeJSONToFile(path.join(siteAssetsZiDir, 'commons.json'), commonWords);
 
 // ---------------------------------------------------------------
@@ -160,9 +162,9 @@ const wordMetaSchemaMapping = {
   radical: 2,
   stroke_count: 3,
   struct: 4,
-  stroke_svg: 5,
-  glyph_svg: 6
+  glyph_type: 5
 };
+const wordGlyphTypes = ['stroke', 'glyph'];
 
 console.log();
 console.log('保存单字详细信息 ...');
@@ -175,29 +177,31 @@ Object.keys(wordMetaMap).forEach((word) => {
 
   if (existFile(strokeDemoFile)) {
     // Note: 笔画 svg 图像由 shell 脚本生成
-    meta.stroke_svg = 'stroke.svg';
+    meta.glyph_type = 'stroke';
 
-    const target = path.join(siteAssetsZiDir, `${unicode}/${meta.stroke_svg}`);
+    const target = path.join(siteAssetsZiDir, `${unicode}/stroke.svg`);
     const svg = readFile(target);
     if (svg) {
-      // Note: 笔画数始终与笔画动画中的笔画数保持一致
       const strokeCount = (svg.match(/<g\s+id="s-\d+"/g) || []).length;
       if (strokeCount != meta.stroke_count) {
         console.log(
-          `- ${word} 的笔画图像包含 ${strokeCount} 个笔画，但其数据中记录的笔画数为 ${meta.stroke_count}`
+          `- ${word}(${unicode}) 的笔画图像包含 ${strokeCount} 个笔画，但其数据中记录的笔画数为 ${meta.stroke_count}`
         );
       }
+
+      // Note: 笔画数始终与笔画动画中的笔画数保持一致
+      meta.stroke_count = strokeCount;
     }
   }
 
-  if (!meta.stroke_svg && existFile(glyphSvgFile)) {
-    meta.glyph_svg = 'glyph.svg';
+  if (!meta.glyph_type && existFile(glyphSvgFile)) {
+    meta.glyph_type = 'glyph';
 
-    const target = path.join(siteAssetsZiDir, `${unicode}/${meta.glyph_svg}`);
+    const target = path.join(siteAssetsZiDir, `${unicode}/glyph.svg`);
     copyFile(glyphSvgFile, target, false);
   }
 
-  if (!meta.stroke_svg && !meta.glyph_svg) {
+  if (!meta.glyph_type) {
     console.log(`- ${word} 没有字形和笔画动画图像文件`);
   }
 
@@ -207,7 +211,11 @@ Object.keys(wordMetaMap).forEach((word) => {
 
     let value = meta[prop];
     if (prop == 'spells') {
-      value = value.map((s) => s.value);
+      value = value.map((s) => pinyinValues.indexOf(s.value));
+    } else if (prop == 'struct') {
+      value = wordStructNames.indexOf(value);
+    } else if (prop == 'glyph_type') {
+      value = wordGlyphTypes.indexOf(value);
     }
 
     if (value == undefined) {
@@ -221,32 +229,80 @@ Object.keys(wordMetaMap).forEach((word) => {
 });
 
 // ---------------------------------------------------------------
+const wordGlyphSchemaMapping = { value: 0, glyph_type: 1 };
+
+console.log();
+console.log('保存汉字笔画信息 ...');
+const wordGlyphData = sortedWordsByWeight.map((word) => {
+  const meta = wordMetaMap[word];
+
+  const data = [];
+  Object.keys(wordGlyphSchemaMapping).forEach((prop) => {
+    const index = wordGlyphSchemaMapping[prop];
+
+    let value = meta[prop];
+    if (prop == 'glyph_type') {
+      value = wordGlyphTypes.indexOf(value);
+    }
+
+    data[index] = value;
+  });
+
+  return data;
+});
+writeJSONToFile(path.join(siteAssetsZiDir, 'glyphs.json'), wordGlyphData);
+
+// ---------------------------------------------------------------
 console.log();
 console.log('更新数据 schema 定义 ...');
 
 // Note: 采用数组存放数据，从而尽可能降低数据文件的总体大小
 writeFile(
-  path.join(siteSrcDir, 'data/schema.mjs'),
-  `// 统一将模型的数组数据转换为对象结构
-const pinyinSchemaMapping = ${JSON.stringify(pinyinSchemaMapping)};
+  path.join(siteSrcDir, 'data/schema.js'),
+  `/** 统一将模型的数组数据转换为对象结构 */
+
+// 简略汉字信息的结构
 const simpleCharSchemaMapping = ${JSON.stringify(pinyinWordSchemaMapping)};
+// 汉字信息的结构
 const charMetaSchemaMapping = ${JSON.stringify(wordMetaSchemaMapping)};
-const wordStructNames = ${JSON.stringify(wordStructNames)};
+// 汉字字形图像类型：笔画分解 or 纯字形
+const charGlyphTypes = ${JSON.stringify(wordGlyphTypes)};
+// 汉字字形信息结构
+const charGlyphSchemaMapping = ${JSON.stringify(wordGlyphSchemaMapping)};
+
+// 汉字结构名列表
+const charStructNames = ${JSON.stringify(wordStructNames)};
+// 带声调拼音列表
+const pinyinValues = ${JSON.stringify(pinyinValues)};
+// 有音频的拼音列表，其元素为对应拼音在 pinyinValues 中的序号
+const audioPinyins = ${JSON.stringify(audioPinyins)};
 
 export function convertSimpleCharData(data) {
-  return convertDataByMapping(data, simpleCharSchemaMapping);
+  const obj = convertDataByMapping(data, simpleCharSchemaMapping);
+
+  obj.spell = pinyinValues[obj.spell];
+
+  return obj;
 }
 
 export function convertCharMetaData(data) {
-  const meta = convertDataByMapping(data, charMetaSchemaMapping);
+  const obj = convertDataByMapping(data, charMetaSchemaMapping);
 
-  meta.struct = wordStructNames[meta.struct] || '未知';
+  obj.glyph_type = charGlyphTypes[obj.glyph_type];
+  obj.struct = charStructNames[obj.struct] || '未知';
+  obj.spells = obj.spells.map(s => ({
+    value: pinyinValues[s], audio: audioPinyins.includes(s)
+  }));
 
-  return meta;
+  return obj;
 }
 
-export function convertPinyinData(data) {
-  return convertDataByMapping(data, pinyinSchemaMapping);
+export function convertCharGlyphData(data) {
+  const obj = convertDataByMapping(data, charGlyphSchemaMapping);
+
+  obj.glyph_type = charGlyphTypes[obj.glyph_type];
+
+  return obj;
 }
 
 function convertDataByMapping(data, mapping) {
