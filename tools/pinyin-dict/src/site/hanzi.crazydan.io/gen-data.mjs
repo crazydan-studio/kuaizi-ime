@@ -194,8 +194,10 @@ Object.keys(wordMetaMap).forEach((word) => {
     }
   }
 
-  if (!meta.glyph_type && existFile(glyphSvgFile)) {
-    meta.glyph_type = 'glyph';
+  if (existFile(glyphSvgFile)) {
+    if (!meta.glyph_type) {
+      meta.glyph_type = 'glyph';
+    }
 
     const target = path.join(siteAssetsZiDir, `${unicode}/glyph.svg`);
     copyFile(glyphSvgFile, target, false);
@@ -229,7 +231,7 @@ Object.keys(wordMetaMap).forEach((word) => {
 });
 
 // ---------------------------------------------------------------
-const wordGlyphSchemaMapping = { value: 0, glyph_type: 1 };
+const wordGlyphSchemaMapping = { value: 0, glyph_type: 1, spell: 2 };
 
 console.log();
 console.log('保存汉字笔画信息 ...');
@@ -243,6 +245,11 @@ const wordGlyphData = sortedWordsByWeight.map((word) => {
     let value = meta[prop];
     if (prop == 'glyph_type') {
       value = wordGlyphTypes.indexOf(value);
+    } else if (prop == 'spell') {
+      // Note: 仅取权重最高的拼音
+      const spells = meta.spells.map((s) => s.value);
+
+      value = pinyinValues.indexOf(spells[0]);
     }
 
     data[index] = value;
@@ -301,6 +308,7 @@ export function convertCharGlyphData(data) {
   const obj = convertDataByMapping(data, charGlyphSchemaMapping);
 
   obj.glyph_type = charGlyphTypes[obj.glyph_type];
+  obj.spell = pinyinValues[obj.spell];
 
   return obj;
 }

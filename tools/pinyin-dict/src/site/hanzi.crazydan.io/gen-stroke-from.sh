@@ -10,6 +10,7 @@ TARGET_ZI_ASSET_DIR="${ROOT_DIR}/../../site/hanzi.crazydan.io/public/assets/zi"
 
 for gif in "$@"; do
     unicode="$(basename "$(dirname "${gif}")")"
+    word="$(printf "\\$(echo ${unicode} | sed 's/+//g')")"
     target="${TARGET_ZI_ASSET_DIR}/${unicode}/stroke.svg"
 
     if [[ ! -f "${target}" ]]; then
@@ -21,7 +22,7 @@ for gif in "$@"; do
             --stroke-mask-sigma 0 --stroke-contour-sigma 1 \
             --grid-scale 8 --stroke-min-area 80 --stroke-simplify 2.5 \
             --stroke-anim-duration 0 --stroke-anim-frames 10 \
-            --log-label "${unicode}" \
+            --log-label "${word}(${unicode})" \
             --input "${gif}" \
             --anim-output "${target}"
     fi
