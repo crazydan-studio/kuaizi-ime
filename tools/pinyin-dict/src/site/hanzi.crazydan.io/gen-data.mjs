@@ -76,7 +76,8 @@ wordMetas.forEach((meta) => {
     spells: meta.pinyins.sort((p1, p2) => p2.used_weight - p1.used_weight),
     radical: meta.radical,
     stroke_count: meta.total_stroke_count,
-    struct: glyph_struct
+    struct: glyph_struct,
+    glyph_weight: meta.glyph_weight || 0
   };
 });
 
@@ -235,28 +236,32 @@ const wordGlyphSchemaMapping = { value: 0, glyph_type: 1, spell: 2 };
 
 console.log();
 console.log('保存汉字笔画信息 ...');
-const wordGlyphData = sortedWordsByWeight.map((word) => {
-  const meta = wordMetaMap[word];
+const wordGlyphData = Object.keys(wordMetaMap)
+  .sort(
+    (w1, w2) => wordMetaMap[w1].glyph_weight - wordMetaMap[w2].glyph_weight
+  )
+  .map((word) => {
+    const meta = wordMetaMap[word];
 
-  const data = [];
-  Object.keys(wordGlyphSchemaMapping).forEach((prop) => {
-    const index = wordGlyphSchemaMapping[prop];
+    const data = [];
+    Object.keys(wordGlyphSchemaMapping).forEach((prop) => {
+      const index = wordGlyphSchemaMapping[prop];
 
-    let value = meta[prop];
-    if (prop == 'glyph_type') {
-      value = wordGlyphTypes.indexOf(value);
-    } else if (prop == 'spell') {
-      // Note: 仅取权重最高的拼音
-      const spells = meta.spells.map((s) => s.value);
+      let value = meta[prop];
+      if (prop == 'glyph_type') {
+        value = wordGlyphTypes.indexOf(value);
+      } else if (prop == 'spell') {
+        // Note: 仅取权重最高的拼音
+        const spells = meta.spells.map((s) => s.value);
 
-      value = pinyinValues.indexOf(spells[0]);
-    }
+        value = pinyinValues.indexOf(spells[0]);
+      }
 
-    data[index] = value;
+      data[index] = value;
+    });
+
+    return data;
   });
-
-  return data;
-});
 writeJSONToFile(path.join(siteAssetsZiDir, 'glyphs.json'), wordGlyphData);
 
 // ---------------------------------------------------------------
