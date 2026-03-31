@@ -3,7 +3,7 @@ import * as path from 'path';
 
 import { fromRootPath } from '#utils/file.mjs';
 
-import { readAllSavedWordMetas } from '#data/word/meta.mjs';
+import { readAllSavedZiMetas } from '#data/zi/meta.mjs';
 
 import { fetchAndSaveZiMedias, patchZiMedias } from './media/index.mjs';
 
@@ -13,7 +13,7 @@ const siteAssetsDir = path.join(siteRootDir, 'public/assets');
 // ---------------------------------------------------------------
 console.log();
 console.log('读取已收集的有效字信息 ...');
-const ziMetas = await readAllSavedWordMetas();
+const ziMetas = await readAllSavedZiMetas();
 
 console.log('- 有效字信息总数：' + ziMetas.length);
 console.log();

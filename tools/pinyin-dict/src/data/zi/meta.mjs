@@ -10,18 +10,18 @@ import {
   correctZhuyin
 } from '#utils/spell.mjs';
 
-import { fetchWordMeta } from '#data/provider/zdic.net.mjs';
+import { fetchZiMeta } from '#data/provider/zdic.net.mjs';
 
 /** 获取字信息的存储文件 */
-export function getWordMetasSavedFile() {
+export function getZiMetasSavedFile() {
   return fromRootPath('data', 'pinyin-dict.valid.txt');
 }
 
 /** 读取所有已保存的字信息 */
-export async function readAllSavedWordMetas() {
-  const wordMetas = [];
+export async function readAllSavedZiMetas() {
+  const ziMetas = [];
 
-  const file = getWordMetasSavedFile();
+  const file = getZiMetasSavedFile();
   await readLineFromFile(file, (line) => {
     if (!line || !line.trim()) {
       return;
@@ -29,10 +29,10 @@ export async function readAllSavedWordMetas() {
 
     const metas = JSON.parse(line);
     metas.forEach((meta) => {
-      wordMetas.push(meta);
+      ziMetas.push(meta);
     });
   });
-  return wordMetas;
+  return ziMetas;
 }
 
 /**
@@ -46,12 +46,12 @@ export async function readAllSavedWordMetas() {
  * }, ...]
  * ```
  */
-export async function patchWordMetaAndSaveToFile(thinWords, file) {
+export async function patchZiMetaAndSaveToFile(thinZies, file) {
   const batchSize = 20;
 
-  let savedWordMetas = [];
+  let savedZiMetas = [];
 
-  const savedWords = {};
+  const savedZies = {};
   await readLineFromFile(file, (line) => {
     if (!line || !line.trim()) {
       return;
@@ -59,118 +59,118 @@ export async function patchWordMetaAndSaveToFile(thinWords, file) {
 
     const metas = JSON.parse(line);
     metas.forEach((meta) => {
-      if (shouldBeExcludedWord(meta)) {
-        savedWords[meta.value] = true;
+      if (shouldBeExcludedZi(meta)) {
+        savedZies[meta.value] = true;
 
-        console.log(`忽略字：${wordMetaToString(meta)}`);
+        console.log(`忽略字：${ziMetaToString(meta)}`);
         return;
       }
 
-      const word = thinWords[meta.value];
-      if (!word) {
-        console.log(`多余字：${wordMetaToString(meta)}`);
+      const zi = thinZies[meta.value];
+      if (!zi) {
+        console.log(`多余字：${ziMetaToString(meta)}`);
         return;
       }
 
-      savedWords[meta.value] = true;
+      savedZies[meta.value] = true;
 
-      correctWordMeta(meta);
+      correctZiMeta(meta);
 
-      savedWordMetas.push(meta);
+      savedZiMetas.push(meta);
     });
   });
 
-  const missingWordKeys = Object.keys(thinWords).filter(
-    (key) => !savedWords[key] && !shouldBeExcludedWord(thinWords[key])
+  const missingZiKeys = Object.keys(thinZies).filter(
+    (key) => !savedZies[key] && !shouldBeExcludedZi(thinZies[key])
   );
-  if (missingWordKeys.length > 0) {
+  if (missingZiKeys.length > 0) {
     console.log(
-      `已抓取到 ${savedWordMetas.length} 条数据，继续抓取剩余的 ${missingWordKeys.length} 条数据 ...`
+      `已抓取到 ${savedZiMetas.length} 条数据，继续抓取剩余的 ${missingZiKeys.length} 条数据 ...`
     );
 
-    for (let i = 0; i < missingWordKeys.length; i += batchSize) {
-      const keys = missingWordKeys.slice(i, i + batchSize);
-      const metas = await getWordMetas(keys, thinWords);
+    for (let i = 0; i < missingZiKeys.length; i += batchSize) {
+      const keys = missingZiKeys.slice(i, i + batchSize);
+      const metas = await getZiMetas(keys, thinZies);
 
       appendLineToFile(file, JSON.stringify(metas));
       console.log(`已抓取到第 ${i + 1} 到 ${i + keys.length} 之间的数据.`);
 
-      savedWordMetas = savedWordMetas.concat(metas);
+      savedZiMetas = savedZiMetas.concat(metas);
     }
   }
 
-  return savedWordMetas;
+  return savedZiMetas;
 }
 
 /** 获取 汉典网 中的字信息 */
-async function getWordMetas(wordKeys, thinWords) {
-  const wordMetas = [];
+async function getZiMetas(ziKeys, thinZies) {
+  const ziMetas = [];
 
   // Note: 挨个获取以避免 "429 Too Many Requests"
-  for (let wordKey of wordKeys) {
-    const word = thinWords[wordKey];
-    const meta = await fetchWordMeta(wordKey);
+  for (let ziKey of ziKeys) {
+    const zi = thinZies[ziKey];
+    const meta = await fetchZiMeta(ziKey);
 
     if (!meta.src_url) {
-      console.log(`缺失字：${wordMetaToString(word)}`);
+      console.log(`缺失字：${ziMetaToString(zi)}`);
       continue;
     }
 
     if (meta.pinyins.length == 0) {
-      meta.pinyins = word.pinyins || [];
+      meta.pinyins = zi.pinyins || [];
     }
 
-    correctWordMeta(meta);
+    correctZiMeta(meta);
 
-    wordMetas.push(meta);
+    ziMetas.push(meta);
 
     await sleep(100);
   }
 
-  return wordMetas;
+  return ziMetas;
 }
 
 /** 保存字信息到指定文件 */
-export function saveWordMetasToFile(wordMetas, file) {
+export function saveZiMetasToFile(ziMetas, file) {
   const batchSize = 50;
 
-  for (let i = 0; i < wordMetas.length; i += batchSize) {
-    const metas = wordMetas.slice(i, i + batchSize);
+  for (let i = 0; i < ziMetas.length; i += batchSize) {
+    const metas = ziMetas.slice(i, i + batchSize);
 
     // Note: 首行写入前，先清空文件
     appendLineToFile(file, JSON.stringify(metas), i === 0);
   }
 }
 
-function wordMetaToString(meta) {
+function ziMetaToString(meta) {
   const pinyins = meta.pinyins.map((py) => py.value).join(',');
   return `${meta.value} - ${pinyins}`;
 }
 
-/** 补充字拼音的使用权重（值越大，优先级越高） */
-export function patchWordPinyinUsedWeight(wordMetas, wordPinyinWeightData) {
-  wordMetas.forEach((meta) => {
-    const word = meta.value;
+/** 补充拼音字的使用权重（值越大，优先级越高） */
+export function patchPinyinZiUsedWeight(ziMetas, pinyinZiWeightData) {
+  ziMetas.forEach((meta) => {
+    const zi = meta.value;
 
-    const pinyinWeights = wordPinyinWeightData[word];
-    if (!pinyinWeights) {
+    const weights = pinyinZiWeightData[zi];
+    if (!weights) {
       return;
     }
 
     meta.pinyins.forEach((pinyin) => {
-      pinyin.used_weight = pinyinWeights[pinyin.value] || 0;
+      pinyin.used_weight = weights[pinyin.value] || 0;
     });
   });
 }
 
 /** 根据字形计算字的权重（值越大，排列位置越靠后） */
-export function calculateWordGlyphWeight(wordMetas) {
+export function calculateZiGlyphWeight(ziMetas) {
   // 按部首分组
   const radicalGroups = {};
   // 按拼音分组
   const pinyinCharsGroups = {};
 
-  wordMetas.forEach((meta) => {
+  ziMetas.forEach((meta) => {
     meta.glyph_weight = calcGlyphWeight(meta);
 
     (radicalGroups[meta.radical] ||= []).push(meta);
@@ -209,73 +209,69 @@ export function calculateWordGlyphWeight(wordMetas) {
 }
 
 /** 纠正字信息 */
-function correctWordMeta(wordMeta) {
-  if (!wordMeta.traditional) {
-    wordMeta.traditional = wordMeta.simple_words.length > 0;
+function correctZiMeta(ziMeta) {
+  if (!ziMeta.traditional) {
+    ziMeta.traditional = ziMeta.simple_words.length > 0;
   }
-  if (wordMeta.radical === '难检') {
-    wordMeta.radical = '';
+  if (ziMeta.radical === '难检') {
+    ziMeta.radical = '';
   }
 
-  const glyph_struct = wordMeta.glyph_struct;
+  const glyph_struct = ziMeta.glyph_struct;
   switch (glyph_struct) {
     case '在右结构':
-      wordMeta.glyph_struct = '左右结构';
+      ziMeta.glyph_struct = '左右结构';
       break;
     case '上下下结构':
-      wordMeta.glyph_struct = '上中下结构';
+      ziMeta.glyph_struct = '上中下结构';
       break;
     case '半包围':
-      wordMeta.glyph_struct = '半包围结构';
+      ziMeta.glyph_struct = '半包围结构';
       break;
     case '单一结构':
     case '单体结构':
     case '独体字':
     case '独体':
     case '嵌套结构':
-      wordMeta.glyph_struct = '独体结构';
+      ziMeta.glyph_struct = '独体结构';
       break;
     case '形声；从车、古声':
     case '形声；左右结构':
-      wordMeta.glyph_struct = '左右结构';
+      ziMeta.glyph_struct = '左右结构';
       break;
     default:
       if (glyph_struct.includes('；') || glyph_struct.includes('，')) {
-        wordMeta.glyph_struct = glyph_struct.replaceAll(/[；，].+/g, '');
+        ziMeta.glyph_struct = glyph_struct.replaceAll(/[；，].+/g, '');
       }
   }
 
-  correctWordMetaByWord(wordMeta);
+  correctZiMetaByValue(ziMeta);
 
-  if (wordMeta.stroke_order) {
-    wordMeta.total_stroke_count = wordMeta.stroke_order.length;
-  }
-
-  wordMeta.pinyins.forEach((data) => {
+  ziMeta.pinyins.forEach((data) => {
     data.value = correctPinyin(data.value);
   });
-  wordMeta.zhuyins.forEach((data) => {
+  ziMeta.zhuyins.forEach((data) => {
     data.value = correctZhuyin(data.value);
 
     if (data.value === 'ㄏπ') {
-      console.log(wordMeta.value, data);
+      console.log(ziMeta.value, data);
     }
   });
 
   // 去除重复、无用读音
-  wordMeta.pinyins = removeUselessSpell(wordMeta.pinyins);
-  wordMeta.zhuyins = removeUselessSpell(wordMeta.zhuyins);
+  ziMeta.pinyins = removeUselessSpell(ziMeta.pinyins);
+  ziMeta.zhuyins = removeUselessSpell(ziMeta.zhuyins);
 
-  addMissingPinyin(wordMeta);
+  addMissingPinyin(ziMeta);
 }
 
-function addMissingPinyin(wordMeta) {
+function addMissingPinyin(ziMeta) {
   const missing = getMissingPinyin();
 
-  const pinyin = missing[wordMeta.value];
+  const pinyin = missing[ziMeta.value];
   if (pinyin) {
-    wordMeta.pinyins = wordMeta.pinyins.filter((data) => data.value !== pinyin);
-    wordMeta.pinyins.push({
+    ziMeta.pinyins = ziMeta.pinyins.filter((data) => data.value !== pinyin);
+    ziMeta.pinyins.push({
       value: pinyin
     });
   }
@@ -340,8 +336,8 @@ function shouldBeExcludedPinyin(pinyin) {
   return !pinyin.value;
 }
 
-function shouldBeExcludedWord(wordMeta) {
-  switch (wordMeta.value) {
+function shouldBeExcludedZi(ziMeta) {
+  switch (ziMeta.value) {
     // 忽略组合音
     case '瓧': // shíwǎ
     case '瓱': // máowǎ
@@ -479,9 +475,9 @@ function getMissingPinyin() {
   };
 }
 
-function correctWordMetaByWord(wordMeta) {
+function correctZiMetaByValue(ziMeta) {
   // 笔画顺序：1 - 横/提，2 - 竖，3 - 撇，4 - 捺/点，5 - 折
-  switch (wordMeta.value) {
+  switch (ziMeta.value) {
     case '贋':
     case '尨':
     case '戍':
@@ -490,13 +486,13 @@ function correctWordMetaByWord(wordMeta) {
     case '戌':
     case '烕':
     case '辰':
-      wordMeta.glyph_struct = '左上包围结构';
+      ziMeta.glyph_struct = '左上包围结构';
       break;
     case '匚':
     case '匸':
     case '巨':
     case '臣':
-      wordMeta.glyph_struct = '左包围结构';
+      ziMeta.glyph_struct = '左包围结构';
       break;
     case '用':
     case '甩':
@@ -504,111 +500,111 @@ function correctWordMetaByWord(wordMeta) {
     case '円':
     case '几':
     case '凡':
-      wordMeta.glyph_struct = '上包围结构';
+      ziMeta.glyph_struct = '上包围结构';
       break;
     case '龵':
-      wordMeta.stroke_order = '3113';
+      ziMeta.stroke_order = '3113';
       break;
     case '龷':
-      wordMeta.stroke_order = '1221';
+      ziMeta.stroke_order = '1221';
       break;
     case '龹':
-      wordMeta.stroke_order = '431134';
+      ziMeta.stroke_order = '431134';
       break;
     case '龻':
-      wordMeta.stroke_order = '4111251554444554444';
+      ziMeta.stroke_order = '4111251554444554444';
       break;
     case '﨩':
-      wordMeta.stroke_order = '523251115252';
+      ziMeta.stroke_order = '523251115252';
       break;
     case '龧':
-      wordMeta.stroke_order = '2511251112132511';
+      ziMeta.stroke_order = '2511251112132511';
       break;
     case '龦':
-      wordMeta.stroke_order = '433424345251252';
+      ziMeta.stroke_order = '433424345251252';
       break;
     case '龨':
-      wordMeta.stroke_order = '1324111215';
+      ziMeta.stroke_order = '1324111215';
       break;
     case '龪':
-      wordMeta.stroke_order = '121213434';
+      ziMeta.stroke_order = '121213434';
       break;
     case '龫':
-      wordMeta.stroke_order = '125111234112';
+      ziMeta.stroke_order = '125111234112';
       break;
     case '龮':
-      wordMeta.stroke_order = '121125444453353325121122134';
+      ziMeta.stroke_order = '121125444453353325121122134';
       break;
     case '龯':
-      wordMeta.stroke_order = '3411243113534';
+      ziMeta.stroke_order = '3411243113534';
       break;
     case '龰':
-      wordMeta.stroke_order = '2134';
+      ziMeta.stroke_order = '2134';
       break;
     case '龱':
-      wordMeta.stroke_order = '25134';
+      ziMeta.stroke_order = '25134';
       break;
     case '𢅫':
-      wordMeta.stroke_order = '252111211125114544';
+      ziMeta.stroke_order = '252111211125114544';
       break;
     case '龲':
-      wordMeta.stroke_order = '341124314131251112';
+      ziMeta.stroke_order = '341124314131251112';
       break;
     case '龺':
-      wordMeta.stroke_order = '12251112';
+      ziMeta.stroke_order = '12251112';
       break;
     case '鿃':
-      wordMeta.stroke_order = '251111343434';
+      ziMeta.stroke_order = '251111343434';
       break;
     case '鿄':
-      wordMeta.stroke_order = '4415341234';
+      ziMeta.stroke_order = '4415341234';
       break;
     case '鿌':
-      wordMeta.stroke_order = '441412511234';
+      ziMeta.stroke_order = '441412511234';
       break;
     case '卝':
-      wordMeta.radical = '卝';
-      wordMeta.radical_stroke_count = 4;
+      ziMeta.radical = '卝';
+      ziMeta.radical_stroke_count = 4;
       break;
     case '㴝':
-      wordMeta.radical = '水';
-      wordMeta.radical_stroke_count = 4;
+      ziMeta.radical = '水';
+      ziMeta.radical_stroke_count = 4;
       break;
     case '凱':
-      wordMeta.radical = '几';
-      wordMeta.radical_stroke_count = 2;
+      ziMeta.radical = '几';
+      ziMeta.radical_stroke_count = 2;
       break;
     case '彛':
     case '彞':
-      wordMeta.radical = '廾';
-      wordMeta.radical_stroke_count = 3;
+      ziMeta.radical = '廾';
+      ziMeta.radical_stroke_count = 3;
       break;
     case '瑴':
-      wordMeta.radical = '殳';
-      wordMeta.radical_stroke_count = 4;
+      ziMeta.radical = '殳';
+      ziMeta.radical_stroke_count = 4;
       break;
     case '羋':
-      wordMeta.radical = '干';
-      wordMeta.radical_stroke_count = 3;
+      ziMeta.radical = '干';
+      ziMeta.radical_stroke_count = 3;
       break;
     case '羐':
-      wordMeta.radical = '艹';
-      wordMeta.radical_stroke_count = 3;
+      ziMeta.radical = '艹';
+      ziMeta.radical_stroke_count = 3;
       break;
     case '龜':
     case '龞':
-      wordMeta.radical = '龟';
-      wordMeta.radical_stroke_count = 21;
+      ziMeta.radical = '龟';
+      ziMeta.radical_stroke_count = 21;
       break;
     case '〇':
       // 取 囗 的笔顺
-      wordMeta.stroke_order = '251';
-      wordMeta.total_stroke_count = 3;
-      wordMeta.radical_stroke_count = 3;
+      ziMeta.stroke_order = '251';
+      ziMeta.total_stroke_count = 3;
+      ziMeta.radical_stroke_count = 3;
     case '囗':
     case '曰':
     case '田':
-      wordMeta.glyph_struct = '全包围结构';
+      ziMeta.glyph_struct = '全包围结构';
       break;
     case '弐':
     case '彧':
@@ -623,14 +619,14 @@ function correctWordMetaByWord(wordMeta) {
     case '勺':
     case '匁':
     case '匆':
-      wordMeta.glyph_struct = '右上包围结构';
+      ziMeta.glyph_struct = '右上包围结构';
       break;
     case '彐':
-      wordMeta.glyph_struct = '右包围结构';
+      ziMeta.glyph_struct = '右包围结构';
       break;
     case '圡':
     case '玊':
-      wordMeta.glyph_struct = '独体结构';
+      ziMeta.glyph_struct = '独体结构';
       break;
     case '娈':
     case '蒧':
@@ -651,34 +647,34 @@ function correctWordMetaByWord(wordMeta) {
     case '畢':
     case '革':
     case '韭':
-      wordMeta.glyph_struct = '上下结构';
+      ziMeta.glyph_struct = '上下结构';
       break;
     case '䙪':
     case '豆':
     case '亚':
     case '亘':
-      wordMeta.glyph_struct = '上中下结构';
+      ziMeta.glyph_struct = '上中下结构';
       break;
     case '承':
-      wordMeta.glyph_struct = '左中右结构';
+      ziMeta.glyph_struct = '左中右结构';
       break;
     case '竹':
-      wordMeta.glyph_struct = '左右结构';
+      ziMeta.glyph_struct = '左右结构';
       break;
     case '𩭳':
-      wordMeta.pinyins = [{ value: 'huō' }];
+      ziMeta.pinyins = [{ value: 'huō' }];
       break;
     case '𧵻':
-      wordMeta.pinyins = [{ value: 'huó' }];
+      ziMeta.pinyins = [{ value: 'huó' }];
       break;
     case '𦨯':
-      wordMeta.pinyins = [{ value: 'huó' }];
+      ziMeta.pinyins = [{ value: 'huó' }];
       break;
     case '㣫': // ㄓㄨㄥˇㄉㄨㄥˋ
-      wordMeta.zhuyins = [{ value: 'ㄓㄨㄥˇ' }, { value: 'ㄉㄨㄥˋ' }];
+      ziMeta.zhuyins = [{ value: 'ㄓㄨㄥˇ' }, { value: 'ㄉㄨㄥˋ' }];
       break;
     case '頁': // ㄧㄝˋ，ㄒ〡ㄝˊ
-      wordMeta.zhuyins = [{ value: 'ㄧㄝˋ' }, { value: 'ㄒ〡ㄝˊ' }];
+      ziMeta.zhuyins = [{ value: 'ㄧㄝˋ' }, { value: 'ㄒ〡ㄝˊ' }];
       break;
   }
 
@@ -698,9 +694,12 @@ function correctWordMetaByWord(wordMeta) {
     鬭: 24,
     巔: 22
   };
-  const strokeCount = strokeCountMap[wordMeta.value];
+  const strokeCount = strokeCountMap[ziMeta.value];
   if (strokeCount > 0) {
-    wordMeta.total_stroke_count = strokeCount;
+    ziMeta.total_stroke_count = strokeCount;
+  } //
+  else if (ziMeta.stroke_order) {
+    ziMeta.total_stroke_count = ziMeta.stroke_order.length;
   }
 }
 

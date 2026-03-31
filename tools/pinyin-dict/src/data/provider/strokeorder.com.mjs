@@ -1,4 +1,4 @@
-import { getWordCode } from '#utils/word.mjs';
+import { getZiCode } from '#utils/zi.mjs';
 
 // 从 strokeorder.com 获取字的笔画演示（使用条款 https://www.strokeorder.com/terms.html）
 
@@ -8,7 +8,7 @@ import { getWordCode } from '#utils/word.mjs';
  * @return `{stroke_demo_url: 'https://xxx', stroke_order_url: 'https://xxx'}`
  */
 export function getStrokeImage(word) {
-  const code = getWordCode(word);
+  const code = getZiCode(word);
 
   return {
     stroke_demo_url: `https://www.strokeorder.com/assets/bishun/animation/${code}.gif`,

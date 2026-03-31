@@ -1,4 +1,5 @@
-import { splitChars, appendLineToFile } from '#utils/utils.mjs';
+import { appendLineToFile } from '#utils/file.mjs';
+import { splitChars } from '#utils/spell.mjs';
 import { queryAll } from '#utils/sqlite.mjs';
 
 /** 生成拼音字母组合数据 */

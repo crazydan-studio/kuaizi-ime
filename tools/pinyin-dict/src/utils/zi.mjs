@@ -3,16 +3,16 @@ import getSystemFonts from 'get-system-fonts';
 
 const systemFonts = await prepareSystemFonts();
 
-export function getWordCode(word) {
+export function getZiCode(zi) {
   let code = 0;
-  for (var i = 0; i < word.length; i++) {
-    code += word.charCodeAt(i);
+  for (var i = 0; i < zi.length; i++) {
+    code += zi.charCodeAt(i);
   }
   return code;
 }
 
-export function getWordUnicode(word) {
-  return 'U+' + word.codePointAt(0).toString(16).toUpperCase();
+export function getZiUnicode(zi) {
+  return 'U+' + zi.codePointAt(0).toString(16).toUpperCase();
 }
 
 /** 判断系统字体中是否存在指定编码的字形，若不存在，则表示该编码的字不可读 */
@@ -36,7 +36,7 @@ export function hasGlyphFontForCodePoint(unicode) {
  * - [字符串编辑距离之 Levenshtein Distance](https://blog.csdn.net/asty9000/article/details/81384650)
  * - [Damerau–Levenshtein distance](https://en.wikipedia.org/wiki/Damerau%E2%80%93Levenshtein_distance)
  */
-export function calculateWordStrokeSimilarity(s, t) {
+export function calculateZiStrokeSimilarity(s, t) {
   const d = []; // 2d matrix
 
   // Step 1

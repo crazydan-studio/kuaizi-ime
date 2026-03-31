@@ -2,14 +2,14 @@
 import { openDB, closeDB } from '#utils/sqlite.mjs';
 
 import {
-  getWordDictSQLiteVersionFile,
-  getWordDictSQLiteFile
+  getZiDictSQLiteVersionFile,
+  getZiDictSQLiteFile
 } from '#db/utils.mjs';
 
-import { diffMetaData, diffWordData } from './diff.mjs';
+import { diffMetaData, diffZiData } from './diff.mjs';
 
-const oldDictDataSQLiteFile = getWordDictSQLiteVersionFile('v3');
-const dictDataSQLiteFile = getWordDictSQLiteFile();
+const oldDictDataSQLiteFile = getZiDictSQLiteVersionFile('v3');
+const dictDataSQLiteFile = getZiDictSQLiteFile();
 
 const oldDb = openDB(oldDictDataSQLiteFile);
 const newDb = openDB(dictDataSQLiteFile);
@@ -21,7 +21,7 @@ try {
 
   console.log();
   console.log('对比字数据的差异 ...');
-  diffWordData(oldDb, newDb);
+  diffZiData(oldDb, newDb);
 } catch (e) {
   throw e;
 } finally {

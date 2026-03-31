@@ -1,7 +1,7 @@
 /** 修正输入数据 */
-export function patchWordMeta(meta) {
+export function patchZiMeta(meta) {
   // 先增改，
-  const addedPinyin = getAddedWordPinyin()[meta.value];
+  const addedPinyin = getAddedPinyin()[meta.value];
   if (
     addedPinyin &&
     meta.pinyins.filter(({ value }) => value == addedPinyin).length == 0
@@ -10,21 +10,21 @@ export function patchWordMeta(meta) {
   }
 
   // 再删除，以避免自增 id 发生较大变动
-  const deletedPinyin = getDeletedWordPinyin()[meta.value];
+  const deletedPinyin = getDeletedPinyin()[meta.value];
   if (deletedPinyin) {
     meta.pinyins = meta.pinyins.filter(({ value }) => value !== deletedPinyin);
   }
 }
 
-function getDeletedWordPinyin() {
+function getDeletedPinyin() {
   const deleted = [
     '虾:hā' // -> 虾:há
   ];
 
-  return pinyinWordToMap(deleted);
+  return pinyinZiToMap(deleted);
 }
 
-function getAddedWordPinyin() {
+function getAddedPinyin() {
   const added = [
     // “一”和“不”变调有规律：https://www.chinanews.com.cn/hwjy/news/2010/04-15/2228742.shtml
     '不:bú',
@@ -119,18 +119,18 @@ function getAddedWordPinyin() {
     '舍:shì'
   ];
 
-  return pinyinWordToMap(added);
+  return pinyinZiToMap(added);
 }
 
-function pinyinWordToMap(words) {
+function pinyinZiToMap(zies) {
   const map = {};
-  words
-    .map((w) => w.split(':'))
+  zies
+    .map((zi) => zi.split(':'))
     .forEach((s) => {
-      const w = s[0];
+      const zi = s[0];
       const py = s[1];
 
-      map[w] = py;
+      map[zi] = py;
     });
 
   return map;

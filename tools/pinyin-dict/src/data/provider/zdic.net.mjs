@@ -1,35 +1,35 @@
 import { JSDOM } from 'jsdom';
 
 import { naiveHTMLNodeInnerText } from '#utils/html.mjs';
-import { hasGlyphFontForCodePoint } from '#utils/word.mjs';
+import { hasGlyphFontForCodePoint } from '#utils/zi.mjs';
 
 // 从 zdic.net 获取字的详细数据
 const baseUrl = 'https://www.zdic.net/hans/';
 
 /** 同时获取多个字信息。Note: 部分字信息可能未提供读音 */
-export async function fetchWordMetas(words) {
-  return await Promise.all(words.map(fetchWordMeta));
+export async function fetchZiMetas(zies) {
+  return await Promise.all(zies.map(fetchZiMeta));
 }
 
 /** 获取单个字信息。Note: 部分字信息可能未提供读音 */
-export async function fetchWordMeta(word) {
-  const srcUrl = baseUrl + word;
+export async function fetchZiMeta(zi) {
+  const srcUrl = baseUrl + zi;
   const html = await (await fetch(srcUrl)).text();
   const $dom = new JSDOM(html);
   const $doc = (($dom || {}).window || {}).document;
   if (!$doc) {
-    return { value: word };
+    return { value: zi };
   }
 
   const title = $doc.title;
-  if (!title.includes(word)) {
-    console.error('获取 "' + word + '" 的字信息存在异常: ' + title);
+  if (!title.includes(zi)) {
+    console.error('获取 "' + zi + '" 的字信息存在异常: ' + title);
 
-    return { value: word };
+    return { value: zi };
   }
 
-  const wordMeta = {
-    value: word,
+  const ziMeta = {
+    value: zi,
     unicode: '',
     src_url: srcUrl,
     glyph_svg_url: '',
@@ -59,8 +59,8 @@ export async function fetchWordMeta(word) {
     const src = $img.getAttribute('src');
     const gif = $img.getAttribute('data-gif');
 
-    src && (wordMeta.glyph_svg_url = 'https:' + src);
-    gif && (wordMeta.glyph_gif_url = 'https:' + gif);
+    src && (ziMeta.glyph_svg_url = 'https:' + src);
+    gif && (ziMeta.glyph_gif_url = 'https:' + gif);
   }
 
   // 拼音
@@ -72,7 +72,7 @@ export async function fetchWordMeta(word) {
 
     // Note: 音频地址始终为 https://img.zdic.net/audio/zd/py/${value}.mp3 形式
     value &&
-      wordMeta.pinyins.push({
+      ziMeta.pinyins.push({
         value
         // audio_url: audio ? 'https:' + audio : ''
       });
@@ -87,7 +87,7 @@ export async function fetchWordMeta(word) {
 
     // Note: 音频地址始终为 https://img.zdic.net/audio/zd/zy/${value}.mp3 形式
     value &&
-      wordMeta.zhuyins.push({
+      ziMeta.zhuyins.push({
         value
         // audio_url: audio ? 'https:' + audio : ''
       });
@@ -96,7 +96,7 @@ export async function fetchWordMeta(word) {
   // 总笔画数
   const $totalStrokeCount = $doc.querySelector('.ziif .dsk .z_bs2 .z_ts3');
   $totalStrokeCount &&
-    (wordMeta.total_stroke_count = parseInt(
+    (ziMeta.total_stroke_count = parseInt(
       naiveHTMLNodeInnerText($totalStrokeCount.parentElement)
         .replaceAll(/^.+\s+/g, '')
         .trim()
@@ -109,11 +109,11 @@ export async function fetchWordMeta(word) {
     const value = text.replaceAll(/^.+\s+/g, '').trim();
 
     if (text.includes('部首')) {
-      wordMeta.radical = value;
+      ziMeta.radical = value;
     } else if (text.includes('部外')) {
-      wordMeta.radical_stroke_count = Math.max(
+      ziMeta.radical_stroke_count = Math.max(
         0,
-        wordMeta.total_stroke_count - parseInt(value)
+        ziMeta.total_stroke_count - parseInt(value)
       );
     }
   });
@@ -129,11 +129,11 @@ export async function fetchWordMeta(word) {
     const value = naiveHTMLNodeInnerText($el).trim();
 
     if (parentText.includes('繁体')) {
-      wordMeta.traditional = false;
-      wordMeta.traditional_words = value.split(/\s+/g);
+      ziMeta.traditional = false;
+      ziMeta.traditional_words = value.split(/\s+/g);
     } else if (parentText.includes('简体')) {
-      wordMeta.traditional = true;
-      wordMeta.simple_words = value.split(/\s+/g);
+      ziMeta.traditional = true;
+      ziMeta.simple_words = value.split(/\s+/g);
     }
   });
 
@@ -145,13 +145,13 @@ export async function fetchWordMeta(word) {
     }
 
     const value = naiveHTMLNodeInnerText($el).trim();
-    value && wordMeta.variant_words.push(value);
+    value && ziMeta.variant_words.push(value);
   });
 
   // 笔顺
   const $strokeOrder = $doc.querySelector('.ziif .dsk .z_bis2');
   $strokeOrder &&
-    (wordMeta.stroke_order = naiveHTMLNodeInnerText($strokeOrder).trim());
+    (ziMeta.stroke_order = naiveHTMLNodeInnerText($strokeOrder).trim());
 
   // 编码信息
   const codeTitles = [];
@@ -175,21 +175,21 @@ export async function fetchWordMeta(word) {
     const value = codes[i];
 
     if (title === '统一码') {
-      wordMeta.unicode = value.replaceAll(/^.+(U\+.+)\s*/g, '$1');
+      ziMeta.unicode = value.replaceAll(/^.+(U\+.+)\s*/g, '$1');
     } else if (title === '字形分析') {
-      wordMeta.glyph_struct = value;
+      ziMeta.glyph_struct = value;
     } else if (title === '五笔') {
-      wordMeta.wubi_codes = value.split(/\|/g);
+      ziMeta.wubi_codes = value.split(/\|/g);
     } else if (title === '仓颉') {
-      wordMeta.cangjie_codes = value.split(/\|/g);
+      ziMeta.cangjie_codes = value.split(/\|/g);
     } else if (title === '郑码') {
-      wordMeta.zhengma_codes = value.split(/\|/g);
+      ziMeta.zhengma_codes = value.split(/\|/g);
     } else if (title === '四角') {
-      wordMeta.sijiao_codes = value.split(/\|/g);
+      ziMeta.sijiao_codes = value.split(/\|/g);
     }
   }
 
-  wordMeta.glyph_font_exists = hasGlyphFontForCodePoint(wordMeta.unicode);
+  ziMeta.glyph_font_exists = hasGlyphFontForCodePoint(ziMeta.unicode);
 
-  return wordMeta;
+  return ziMeta;
 }

@@ -3,15 +3,15 @@ _DIR_="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 
 ROOT_DIR="$(cd "${_DIR_}/../../../.." && pwd -P)"
 
-GEN_PY_FILE="${ROOT_DIR}/src/data/word/stroke/gen-from-gif.py"
-GEN_PY_GRID_MASK_FILE="${ROOT_DIR}/src/data/word/stroke/assets/extra-mask.png"
+GEN_PY_FILE="${ROOT_DIR}/src/data/zi/stroke/gen-from-gif.py"
+GEN_PY_GRID_MASK_FILE="${ROOT_DIR}/src/data/zi/stroke/assets/extra-mask.png"
 
 TARGET_ZI_ASSET_DIR="$1"
 
 # 依次转换参数列表中的多个文件
 for gif in "${@:2}"; do
     unicode="$(basename "$(dirname "${gif}")")"
-    word="$(printf "\\$(echo ${unicode} | sed 's/+//g')")"
+    zi="$(printf "\\$(echo ${unicode} | sed 's/+//g')")"
     target="${TARGET_ZI_ASSET_DIR}/${unicode}/stroke.svg"
 
     if [[ ! -f "${target}" ]]; then
@@ -23,7 +23,7 @@ for gif in "${@:2}"; do
             --stroke-mask-sigma 0 --stroke-contour-sigma 1 \
             --grid-scale 8 --stroke-min-area 80 --stroke-simplify 2.5 \
             --stroke-anim-duration 0 --stroke-anim-frames 10 \
-            --log-label "${word}(${unicode})" \
+            --log-label "${zi}(${unicode})" \
             --input "${gif}" \
             --anim-output "${target}"
     fi

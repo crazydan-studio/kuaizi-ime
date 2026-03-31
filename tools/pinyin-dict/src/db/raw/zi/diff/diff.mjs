@@ -6,7 +6,7 @@ export function diffMetaData(oldDb, newDb) {
     'meta_pinyin_chars',
     // 'meta_zhuyin',
     // 'meta_zhuyin_chars',
-    'meta_word'
+    'meta_zi'
   ].forEach((table) => {
     const oldData = {};
     const newData = {};
@@ -49,10 +49,10 @@ export function diffMetaData(oldDb, newDb) {
   });
 }
 
-export function diffWordData(oldDb, newDb) {
+export function diffZiData(oldDb, newDb) {
   [
-    'pinyin_word'
-    // 'zhuyin_word'
+    'pinyin_zi'
+    // 'zhuyin_zi'
   ].forEach((table) => {
     const oldData = { __mapping__: {} };
     const newData = { __mapping__: {} };
@@ -61,18 +61,18 @@ export function diffWordData(oldDb, newDb) {
       const id = row.id_;
 
       oldData[id] = row;
-      (oldData.__mapping__[row.word_] ||= []).push(row.spell_);
+      (oldData.__mapping__[row.zi_] ||= []).push(row.spell_);
     });
     queryAll(newDb, `select * from ${table} group by id_`).forEach((row) => {
       const id = row.id_;
 
       newData[id] = row;
-      (newData.__mapping__[row.word_] ||= []).push(row.spell_);
+      (newData.__mapping__[row.zi_] ||= []).push(row.spell_);
     });
 
     // Note: source_id_/target_id_/target_chars_id_ 是在兼容最初始的版本
     const genCode = (row) => {
-      return `${row.word_id_ || row.source_id_}:${
+      return `${row.zi_id_ || row.source_id_}:${
         row.spell_id_ || row.target_id_
       }:${row.spell_chars_id_ || row.target_chars_id_}`;
     };
@@ -81,16 +81,16 @@ export function diffWordData(oldDb, newDb) {
       const oldRow = oldData[id];
       const newRow = newData[id];
 
-      const word = newRow.word_;
+      const zi = newRow.zi_;
       const spell = newRow.spell_;
 
       if (!oldRow) {
-        const newSpells = (newData.__mapping__[word] || []).filter(
+        const newSpells = (newData.__mapping__[zi] || []).filter(
           (s) => s != spell
         );
 
         console.log(
-          `- ${table} => 字数据 ${id}:${word}:${spell} 为新增。${word} ` +
+          `- ${table} => 字数据 ${id}:${zi}:${spell} 为新增。${zi} ` +
             (newSpells.length > 0
               ? `还有新读音 ${newSpells.join(',')}`
               : '再无其他新读音')
@@ -102,7 +102,7 @@ export function diffWordData(oldDb, newDb) {
 
         if (oldCode != newCode) {
           console.log(
-            `- ${table} => 字数据 ${id}:${word}:${spell} 的组合不同: ${oldCode} -> ${newCode}`
+            `- ${table} => 字数据 ${id}:${zi}:${spell} 的组合不同: ${oldCode} -> ${newCode}`
           );
         }
       }
@@ -112,14 +112,14 @@ export function diffWordData(oldDb, newDb) {
       const oldRow = oldData[id];
       const newRow = newData[id];
 
-      const word = oldRow.word_;
+      const zi = oldRow.zi_;
       const spell = oldRow.spell_;
 
       if (!newRow) {
-        const newSpells = newData.__mapping__[word] || [];
+        const newSpells = newData.__mapping__[zi] || [];
 
         console.log(
-          `- ${table} => 字数据 ${id}:${word}:${spell} 已被删除。${word} ` +
+          `- ${table} => 字数据 ${id}:${zi}:${spell} 已被删除。${zi} ` +
             (newSpells.length > 0
               ? `还剩余读音 ${newSpells.join(',')}`
               : '再无其他剩余读音')

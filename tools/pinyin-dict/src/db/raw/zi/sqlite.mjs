@@ -13,10 +13,10 @@ import {
 export { openDB as open, closeDB as close } from '#utils/sqlite.mjs';
 
 const sql_file_path = (name) =>
-  fromRootPath('src', 'db/raw/word/' + name + '.create.sql');
+  fromRootPath('src', 'db/raw/zi/' + name + '.create.sql');
 
 /** 保存拼音和注音信息 */
-export function saveSpells(db, wordMetas) {
+export function saveSpells(db, ziMetas) {
   const sqlFile = sql_file_path('table-spell');
   execSQLFile(db, sqlFile);
 
@@ -33,19 +33,19 @@ export function saveSpells(db, wordMetas) {
       chars_table: 'meta_zhuyin_chars',
       chars_fn: extractZhuyinChars
     }
-  ].forEach((options) => doSaveSpells(db, wordMetas, options));
+  ].forEach((options) => doSaveSpells(db, ziMetas, options));
 }
 
 /** 保存字信息 */
-export function saveWords(db, wordMetas) {
-  const sqlFile = sql_file_path('table-word');
+export function saveZies(db, ziMetas) {
+  const sqlFile = sql_file_path('table-zi');
   execSQLFile(db, sqlFile);
 
   // ----------------------------------------------------------------
-  const wordMetaData = {};
-  const wordRadicalMetaData = {};
-  wordMetas.forEach((meta) => {
-    wordMetaData[meta.value] = {
+  const ziMetaData = {};
+  const ziRadicalMetaData = {};
+  ziMetas.forEach((meta) => {
+    ziMetaData[meta.value] = {
       __meta__: meta,
       value_: meta.value,
       unicode_: meta.unicode,
@@ -58,7 +58,7 @@ export function saveWords(db, wordMetas) {
 
     const radical = meta.radical;
     if (radical) {
-      wordRadicalMetaData[radical] = {
+      ziRadicalMetaData[radical] = {
         value_: radical,
         stroke_count_: meta.radical_stroke_count || 0
       };
@@ -67,65 +67,65 @@ export function saveWords(db, wordMetas) {
 
   // ----------------------------------------------------------------
   // 保存字部首信息
-  const missingWordRadicals = [];
-  queryAll(db, 'select * from meta_word_radical').forEach((row) => {
+  const missingZiRadicals = [];
+  queryAll(db, 'select * from meta_zi_radical').forEach((row) => {
     const id = row.id_;
     const value = row.value_;
 
-    if (wordRadicalMetaData[value]) {
-      wordRadicalMetaData[value].id_ = id;
-      wordRadicalMetaData[value].__exist__ = row;
+    if (ziRadicalMetaData[value]) {
+      ziRadicalMetaData[value].id_ = id;
+      ziRadicalMetaData[value].__exist__ = row;
     } else {
       // 在库中已存在，但已不再被使用
-      missingWordRadicals.push(id);
+      missingZiRadicals.push(id);
       console.log('部首已被废弃：', value, id);
     }
   });
-  saveToDB(db, 'meta_word_radical', wordRadicalMetaData);
-  removeFromDB(db, 'meta_word_radical', missingWordRadicals);
+  saveToDB(db, 'meta_zi_radical', ziRadicalMetaData);
+  removeFromDB(db, 'meta_zi_radical', missingZiRadicals);
 
   // 获取新增字部首 id
-  queryAll(db, 'select id_, value_ from meta_word_radical').forEach((row) => {
+  queryAll(db, 'select id_, value_ from meta_zi_radical').forEach((row) => {
     const value = row.value_;
-    wordRadicalMetaData[value].id_ = row.id_;
+    ziRadicalMetaData[value].id_ = row.id_;
   });
 
   // ----------------------------------------------------------------
   // 绑定字与其部首
-  Object.keys(wordMetaData).forEach((k) => {
-    const word = wordMetaData[k];
-    const radical = word.__meta__.radical;
-    const radical_id_ = (wordRadicalMetaData[radical] || {}).id_;
+  Object.keys(ziMetaData).forEach((k) => {
+    const zi = ziMetaData[k];
+    const radical = zi.__meta__.radical;
+    const radical_id_ = (ziRadicalMetaData[radical] || {}).id_;
 
     if (!radical_id_) {
-      console.log('字的部首未保存：', word.value_, radical);
+      console.log('字的部首未保存：', zi.value_, radical);
     }
 
-    word.radical_id_ = radical_id_;
+    zi.radical_id_ = radical_id_;
   });
 
   // 保存字信息
-  const missingWords = [];
-  queryAll(db, 'select * from meta_word').forEach((row) => {
+  const missingZies = [];
+  queryAll(db, 'select * from meta_zi').forEach((row) => {
     const id = row.id_;
     const value = row.value_;
 
-    if (wordMetaData[value]) {
-      wordMetaData[value].id_ = id;
-      wordMetaData[value].__exist__ = row;
+    if (ziMetaData[value]) {
+      ziMetaData[value].id_ = id;
+      ziMetaData[value].__exist__ = row;
     } else {
       // 在库中已存在，但已不再被使用
-      missingWords.push(id);
+      missingZies.push(id);
       console.log('字已被废弃：', value, id);
     }
   });
-  saveToDB(db, 'meta_word', wordMetaData);
-  removeFromDB(db, 'meta_word', missingWords);
+  saveToDB(db, 'meta_zi', ziMetaData);
+  removeFromDB(db, 'meta_zi', missingZies);
 
   // 获取新增字 id
-  queryAll(db, 'select id_, value_ from meta_word').forEach((row) => {
+  queryAll(db, 'select id_, value_ from meta_zi').forEach((row) => {
     const value = row.value_;
-    wordMetaData[value].id_ = row.id_;
+    ziMetaData[value].id_ = row.id_;
   });
 
   // ----------------------------------------------------------------
@@ -133,63 +133,63 @@ export function saveWords(db, wordMetas) {
   [
     {
       prop: 'pinyins',
-      table: 'meta_word_with_pinyin',
+      table: 'meta_zi_with_pinyin',
       spell_meta_table: 'meta_pinyin',
       has_weight: true
-    },
-    {
-      prop: 'zhuyins',
-      table: 'meta_word_with_zhuyin',
-      spell_meta_table: 'meta_zhuyin',
-      has_weight: false
+      // },
+      // {
+      //   prop: 'zhuyins',
+      //   table: 'meta_zi_with_zhuyin',
+      //   spell_meta_table: 'meta_zhuyin',
+      //   has_weight: false
     }
-  ].forEach((options) => linkWordSpells(db, wordMetaData, options));
+  ].forEach((options) => linkZiSpells(db, ziMetaData, options));
 
   // ----------------------------------------------------------------
   // 绑定字与字的关联
   [
     {
-      prop: 'simple_words',
-      table: 'meta_word_simple'
+      prop: 'simples',
+      table: 'meta_zi_simple'
     },
     {
-      prop: 'traditional_words',
-      table: 'meta_word_traditional'
-    },
-    {
-      prop: 'variant_words',
-      table: 'meta_word_variant'
+      prop: 'traditionals',
+      table: 'meta_zi_traditional'
+      // },
+      // {
+      //   prop: 'variants',
+      //   table: 'meta_zi_variant'
     }
-  ].forEach((options) => linkWordVariants(db, wordMetaData, options));
+  ].forEach((options) => linkZiVariants(db, ziMetaData, options));
 
-  // ----------------------------------------------------------------
-  // 绑定字与编码的关联
-  [
-    {
-      prop: 'wubi_codes',
-      table: 'meta_word_wubi_code'
-    },
-    {
-      prop: 'cangjie_codes',
-      table: 'meta_word_cangjie_code'
-    },
-    {
-      prop: 'zhengma_codes',
-      table: 'meta_word_zhengma_code'
-    },
-    {
-      prop: 'sijiao_codes',
-      table: 'meta_word_sijiao_code'
-    }
-  ].forEach((options) => linkWordCodes(db, wordMetaData, options));
+  // // ----------------------------------------------------------------
+  // // 绑定字与编码的关联
+  // [
+  //   {
+  //     prop: 'wubi_codes',
+  //     table: 'meta_zi_wubi_code'
+  //   },
+  //   {
+  //     prop: 'cangjie_codes',
+  //     table: 'meta_zi_cangjie_code'
+  //   },
+  //   {
+  //     prop: 'zhengma_codes',
+  //     table: 'meta_zi_zhengma_code'
+  //   },
+  //   {
+  //     prop: 'sijiao_codes',
+  //     table: 'meta_zi_sijiao_code'
+  //   }
+  // ].forEach((options) => linkZiCodes(db, ziMetaData, options));
 }
 
-function doSaveSpells(db, wordMetas, { prop, table, chars_table, chars_fn }) {
+function doSaveSpells(db, ziMetas, { prop, table, chars_table, chars_fn }) {
   const spellMetaData = {};
   const charsMetaData = {};
 
-  wordMetas.forEach((wordMeta) => {
-    const spells = wordMeta[prop];
+  ziMetas.forEach((ziMeta) => {
+    const spells = ziMeta[prop];
 
     spells.forEach(({ value }) => {
       if (!value || spellMetaData[value]) {
@@ -261,9 +261,9 @@ function doSaveSpells(db, wordMetas, { prop, table, chars_table, chars_fn }) {
   removeFromDB(db, table, missingSpellMetas);
 }
 
-function linkWordSpells(
+function linkZiSpells(
   db,
-  wordMetaData,
+  ziMetaData,
   { prop, table, spell_meta_table, has_weight }
 ) {
   const spellMetaMap = {};
@@ -271,25 +271,25 @@ function linkWordSpells(
     spellMetaMap[row.value_] = row.id_;
   });
 
-  const wordIdMap = {};
+  const ziIdMap = {};
   const spellIdMap = {};
 
   const spellType = has_weight ? '拼音' : '注音';
   const linkDataMap = {};
-  Object.keys(wordMetaData).forEach((k) => {
-    const word = wordMetaData[k];
-    const spells = word.__meta__[prop];
+  Object.keys(ziMetaData).forEach((k) => {
+    const zi = ziMetaData[k];
+    const spells = zi.__meta__[prop];
 
-    const word_id_ = word.id_;
-    wordIdMap[word_id_] = k;
+    const zi_id_ = zi.id_;
+    ziIdMap[zi_id_] = k;
 
     spells.forEach((spell) => {
       const spell_id_ = spellMetaMap[spell.value];
       spellIdMap[spell_id_] = spell.value;
 
-      const code = word_id_ + ':' + spell_id_;
+      const code = zi_id_ + ':' + spell_id_;
       const data = (linkDataMap[code] = {
-        word_id_,
+        zi_id_,
         spell_id_
       });
 
@@ -302,7 +302,7 @@ function linkWordSpells(
   const missingLinks = [];
   queryAll(db, `select * from ${table}`).forEach((row) => {
     const id = row.id_;
-    const code = row.word_id_ + ':' + row.spell_id_;
+    const code = row.zi_id_ + ':' + row.spell_id_;
 
     if (linkDataMap[code]) {
       linkDataMap[code].id_ = id;
@@ -313,7 +313,7 @@ function linkWordSpells(
       console.log(
         spellType + '字已被废弃：',
         id,
-        wordIdMap[row.word_id_] || '',
+        ziIdMap[row.zi_id_] || '',
         spellIdMap[row.spell_id_] || ''
       );
     }
@@ -323,7 +323,7 @@ function linkWordSpells(
   removeFromDB(db, table, missingLinks);
 }
 
-function linkWordVariants(db, wordMetaData, { prop, table }) {
+function linkZiVariants(db, ziMetaData, { prop, table }) {
   const primaryKeys = ['source_id_', 'target_id_'];
 
   const linkData = {};
@@ -335,13 +335,13 @@ function linkWordVariants(db, wordMetaData, { prop, table }) {
     };
   });
 
-  Object.keys(wordMetaData).forEach((k) => {
-    const word = wordMetaData[k];
-    const variants = word.__meta__[prop];
+  Object.keys(ziMetaData).forEach((k) => {
+    const zi = ziMetaData[k];
+    const variants = zi.__meta__[prop];
 
     variants.forEach((variant) => {
-      const source_id_ = word.id_;
-      const target_id_ = (wordMetaData[variant] || {}).id_;
+      const source_id_ = zi.id_;
+      const target_id_ = (ziMetaData[variant] || {}).id_;
       if (!target_id_) {
         return;
       }
@@ -376,29 +376,29 @@ function linkWordVariants(db, wordMetaData, { prop, table }) {
   removeFromDB(db, table, missingLinks, primaryKeys);
 }
 
-function linkWordCodes(db, wordMetaData, { prop, table }) {
+function linkZiCodes(db, ziMetaData, { prop, table }) {
   const linkData = {};
   queryAll(db, `select * from ${table}`).forEach((row) => {
-    const code = row.value_ + ':' + row.word_id_;
+    const code = row.value_ + ':' + row.zi_id_;
     linkData[code] = {
       ...row,
       __exist__: row
     };
   });
 
-  Object.keys(wordMetaData).forEach((k) => {
-    const word = wordMetaData[k];
-    const codes = word.__meta__[prop];
+  Object.keys(ziMetaData).forEach((k) => {
+    const zi = ziMetaData[k];
+    const codes = zi.__meta__[prop];
 
     codes.forEach((value_) => {
-      const word_id_ = word.id_;
-      const code = value_ + ':' + word_id_;
+      const zi_id_ = zi.id_;
+      const code = value_ + ':' + zi_id_;
 
       if (!linkData[code]) {
         // 新增关联
         linkData[code] = {
           value_,
-          word_id_
+          zi_id_
         };
       } else {
         // 关联无需更新

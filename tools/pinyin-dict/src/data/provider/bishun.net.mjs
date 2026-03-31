@@ -1,7 +1,7 @@
 import { JSDOM } from 'jsdom';
 
 import { naiveHTMLNodeInnerText, sleep } from '#utils/file.mjs';
-import { getWordCode } from '#utils/word.mjs';
+import { getZiCode } from '#utils/zi.mjs';
 
 // 从 bishun.net 获取字的笔画演示
 // - 汉字皮：https://www.hanzipi.com/
@@ -14,8 +14,8 @@ const alllistUrl = 'https://bishun.net/alllist/';
  *
  *  @return `[{stroke_demo_url: 'https://xxx', stroke_order_url: 'https://xxx'}, ...]`
  */
-export async function fetchWordStrokeImages(words) {
-  return await Promise.all(words.map(fetchWordMeta));
+export async function fetchZiStrokeImages(zies) {
+  return await Promise.all(zies.map(fetchZiStrokeImage));
 }
 
 /**
@@ -23,8 +23,8 @@ export async function fetchWordStrokeImages(words) {
  *
  * @return `{stroke_demo_url: 'https://xxx', stroke_order_url: 'https://xxx'}`
  */
-export async function fetchWordStrokeImage(word) {
-  const srcUrl = baseUrl + getWordCode(word);
+export async function fetchZiStrokeImage(zi) {
+  const srcUrl = baseUrl + getZiCode(zi);
   const html = await (await fetch(srcUrl)).text();
   const $dom = new JSDOM(html);
   const $doc = (($dom || {}).window || {}).document;
@@ -55,24 +55,24 @@ export async function fetchWordStrokeImage(word) {
  *
  * @return `[{value: '字', code: '23383', media: {stroke_demo_url: 'https://xxx', stroke_order_url: 'https://xxx'}}, ...]`
  */
-export async function fetchAllValidWords() {
-  let allWords = [];
+export async function fetchAllValidZies() {
+  let allZies = [];
 
   let page = 1;
   while (true) {
-    const words = await fetchPageValidWords(page++);
-    if (words.length == 0) {
+    const zies = await fetchPageValidZies(page++);
+    if (zies.length == 0) {
       break;
     }
 
-    allWords = allWords.concat(words);
+    allZies = allZies.concat(zies);
 
     sleep(100);
   }
-  return allWords;
+  return allZies;
 }
 
-async function fetchPageValidWords(page) {
+async function fetchPageValidZies(page) {
   const srcUrl = alllistUrl + (page == 1 ? 'index.html' : `index_${page}.html`);
   const html = await (await fetch(srcUrl)).text();
   const $dom = new JSDOM(html);
@@ -81,14 +81,14 @@ async function fetchPageValidWords(page) {
     return;
   }
 
-  const words = [];
+  const zies = [];
   const $list = $doc.querySelectorAll('li a.hanzibishun');
   $list.forEach(($el) => {
     const value = naiveHTMLNodeInnerText($el).trim();
     const href = $el.getAttribute('href');
     const code = href.replace(/^.+\/([^\/]+)$/g, '$1');
 
-    words.push({
+    zies.push({
       value,
       media: {
         stroke_demo_url: `https://bishun.net/assets/bishun/donghua/bishundonghua-${code}.gif`,
@@ -97,5 +97,5 @@ async function fetchPageValidWords(page) {
     });
   });
 
-  return words;
+  return zies;
 }

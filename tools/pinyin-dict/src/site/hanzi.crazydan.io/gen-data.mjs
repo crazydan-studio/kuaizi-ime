@@ -9,9 +9,9 @@ import {
   readFile
 } from '#utils/file.mjs';
 import { extractPinyinChars } from '#utils/spell.mjs';
-import { getWordUnicode } from '#utils/word.mjs';
+import { getZiUnicode } from '#utils/zi.mjs';
 
-import { readAllSavedWordMetas } from '#data/word/meta.mjs';
+import { readAllSavedZiMetas } from '#data/zi/meta.mjs';
 
 const siteRootDir = fromRootPath('../../site/hanzi.crazydan.io');
 
@@ -27,7 +27,7 @@ const pinyinValues = [];
 
 console.log();
 console.log('读取已收集的有效字信息 ...');
-const ziMetas = await readAllSavedWordMetas();
+const ziMetas = await readAllSavedZiMetas();
 
 console.log('- 有效字信息总数：' + ziMetas.length);
 console.log();
@@ -56,7 +56,7 @@ ziMetas.forEach((meta) => {
     pyZies[zi] += weight;
   });
 
-  const ziUnicode = getWordUnicode(zi);
+  const ziUnicode = getZiUnicode(zi);
   if (ziUnicode != meta.unicode) {
     console.log(
       `- ${zi} 的 Unicode 与计算结果不一致：${meta.unicode} != ${ziUnicode}`
@@ -126,7 +126,7 @@ Object.keys(pinyinZiWeightMap).forEach((pyChar) => {
   console.log(`- ${pyChar} 包含 ${pyZies.length} 个字`);
 
   const file = path.join(siteAssetsPinyinDir, `${pyChar}/meta.json`);
-  writeJSONToFile(file, { chars: pyZies });
+  writeJSONToFile(file, { zies: pyZies });
 });
 
 // ---------------------------------------------------------------

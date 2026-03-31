@@ -13,7 +13,7 @@ const data_path = (...paths) =>
  * }, ...}
  * ```
  */
-export async function readZdicWords() {
+export async function readZdicZies() {
   // https://github.com/mozillazg/pinyin-data/blob/master/zdic.txt
   const file = data_path('zdic.txt');
 
@@ -32,10 +32,10 @@ export async function readZdicWords() {
       return;
     }
 
-    const word = line.replaceAll(/^.+#\s*([^\s]+).*$/g, '$1');
+    const zi = line.replaceAll(/^.+#\s*([^\s]+).*$/g, '$1');
     const pinyins = joinedPinyin.split(/,/g).map((value) => ({ value }));
 
-    data[word] = { value: word, unicode, pinyins };
+    data[zi] = { value: zi, unicode, pinyins };
   });
 
   return data;
