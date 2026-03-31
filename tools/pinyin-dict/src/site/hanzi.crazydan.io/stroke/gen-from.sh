@@ -1,14 +1,15 @@
 #!/bin/bash
 _DIR_="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 
-ROOT_DIR="$(cd "${_DIR_}/../../.." && pwd -P)"
+ROOT_DIR="$(cd "${_DIR_}/../../../.." && pwd -P)"
 
 GEN_PY_FILE="${ROOT_DIR}/src/data/word/stroke/gen-from-gif.py"
 GEN_PY_GRID_MASK_FILE="${ROOT_DIR}/src/data/word/stroke/assets/extra-mask.png"
 
-TARGET_ZI_ASSET_DIR="${ROOT_DIR}/../../site/hanzi.crazydan.io/public/assets/zi"
+TARGET_ZI_ASSET_DIR="$1"
 
-for gif in "$@"; do
+# 依次转换参数列表中的多个文件
+for gif in "${@:2}"; do
     unicode="$(basename "$(dirname "${gif}")")"
     word="$(printf "\\$(echo ${unicode} | sed 's/+//g')")"
     target="${TARGET_ZI_ASSET_DIR}/${unicode}/stroke.svg"

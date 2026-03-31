@@ -695,7 +695,8 @@ function correctWordMetaByWord(wordMeta) {
     臦: 12,
     輤: 15,
     齋: 17,
-    鬭: 24
+    鬭: 24,
+    巔: 22
   };
   const strokeCount = strokeCountMap[wordMeta.value];
   if (strokeCount > 0) {

@@ -1,31 +1,33 @@
 // 获取汉字的图片、读音、笔顺动画等多媒体文件资源
+import * as path from 'path';
+
 import { fromRootPath } from '#utils/file.mjs';
 
 import { readAllSavedWordMetas } from '#data/word/meta.mjs';
 
-import { fetchAndSaveWordMedias } from './media.mjs';
-import { patchWordMedias } from './patch.mjs';
+import { fetchAndSaveZiMedias, patchZiMedias } from './media/index.mjs';
 
-const wordMediasDir = fromRootPath('data', 'medias');
+const siteRootDir = fromRootPath('../../site/hanzi.crazydan.io');
+const siteAssetsDir = path.join(siteRootDir, 'public/assets');
 
 // ---------------------------------------------------------------
 console.log();
 console.log('读取已收集的有效字信息 ...');
-const wordMetas = await readAllSavedWordMetas();
+const ziMetas = await readAllSavedWordMetas();
 
-console.log('- 有效字信息总数：' + wordMetas.length);
+console.log('- 有效字信息总数：' + ziMetas.length);
 console.log();
 
 // ---------------------------------------------------------------
 console.log();
 console.log('获取与字相关的媒体信息 ...');
-const wordMedias = await patchWordMedias(wordMetas);
+const ziMedias = await patchZiMedias(ziMetas);
 
-console.log('- 拼音媒体总数：' + Object.keys(wordMedias.pinyins).length);
-console.log('- 字媒体总数：' + wordMedias.words.length);
+console.log('- 拼音媒体总数：' + Object.keys(ziMedias.pinyins).length);
+console.log('- 字媒体总数：' + ziMedias.zies.length);
 console.log();
 
 // ---------------------------------------------------------------
 console.log();
 console.log('保存与字相关的媒体文件 ...');
-await fetchAndSaveWordMedias(wordMedias, wordMediasDir);
+await fetchAndSaveZiMedias(ziMedias, siteAssetsDir);

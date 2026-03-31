@@ -1,0 +1,88 @@
+import * as path from 'path';
+
+import { sleep } from '#utils/native.mjs';
+import { existFile, fetchAndWriteFile } from '#utils/file.mjs';
+
+import { getStrokeImage } from '#data/provider/strokeorder.com.mjs';
+
+/** 获取并保存与字相关的图片和音频 */
+export async function fetchAndSaveZiMedias(ziMedias, targetDir) {
+  console.log('- 保存拼音的音频文件');
+  for (let pinyin in ziMedias.pinyins) {
+    const url = ziMedias.pinyins[pinyin];
+    const file = path.join(targetDir, 'audio/pinyin', `${pinyin}.${getExt(url)}`);
+
+    await saveUrl(url, file);
+  }
+
+  console.log('- 保存字的字形和笔顺图片');
+  for (let { media, unicode } of ziMedias.zies) {
+    for (let name in media) {
+      const url = media[name];
+      const file = path.join(
+        targetDir,
+        `zi/${unicode}`,
+        `${name.replace(/_url$/g, '').replace('_', '-')}.${getExt(url)}`
+      );
+
+      await saveUrl(url, file);
+    }
+  }
+}
+
+/**
+ * 向字补充媒体信息并保存到文件
+ *
+ * @return ```json
+ * {
+ *    pinyins: {yi: 'https://xxx', ...},
+ *    zies: [{
+ *      value: '字',
+ *      unicode: 'U+5B57',
+ *      media: {
+ *        glyph_url: 'https://xxx',
+ *        stroke_order_url: 'https://xxx'
+ *      }
+ *    }, ...]
+ * }
+ * ```
+ */
+export async function patchZiMedias(ziMetas) {
+  const ziMedias = { pinyins: {}, zies: [] };
+
+  ziMetas.forEach((meta) => {
+    meta.pinyins.forEach(({ value }) => {
+      if (!ziMedias.pinyins[value]) {
+        ziMedias.pinyins[value] =
+          `https://img.zdic.net/audio/zd/py/${value}.mp3`;
+      }
+    });
+
+    ziMedias.zies.push({
+      value: meta.value,
+      unicode: meta.unicode,
+      media: {
+        glyph_url: meta.glyph_svg_url,
+        ...getStrokeImage(meta.value)
+      }
+    });
+  });
+
+  return ziMedias;
+}
+
+async function saveUrl(url, file, force) {
+  if (force || !existFile(file)) {
+    try {
+      await fetchAndWriteFile(url, file);
+    } catch (e) {
+      console.log(`  - ${url} ${e.message}`);
+    }
+
+    sleep(100);
+  }
+}
+
+function getExt(url) {
+  return url.replace(/^.+\.([^.]+)$/g, '$1');
+}
