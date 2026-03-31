@@ -658,6 +658,7 @@ function correctWordMetaByWord(wordMeta) {
     case '亚':
     case '亘':
       wordMeta.glyph_struct = '上中下结构';
+      break;
     case '承':
       wordMeta.glyph_struct = '左中右结构';
       break;
@@ -679,6 +680,26 @@ function correctWordMetaByWord(wordMeta) {
     case '頁': // ㄧㄝˋ，ㄒ〡ㄝˊ
       wordMeta.zhuyins = [{ value: 'ㄧㄝˋ' }, { value: 'ㄒ〡ㄝˊ' }];
       break;
+  }
+
+  const strokeCountMap = {
+    様: 15,
+    敻: 15,
+    瀧: 19,
+    坰: 8,
+    惸: 12,
+    獡: 15,
+    樮: 14,
+    燛: 16,
+    臩: 17,
+    臦: 12,
+    輤: 15,
+    齋: 17,
+    鬭: 24
+  };
+  const strokeCount = strokeCountMap[wordMeta.value];
+  if (strokeCount > 0) {
+    wordMeta.total_stroke_count = strokeCount;
   }
 }
 
