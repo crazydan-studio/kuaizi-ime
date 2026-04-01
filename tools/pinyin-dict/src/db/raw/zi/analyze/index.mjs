@@ -1,4 +1,4 @@
-import { fromRootPath } from '#utils/utils.mjs';
+import { fromRootPath } from '#utils/file.mjs';
 import { openDB, closeDB } from '#utils/sqlite.mjs';
 
 import { getZiDictSQLiteFile } from '#db/utils.mjs';
