@@ -44,9 +44,11 @@ export async function fetchZiMeta(zi) {
     total_stroke_count: 0,
     radical_stroke_count: 0,
     traditional: false,
-    simple_words: [],
-    variant_words: [],
-    traditional_words: [],
+    //
+    simples: [],
+    variants: [],
+    traditionals: [],
+    //
     wubi_codes: [],
     cangjie_codes: [],
     zhengma_codes: [],
@@ -130,10 +132,10 @@ export async function fetchZiMeta(zi) {
 
     if (parentText.includes('繁体')) {
       ziMeta.traditional = false;
-      ziMeta.traditional_words = value.split(/\s+/g);
+      ziMeta.traditionals = value.split(/\s+/g);
     } else if (parentText.includes('简体')) {
       ziMeta.traditional = true;
-      ziMeta.simple_words = value.split(/\s+/g);
+      ziMeta.simples = value.split(/\s+/g);
     }
   });
 
@@ -145,7 +147,7 @@ export async function fetchZiMeta(zi) {
     }
 
     const value = naiveHTMLNodeInnerText($el).trim();
-    value && ziMeta.variant_words.push(value);
+    value && ziMeta.variants.push(value);
   });
 
   // 笔顺

@@ -5,7 +5,7 @@ import {
   appendLineToFile
 } from '#utils/file.mjs';
 import {
-  extractPinyinChars,
+  zeroPinyinTone,
   correctPinyin,
   correctZhuyin
 } from '#utils/spell.mjs';
@@ -168,7 +168,7 @@ export function calculateZiGlyphWeight(ziMetas) {
   // 按部首分组
   const radicalGroups = {};
   // 按拼音分组
-  const pinyinCharsGroups = {};
+  const pinyinGroups = {};
 
   ziMetas.forEach((meta) => {
     meta.glyph_weight = calcGlyphWeight(meta);
@@ -176,8 +176,9 @@ export function calculateZiGlyphWeight(ziMetas) {
     (radicalGroups[meta.radical] ||= []).push(meta);
 
     meta.pinyins.forEach((pinyin) => {
-      const chars = extractPinyinChars(pinyin.value);
-      (pinyinCharsGroups[chars] ||= []).push(meta);
+      const py = zeroPinyinTone(pinyin.value);
+
+      (pinyinGroups[py] ||= []).push(meta);
     });
   });
 
@@ -194,15 +195,15 @@ export function calculateZiGlyphWeight(ziMetas) {
     );
   });
 
-  const pinyinCharsGroupKeys = Object.keys(pinyinCharsGroups);
-  console.log('拼音列表：', pinyinCharsGroupKeys.join(', '));
-  pinyinCharsGroupKeys.forEach((chars) => {
-    const metas = pinyinCharsGroups[chars].sort(
+  const pinyinGroupKeys = Object.keys(pinyinGroups);
+  console.log('拼音列表：', pinyinGroupKeys.join(', '));
+  pinyinGroupKeys.forEach((py) => {
+    const metas = pinyinGroups[py].sort(
       (a, b) => a.glyph_weight - b.glyph_weight
     );
 
     console.log(
-      `- 拼音 ${chars} 按相似性排序结果：` +
+      `- 拼音 ${py} 按相似性排序结果：` +
         metas.map((meta) => meta.value).join(',')
     );
   });
@@ -210,8 +211,23 @@ export function calculateZiGlyphWeight(ziMetas) {
 
 /** 纠正字信息 */
 function correctZiMeta(ziMeta) {
+  // 新旧版本兼容处理
+  if (ziMeta.simple_words) {
+    ziMeta.simples = ziMeta.simple_words;
+    delete ziMeta.simple_words;
+  }
+  if (ziMeta.variant_words) {
+    ziMeta.variants = ziMeta.variant_words;
+    delete ziMeta.variant_words;
+  }
+  if (ziMeta.traditional_words) {
+    ziMeta.traditionals = ziMeta.traditional_words;
+    delete ziMeta.traditional_words;
+  }
+  // 新旧版本兼容处理
+
   if (!ziMeta.traditional) {
-    ziMeta.traditional = ziMeta.simple_words.length > 0;
+    ziMeta.traditional = ziMeta.simples.length > 0;
   }
   if (ziMeta.radical === '难检') {
     ziMeta.radical = '';

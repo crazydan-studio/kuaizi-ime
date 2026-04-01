@@ -1,8 +1,9 @@
+import { fromRootPath } from '#utils/file.mjs';
 import {
-  fromRootPath,
-  extractPinyinChars,
-  extractZhuyinChars
-} from '#utils/utils.mjs';
+  zeroPinyinTone,
+  getPinyinTone,
+  toNumTonePinyin
+} from '#utils/spell.mjs';
 import {
   saveToDB,
   removeFromDB,
@@ -24,14 +25,8 @@ export function saveSpells(db, ziMetas) {
     {
       prop: 'pinyins',
       table: 'meta_pinyin',
-      chars_table: 'meta_pinyin_chars',
-      chars_fn: extractPinyinChars
-    },
-    {
-      prop: 'zhuyins',
-      table: 'meta_zhuyin',
-      chars_table: 'meta_zhuyin_chars',
-      chars_fn: extractZhuyinChars
+      tone_zero_fn: zeroPinyinTone,
+      tone_get_fn: getPinyinTone
     }
   ].forEach((options) => doSaveSpells(db, ziMetas, options));
 }
@@ -135,13 +130,8 @@ export function saveZies(db, ziMetas) {
       prop: 'pinyins',
       table: 'meta_zi_with_pinyin',
       spell_meta_table: 'meta_pinyin',
-      has_weight: true
-      // },
-      // {
-      //   prop: 'zhuyins',
-      //   table: 'meta_zi_with_zhuyin',
-      //   spell_meta_table: 'meta_zhuyin',
-      //   has_weight: false
+      has_weight: true,
+      spell_code_fn: toNumTonePinyin
     }
   ].forEach((options) => linkZiSpells(db, ziMetaData, options));
 
@@ -184,9 +174,8 @@ export function saveZies(db, ziMetas) {
   // ].forEach((options) => linkZiCodes(db, ziMetaData, options));
 }
 
-function doSaveSpells(db, ziMetas, { prop, table, chars_table, chars_fn }) {
+function doSaveSpells(db, ziMetas, { prop, table, tone_zero_fn, tone_get_fn }) {
   const spellMetaData = {};
-  const charsMetaData = {};
 
   ziMetas.forEach((ziMeta) => {
     const spells = ziMeta[prop];
@@ -196,64 +185,34 @@ function doSaveSpells(db, ziMetas, { prop, table, chars_table, chars_fn }) {
         return;
       }
 
-      const chars = chars_fn(value);
-      spellMetaData[value] = {
-        __chars__: chars,
-        value_: value
+      const value_ = tone_zero_fn(value);
+      const tone_ = tone_get_fn(value);
+
+      const code = `${value_}:${tone_}`;
+      spellMetaData[code] = {
+        value_,
+        tone_,
+        raw_: value
       };
-      charsMetaData[chars] = { value_: chars };
     });
   });
 
   // ----------------------------------------------------------------
-  const missingCharsMetas = [];
-  queryAll(db, `select * from ${chars_table}`).forEach((row) => {
-    const id = row.id_;
-    const value = row.value_;
-
-    if (charsMetaData[value]) {
-      charsMetaData[value].id_ = id;
-      charsMetaData[value].__exist__ = row;
-    } else {
-      // 在库中已存在，但已不再被使用
-      missingCharsMetas.push(id);
-      console.log('字母组合已被废弃：', value, id);
-    }
-  });
-  saveToDB(db, chars_table, charsMetaData);
-  removeFromDB(db, chars_table, missingCharsMetas);
-
-  // 获取新增字符组合 id
-  queryAll(db, `select id_, value_ from ${chars_table}`).forEach((row) => {
-    const value = row.value_;
-    charsMetaData[value].id_ = row.id_;
-  });
-
-  // ----------------------------------------------------------------
-  // 绑定读音与其字符组合
-  Object.keys(spellMetaData).forEach((k) => {
-    const spell = spellMetaData[k];
-    const chars_id_ = (charsMetaData[spell.__chars__] || {}).id_;
-
-    if (!chars_id_) {
-      console.log('读音的字母组合未保存：', spell.value_, spell.__chars__);
-    }
-
-    spell.chars_id_ = chars_id_;
-  });
-
   const missingSpellMetas = [];
   queryAll(db, `select * from ${table}`).forEach((row) => {
     const id = row.id_;
     const value = row.value_;
+    const tone = row.tone_;
 
-    if (spellMetaData[value]) {
-      spellMetaData[value].id_ = id;
-      spellMetaData[value].__exist__ = row;
+    const code = `${value}:${tone}`;
+
+    if (spellMetaData[code]) {
+      spellMetaData[code].id_ = id;
+      spellMetaData[code].__exist__ = row;
     } else {
       // 在库中已存在，但已不再被使用
       missingSpellMetas.push(id);
-      console.log('读音已被废弃：', value, id);
+      console.log('读音已被废弃：', row.raw_, code, id);
     }
   });
 
@@ -264,11 +223,20 @@ function doSaveSpells(db, ziMetas, { prop, table, chars_table, chars_fn }) {
 function linkZiSpells(
   db,
   ziMetaData,
-  { prop, table, spell_meta_table, has_weight }
+  { prop, table, spell_meta_table, spell_code_fn, has_weight }
 ) {
   const spellMetaMap = {};
-  queryAll(db, `select id_, value_ from ${spell_meta_table}`).forEach((row) => {
-    spellMetaMap[row.value_] = row.id_;
+  queryAll(db, `select * from ${spell_meta_table}`).forEach((row) => {
+    const code = spell_code_fn(row.raw_);
+
+    const computedCode = `${row.value_}${row.tone_}`;
+    if (code != computedCode) {
+      console.log(
+        `已存储的拼音 ${row.raw_} 声调数值与计算结果不同：${code} vs ${computedCode}`
+      );
+    }
+
+    spellMetaMap[code] = row.id_;
   });
 
   const ziIdMap = {};
@@ -284,7 +252,9 @@ function linkZiSpells(
     ziIdMap[zi_id_] = k;
 
     spells.forEach((spell) => {
-      const spell_id_ = spellMetaMap[spell.value];
+      const spell_code = spell_code_fn(spell.value);
+
+      const spell_id_ = spellMetaMap[spell_code];
       spellIdMap[spell_id_] = spell.value;
 
       const code = zi_id_ + ':' + spell_id_;
@@ -311,7 +281,7 @@ function linkZiSpells(
       // 在库中已存在，但已不再被使用
       missingLinks.push(id);
       console.log(
-        spellType + '字已被废弃：',
+        `${spellType}字已被废弃：`,
         id,
         ziIdMap[row.zi_id_] || '',
         spellIdMap[row.spell_id_] || ''

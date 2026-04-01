@@ -1,12 +1,8 @@
 // https://www.sqlitetutorial.net/sqlite-nodejs/connect/
 import { DatabaseSync } from 'node:sqlite';
 
-import {
-  splitChars,
-  extractPinyinChars,
-  readFile,
-  existFile
-} from './utils.mjs';
+import { readFile, existFile } from './file.mjs';
+import { splitChars, zeroPinyinTone } from './spell.mjs';
 
 export function openDB(file, { readonly, ignoreCheckConstraints } = {}) {
   const options = { readOnly: readonly === true };
@@ -239,8 +235,8 @@ function mapToArray(obj, disableSorting) {
 
   // Note: 主要排序带音调的拼音（注音规则暂时不清楚，故不处理），其余的按字符顺序排序
   const keys = Object.keys(obj).sort((a, b) => {
-    const a_without_special = extractPinyinChars(a).replaceAll(/[ˊˇˋˉ]$/g, '');
-    const b_without_special = extractPinyinChars(b).replaceAll(/[ˊˇˋˉ]$/g, '');
+    const a_without_special = zeroPinyinTone(a).replaceAll(/[ˊˇˋˉ]$/g, '');
+    const b_without_special = zeroPinyinTone(b).replaceAll(/[ˊˇˋˉ]$/g, '');
 
     if (a_without_special === b_without_special) {
       const a_weight = splitChars(a)

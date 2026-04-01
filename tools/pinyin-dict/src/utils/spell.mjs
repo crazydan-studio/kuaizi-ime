@@ -8,48 +8,55 @@ export function splitChars(str) {
   return graphemeSplitter.splitGraphemes(str);
 }
 
+/** Note: 拼音始终都是有声调的，纯字母组合的拼音实际可视为零声（轻声） */
+
 /** 修正拼音 */
-export function correctPinyin(str) {
-  switch (str) {
+export function correctPinyin(pinyin) {
+  switch (pinyin) {
     case 'yòu ㄧ':
-      str = 'yòu';
+      pinyin = 'yòu';
       break;
     case 'ka1':
-      str = 'kā';
+      pinyin = 'kā';
       break;
     case 'mò qí':
-      str = 'mò';
+      pinyin = 'mò';
       break;
     case 'no4u':
-      str = 'nòu';
+      pinyin = 'nòu';
       break;
     case 'so4u':
-      str = 'sòu';
+      pinyin = 'sòu';
       break;
+    case 'ê̄':
     case 'ê1/ei1':
-      str = 'ēi';
+      pinyin = 'ēi';
       break;
+    case 'ế':
     case 'ê2/ei2':
-      str = 'éi';
+      pinyin = 'éi';
       break;
-    case 'ê3/ei3':
-      str = 'ěi';
-      break;
-    case 'ê4/ei4':
-      str = 'èi';
-      break;
+    case 'ê̌':
     case 'ê̌̌':
-      str = 'ê̌';
+    case 'ê3/ei3':
+      pinyin = 'ěi';
+      break;
+    case 'ề':
+    case 'ê4/ei4':
+      pinyin = 'èi';
       break;
     case 'jǔ yǔ':
-      str = 'jǔ';
+      pinyin = 'jǔ';
       break;
     case 'zheng1':
-      str = 'zhēng';
+      pinyin = 'zhēng';
+      break;
+    case 'gūi':
+      pinyin = 'guī';
       break;
   }
 
-  return str
+  return pinyin
     .replaceAll('ā', 'ā')
     .replaceAll('ă', 'ǎ')
     .replaceAll('à', 'à')
@@ -61,6 +68,7 @@ export function correctPinyin(str) {
     .replaceAll('ŭ', 'ǔ')
     .replaceAll('ɡ', 'g')
     .replaceAll('ē', 'ē')
+    .replaceAll('ê', 'ē')
     .replaceAll(/[·]/g, '');
 }
 
@@ -69,17 +77,17 @@ export function correctZhuyin(str) {
   return str.replaceAll('π', 'ㄫ').replaceAll('˙', '');
 }
 
-/** 拼音去掉声调后的字母组合 */
-export function extractPinyinChars(pinyin) {
+/** 将拼音转换为以数字（0-4）代表声调的拼音，如 hàn -> han4 */
+export function toNumTonePinyin(pinyin) {
+  const tone = getPinyinTone(pinyin);
+
+  return zeroPinyinTone(pinyin) + tone;
+}
+
+/** 去掉拼音的声调，将其变为零声（轻声） */
+export function zeroPinyinTone(pinyin) {
   if ('m̀' === pinyin || 'ḿ' === pinyin || 'm̄' === pinyin) {
     return 'm';
-  } else if (
-    'ê̄' === pinyin ||
-    'ế' === pinyin ||
-    'ê̌' === pinyin ||
-    'ề' === pinyin
-  ) {
-    return 'e';
   }
 
   const chars = [];
@@ -104,7 +112,6 @@ export function extractPinyinChars(pinyin) {
       case 'é':
       case 'ě':
       case 'è':
-      case 'ê':
         chars.push('e');
         break;
       case 'ī':
@@ -154,11 +161,12 @@ export function getPinyinTone(pinyin) {
     é: 2,
     ě: 3,
     è: 4,
-    ê: 0,
-    ê̄: 1,
-    ế: 2,
-    ê̌: 3,
-    ề: 4,
+    // Note: 以下为 ei 的专有形式，需将其替换为 ei
+    // ê: 0,
+    // ê̄: 1,
+    // ế: 2,
+    // ê̌: 3,
+    // ề: 4,
     //
     ī: 1,
     í: 2,
@@ -193,7 +201,7 @@ export function getPinyinTone(pinyin) {
   return 0;
 }
 
-/** 注音去掉声调后的字符组合 */
-export function extractZhuyinChars(zhuyin) {
+/** 去掉注音的声调，将其变为零声（轻声） */
+export function zeroZhuyinTone(zhuyin) {
   return zhuyin.replaceAll(/[ˊˇˋˉ˙]/g, '');
 }

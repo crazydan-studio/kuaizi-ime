@@ -817,6 +817,7 @@ drop table meta_word_wubi_code;
 drop table meta_word_zhengma_code;
 drop table meta_zhuyin;
 drop table meta_zhuyin_chars;
+drop table meta_word_with_zhuyin;
 drop table meta_phrase;
 drop table meta_phrase_with_pinyin_word;
 drop table meta_phrase_with_zhuyin_word;
@@ -837,10 +838,54 @@ drop view zhuyin_word;
 -- 对核心的元数据表进行结构变更，直接变更为新版本的表结构
 -- Note：新增的非空列，只能设置为 default null，完整性由代码检查
 -- 查看表结构：.schema meta_word
-alter table meta_word drop column used_weight_;
-alter table meta_word_with_pinyin drop column glyph_weight_;
-alter table meta_word_with_pinyin add used_weight_ integer default 0;
-alter table meta_word_with_zhuyin drop column glyph_weight_;
+
+-- 调整拼音表数据
+create table
+  if not exists meta_pinyin_1 (
+    id_ integer not null primary key,
+    -- 拼音的纯英文字母组合
+    value_ text not null,
+    -- 声调：0 - 零声（轻声），1 - 一声，2 - 二声，3 - 三声，4 - 四声
+    tone_ integer not null,
+    -- 拼音原始内容（含声调）
+    raw_ text not null,
+    --
+    unique (value_, tone_)
+  );
+
+insert into
+  meta_pinyin_1 (id_, value_, raw_, tone_)
+select
+  py_.id_, ch_.value_, py_.value_,
+  case
+    when
+      INSTR(py_.value_, 'ā') > 0 or INSTR(py_.value_, 'ō') > 0 or INSTR(py_.value_, 'ē') > 0 or INSTR(py_.value_, 'ī') > 0 or INSTR(py_.value_, 'ū') > 0 or INSTR(py_.value_, 'ǖ') > 0 or INSTR(py_.value_, 'm̄') > 0 or INSTR(py_.value_, 'ê̄') > 0
+    then 1
+    when
+      INSTR(py_.value_, 'á') > 0 or INSTR(py_.value_, 'ó') > 0 or INSTR(py_.value_, 'é') > 0 or INSTR(py_.value_, 'í') > 0 or INSTR(py_.value_, 'ú') > 0 or INSTR(py_.value_, 'ǘ') > 0 or INSTR(py_.value_, 'ń') > 0 or INSTR(py_.value_, 'ḿ') > 0 or INSTR(py_.value_, 'ế') > 0
+    then 2
+    when
+      INSTR(py_.value_, 'ǎ') > 0 or INSTR(py_.value_, 'ǒ') > 0 or INSTR(py_.value_, 'ě') > 0 or INSTR(py_.value_, 'ǐ') > 0 or INSTR(py_.value_, 'ǔ') > 0 or INSTR(py_.value_, 'ǚ') > 0 or INSTR(py_.value_, 'ň') > 0 or INSTR(py_.value_, 'ê̌') > 0
+    then 3
+    when
+      INSTR(py_.value_, 'à') > 0 or INSTR(py_.value_, 'ò') > 0 or INSTR(py_.value_, 'è') > 0 or INSTR(py_.value_, 'ì') > 0 or INSTR(py_.value_, 'ù') > 0 or INSTR(py_.value_, 'ǜ') > 0 or INSTR(py_.value_, 'ǹ') > 0 or INSTR(py_.value_, 'm̀') > 0 or INSTR(py_.value_, 'ề') > 0
+    then 4
+    else 0
+  end
+from meta_pinyin py_
+  inner join meta_pinyin_chars ch_ on ch_.id_ = py_.chars_id_;
+
+drop table meta_pinyin_chars;
+drop table meta_pinyin;
+
+alter table meta_pinyin_1 RENAME to meta_pinyin;
+
+-- 调整字数据
+-- TODO 先建表再通过 insert into 迁移数据
+drop table meta_word;
+drop table meta_word_radical;
+drop table meta_word_with_pinyin;
+
 
 pragma foreign_keys = 1;
 pragma ignore_check_constraints = 1;
@@ -848,8 +893,8 @@ pragma ignore_check_constraints = 1;
 -- 数据库无用空间回收
 vacuum;
 
--- 执行数据更新/升级脚本: npm run db:raw:word
--- 检查新旧版本数据是否存在差异（注意修改新旧数据库文件名）: npm run db:raw:word:diff
+-- 执行数据更新/升级脚本: npm run db:raw:zi
+-- 检查新旧版本数据是否存在差异（注意修改新旧数据库文件名）: npm run db:raw:zi:diff
 ```
 
 ## 参考资料

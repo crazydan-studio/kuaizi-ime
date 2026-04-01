@@ -1,20 +1,13 @@
--- 不含声调的拼音字母组合
-create table
-  if not exists meta_pinyin_chars (
-    id_ integer not null primary key,
-    value_ text not null,
-    --
-    unique (value_)
-  );
-
--- 含声调的拼音：可根据 id_ 大小排序
+-- 拼音
 create table
   if not exists meta_pinyin (
     id_ integer not null primary key,
+    -- 拼音的纯英文字母组合
     value_ text not null,
-    -- 拼音字母组合 id
-    chars_id_ integer not null,
+    -- 声调：0 - 零声（轻声），1 - 一声，2 - 二声，3 - 三声，4 - 四声
+    tone_ integer not null,
+    -- 拼音原始内容（含声调）
+    raw_ text not null,
     --
-    unique (value_),
-    foreign key (chars_id_) references meta_pinyin_chars (id_)
+    unique (value_, tone_)
   );

@@ -4,7 +4,7 @@ import {
   sleep,
   appendLineToFile,
   correctPinyin,
-  extractPinyinChars
+  zeroPinyinTone
 } from '#utils/utils.mjs';
 
 // 根据 www.cngwzj.com 拉取带拼音的语文课文
@@ -231,7 +231,7 @@ function cleanPinyin(py) {
     py = 'ǹg';
   }
 
-  if (py && !/^[a-zü]+$/g.test(extractPinyinChars(py))) {
+  if (py && !/^[a-zü]+$/g.test(zeroPinyinTone(py))) {
     console.error('  无效拼音：' + py);
     return '';
   }

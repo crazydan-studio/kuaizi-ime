@@ -8,7 +8,7 @@ import {
   existFile,
   readFile
 } from '#utils/file.mjs';
-import { extractPinyinChars } from '#utils/spell.mjs';
+import { zeroPinyinTone } from '#utils/spell.mjs';
 import { getZiUnicode } from '#utils/zi.mjs';
 
 import { readAllSavedZiMetas } from '#data/zi/meta.mjs';
@@ -49,7 +49,7 @@ ziMetas.forEach((meta) => {
     ziWeightMap[zi] ||= 0;
     ziWeightMap[zi] += weight;
 
-    const pyChar = extractPinyinChars(py.value);
+    const pyChar = zeroPinyinTone(py.value);
     const pyZies = (pinyinZiWeightMap[pyChar] ||= {});
     // Note: 不同声调的多音字的权重累加
     pyZies[zi] ||= 0;
@@ -114,7 +114,7 @@ Object.keys(pinyinZiWeightMap).forEach((pyChar) => {
       // Note: 仅取权重最高的拼音
       const spells = ziMetaMap[zi].spells
         .map((s) => s.value)
-        .filter((s) => extractPinyinChars(s) == pyChar);
+        .filter((s) => zeroPinyinTone(s) == pyChar);
 
       const data = [];
       data[pinyinZiSchemaMapping.value] = zi;

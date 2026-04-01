@@ -1,4 +1,4 @@
-import { fromRootPath } from '#utils/utils.mjs';
+import { fromRootPath } from '#utils/file.mjs';
 
 /** 获取 SQLite 字典库文件路径 */
 export function getZiDictSQLiteFile() {

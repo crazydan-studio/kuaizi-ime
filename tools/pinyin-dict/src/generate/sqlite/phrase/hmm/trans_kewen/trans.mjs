@@ -1,4 +1,4 @@
-import { extractPinyinChars } from '#utils/utils.mjs';
+import { zeroPinyinTone } from '#utils/utils.mjs';
 import { countTrans, countWords } from '../utils.mjs';
 
 /**
@@ -153,7 +153,7 @@ function getCorrectPinyin({ zi, py }, prev) {
     case '奶':
     case '婶':
     case '叔':
-      prev.zi == zi && (py = extractPinyinChars(py));
+      prev.zi == zi && (py = zeroPinyinTone(py));
       break;
     // <<<<<<<<<<<<<<<<<<<<<<<
     case '儿':

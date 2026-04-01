@@ -13,7 +13,7 @@ const data_path = (...paths) =>
  * }, ...}
  * ```
  */
-export async function readZdicZies() {
+export async function readZdicData() {
   // https://github.com/mozillazg/pinyin-data/blob/master/zdic.txt
   const file = data_path('zdic.txt');
 

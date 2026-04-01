@@ -32,7 +32,7 @@ console.log();
 // -----------------------------------------------------------------------
 console.log();
 console.log('读取 pinyin-data 数据 ...');
-const zdicZies = await pinyinData.readZdicZies();
+const zdicZies = await pinyinData.readZdicData();
 const zdicZiKeys = Object.keys(zdicZies);
 
 console.log('已读取 pinyin-data 数据：');
@@ -54,10 +54,10 @@ ziMetas.forEach((meta) => {
   meta.traditionals = trads;
 });
 
-const hasPinyin = (w) => w.pinyins.length > 0;
-const hasNotPinyin = (w) => !hasPinyin(w);
-const ziMetasWithPinyin = ziMetas.filter(hasPinyin);
-const ziMetasWithoutPinyin = ziMetas.filter(hasNotPinyin);
+const withPinyin = (w) => w.pinyins.length > 0;
+const withoutPinyin = (w) => !withPinyin(w);
+const ziMetasWithPinyin = ziMetas.filter(withPinyin);
+const ziMetasWithoutPinyin = ziMetas.filter(withoutPinyin);
 const ziMetasWithGlyph = ziMetas.filter((w) => w.glyph_font_exists);
 const ziMetasWithoutGlyph = ziMetas.filter((w) => !w.glyph_font_exists);
 const ziMetasWithStrokeOrder = ziMetas.filter((w) => !!w.stroke_order);
@@ -128,14 +128,14 @@ console.log();
 console.log(
   '- 有字形无拼音的字列表：' +
     ziMetasWithGlyph
-      .filter(hasNotPinyin)
+      .filter(withoutPinyin)
       .map((meta) => meta.value)
       .join(', ')
 );
 console.log(
   '- 有字形无拼音无笔顺的字列表：' +
     ziMetasWithGlyph
-      .filter((w) => hasNotPinyin(w) && !w.stroke_order)
+      .filter((w) => withoutPinyin(w) && !w.stroke_order)
       .map((meta) => meta.value)
       .join(', ')
 );

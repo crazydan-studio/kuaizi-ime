@@ -70,23 +70,6 @@ create table
   );
 
 -- --------------------------------------------------------------
-create view
-  if not exists link_zi_with_pinyin (
-    id_,
-    zi_id_,
-    spell_id_,
-    spell_chars_id_
-  ) as
-select
-  meta_.id_,
-  meta_.zi_id_,
-  meta_.spell_id_,
-  spell_.chars_id_
-from
-  meta_zi_with_pinyin meta_
-  left join meta_pinyin spell_ on spell_.id_ = meta_.spell_id_;
-
--- --------------------------------------------------------------
 -- 字及其拼音
 create view
   if not exists pinyin_zi (
@@ -94,10 +77,10 @@ create view
     zi_,
     zi_id_,
     unicode_,
-    spell_,
     spell_id_,
-    spell_chars_,
-    spell_chars_id_,
+    spell_value_,
+    spell_tone_,
+    spell_raw_,
     used_weight_,
     glyph_weight_,
     glyph_struct_,
@@ -107,18 +90,17 @@ create view
     total_stroke_count_,
     traditional_,
     simple_zi_,
-    traditional_zi_,
-    variant_zi_
+    traditional_zi_
   ) as
 select
   zi_lnk_.id_,
   zi_.value_,
   zi_.id_,
   zi_.unicode_,
-  spell_.value_,
   spell_.id_,
-  spell_ch_.value_,
-  spell_ch_.id_,
+  spell_.value_,
+  spell_.tone_,
+  spell_.raw_,
   zi_lnk_.used_weight_,
   zi_.glyph_weight_,
   zi_.glyph_struct_,
@@ -127,9 +109,8 @@ select
   zi_.stroke_order_,
   zi_.total_stroke_count_,
   zi_.traditional_,
-  sw_.value_,
-  tw_.value_,
-  vw_.value_
+  sc_.value_,
+  tc_.value_
 from
   meta_zi zi_
   --
@@ -137,14 +118,11 @@ from
   --
   left join meta_zi_radical radical_ on radical_.id_ = zi_.radical_id_
   left join meta_pinyin spell_ on spell_.id_ = zi_lnk_.spell_id_
-  left join meta_pinyin_chars spell_ch_ on spell_ch_.id_ = spell_.chars_id_
   --
-  left join meta_zi_simple sw_lnk_ on sw_lnk_.source_id_ = zi_.id_
-  left join meta_zi sw_ on sw_.id_ = sw_lnk_.target_id_
-  left join meta_zi_traditional tw_lnk_ on tw_lnk_.source_id_ = zi_.id_
-  left join meta_zi tw_ on tw_.id_ = tw_lnk_.target_id_
-  left join meta_zi_variant vw_lnk_ on vw_lnk_.source_id_ = zi_.id_
-  left join meta_zi vw_ on vw_.id_ = vw_lnk_.target_id_;
+  left join meta_zi_simple sc_lnk_ on sc_lnk_.source_id_ = zi_.id_
+  left join meta_zi sc_ on sc_.id_ = sc_lnk_.target_id_
+  left join meta_zi_traditional tc_lnk_ on tc_lnk_.source_id_ = zi_.id_
+  left join meta_zi tc_ on tc_.id_ = tc_lnk_.target_id_;
 
 -- --------------------------------------------------------------
 -- 繁体 -> 简体
