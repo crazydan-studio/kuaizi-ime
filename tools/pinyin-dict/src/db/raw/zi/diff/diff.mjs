@@ -3,6 +3,44 @@ import { queryAll } from '#utils/sqlite.mjs';
 export function diffMetaData(oldDb, newDb) {
   [
     {
+      new_table: 'meta_pinyin',
+      old_table: 'meta_pinyin_chars'
+    }
+  ].forEach(({ new_table, old_table }) => {
+    const oldData = {};
+    const newData = {};
+
+    queryAll(oldDb, `select distinct value_ from ${old_table}`).forEach(
+      (row) => {
+        const value = row.value_;
+
+        oldData[value] = true;
+      }
+    );
+    queryAll(newDb, `select distinct value_ from ${new_table}`).forEach(
+      (row) => {
+        const value = row.value_;
+
+        newData[value] = true;
+      }
+    );
+
+    Object.keys(newData).forEach((value) => {
+      if (!oldData[value]) {
+        console.log(`- ${new_table} => 元数据 ${value} 为新增`);
+      }
+    });
+
+    Object.keys(oldData).forEach((value) => {
+      if (!newData[value]) {
+        console.log(`- ${old_table} => 元数据 ${value} 已被删除`);
+      }
+    });
+  });
+
+  // -------------------------------------------------
+  [
+    {
       new_table: { name: 'meta_pinyin', prop: 'raw_' },
       old_table: { name: 'meta_pinyin', prop: 'value_' }
     },

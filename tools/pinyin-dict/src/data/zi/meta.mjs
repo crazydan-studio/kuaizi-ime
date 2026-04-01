@@ -4,11 +4,7 @@ import {
   readLineFromFile,
   appendLineToFile
 } from '#utils/file.mjs';
-import {
-  zeroPinyinTone,
-  correctPinyin,
-  correctZhuyin
-} from '#utils/spell.mjs';
+import { zeroPinyinTone, correctPinyin, correctZhuyin } from '#utils/spell.mjs';
 
 import { fetchZiMeta } from '#data/provider/zdic.net.mjs';
 
@@ -320,6 +316,10 @@ function shouldBeExcludedPinyin(pinyin) {
     case 'laap6':
     // https://www.zdic.net/hans/%E3%B3%A5
     case 'nong4':
+    // https://www.zdic.net/hans/%E5%BF%92
+    // 【忒】仅保留拼音 tuī
+    case 'tēi':
+    //
     case 'pià':
     case 'kēi':
     case 'ru4':
@@ -399,6 +399,7 @@ function getMissingPinyin() {
     挼: 'ruó',
     禑: 'wú',
     𤭢: 'suì',
+    𥌩: 'tè',
     伯: 'bo',
     作: 'zuō',
     轉: 'zhuàn',

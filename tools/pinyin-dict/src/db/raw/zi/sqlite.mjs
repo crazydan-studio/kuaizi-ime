@@ -145,33 +145,8 @@ export function saveZies(db, ziMetas) {
     {
       prop: 'traditionals',
       table: 'meta_zi_traditional'
-      // },
-      // {
-      //   prop: 'variants',
-      //   table: 'meta_zi_variant'
     }
   ].forEach((options) => linkZiVariants(db, ziMetaData, options));
-
-  // // ----------------------------------------------------------------
-  // // 绑定字与编码的关联
-  // [
-  //   {
-  //     prop: 'wubi_codes',
-  //     table: 'meta_zi_wubi_code'
-  //   },
-  //   {
-  //     prop: 'cangjie_codes',
-  //     table: 'meta_zi_cangjie_code'
-  //   },
-  //   {
-  //     prop: 'zhengma_codes',
-  //     table: 'meta_zi_zhengma_code'
-  //   },
-  //   {
-  //     prop: 'sijiao_codes',
-  //     table: 'meta_zi_sijiao_code'
-  //   }
-  // ].forEach((options) => linkZiCodes(db, ziMetaData, options));
 }
 
 function doSaveSpells(db, ziMetas, { prop, table, tone_zero_fn, tone_get_fn }) {
@@ -344,51 +319,4 @@ function linkZiVariants(db, ziMetaData, { prop, table }) {
 
   saveToDB(db, table, linkData, true, primaryKeys);
   removeFromDB(db, table, missingLinks, primaryKeys);
-}
-
-function linkZiCodes(db, ziMetaData, { prop, table }) {
-  const linkData = {};
-  queryAll(db, `select * from ${table}`).forEach((row) => {
-    const code = row.value_ + ':' + row.zi_id_;
-    linkData[code] = {
-      ...row,
-      __exist__: row
-    };
-  });
-
-  Object.keys(ziMetaData).forEach((k) => {
-    const zi = ziMetaData[k];
-    const codes = zi.__meta__[prop];
-
-    codes.forEach((value_) => {
-      const zi_id_ = zi.id_;
-      const code = value_ + ':' + zi_id_;
-
-      if (!linkData[code]) {
-        // 新增关联
-        linkData[code] = {
-          value_,
-          zi_id_
-        };
-      } else {
-        // 关联无需更新
-        delete linkData[code];
-      }
-    });
-  });
-
-  const missingLinks = [];
-  Object.keys(linkData).forEach((code) => {
-    const id = linkData[code].id_;
-
-    if (id) {
-      // 关联在库中已存在，但已不再被使用
-      missingLinks.push(id);
-
-      delete linkData[code];
-    }
-  });
-
-  saveToDB(db, table, linkData);
-  removeFromDB(db, table, missingLinks);
 }
