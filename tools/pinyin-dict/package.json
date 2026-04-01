@@ -37,11 +37,9 @@
   },
   "dependencies": {
     "@inquirer/prompts": "^3.3.0",
-    "@pinyin-pro/data": "^1.2.0",
     "fontkit": "^2.0.2",
     "get-system-fonts": "^2.0.2",
     "grapheme-splitter": "^1.0.4",
-    "jsdom": "^22.1.0",
-    "pinyin-pro": "^3.25.0"
+    "jsdom": "^22.1.0"
   }
 }
