@@ -7,7 +7,7 @@ export function genPinyinChars(db, file) {
   const values = [];
   const nextCharsMap = {};
 
-  queryAll(db, 'select value_ from meta_pinyin_chars order by value_').forEach(
+  queryAll(db, 'select distinct value_ from meta_pinyin order by value_').forEach(
     (row) => {
       const value = row.value_;
       values.push(value);
@@ -29,7 +29,7 @@ export function genPinyinChars(db, file) {
 /** 生成拼音字母的连接数据 */
 export function genPinyinCharLinks(db, file) {
   const links = {};
-  queryAll(db, 'select value_ from meta_pinyin_chars order by value_').forEach(
+  queryAll(db, 'select distinct value_ from meta_pinyin order by value_').forEach(
     (row) => {
       const value = row.value_;
       const chars = splitChars(value);
@@ -58,7 +58,7 @@ export function genPinyinCharLinks(db, file) {
 /** 生成拼音字母后继树数据 */
 export function genPinyinCharTree(db, file) {
   const tree = {};
-  queryAll(db, 'select value_ from meta_pinyin_chars order by value_').forEach(
+  queryAll(db, 'select distinct value_ from meta_pinyin order by value_').forEach(
     (row) => {
       const value = row.value_;
       const chars = splitChars(value);
