@@ -2,6 +2,7 @@ import * as path from 'path';
 
 import { sleep } from '#utils/native.mjs';
 import { existFile, fetchAndWriteFile } from '#utils/file.mjs';
+import { toNumberTonePinyin } from '#utils/spell.mjs';
 
 import { getStrokeImage } from '#data/provider/strokeorder.com.mjs';
 
@@ -10,7 +11,11 @@ export async function fetchAndSaveZiMedias(ziMedias, targetDir) {
   console.log('- 保存拼音的音频文件');
   for (let pinyin in ziMedias.pinyins) {
     const url = ziMedias.pinyins[pinyin];
-    const file = path.join(targetDir, 'audio/pinyin', `${pinyin}.${getExt(url)}`);
+    const file = path.join(
+      targetDir,
+      'audio/pinyin',
+      `${toNumberTonePinyin(pinyin, true)}.${getExt(url)}`
+    );
 
     await saveUrl(url, file);
   }

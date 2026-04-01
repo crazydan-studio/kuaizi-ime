@@ -2,7 +2,7 @@ import { fromRootPath } from '#utils/file.mjs';
 import {
   zeroPinyinTone,
   getPinyinTone,
-  toNumTonePinyin
+  toNumberTonePinyin
 } from '#utils/spell.mjs';
 import {
   saveToDB,
@@ -131,7 +131,7 @@ export function saveZies(db, ziMetas) {
       table: 'meta_zi_with_pinyin',
       spell_meta_table: 'meta_pinyin',
       has_weight: true,
-      spell_code_fn: toNumTonePinyin
+      spell_code_fn: toNumberTonePinyin
     }
   ].forEach((options) => linkZiSpells(db, ziMetaData, options));
 

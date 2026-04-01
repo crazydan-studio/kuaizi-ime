@@ -78,10 +78,10 @@ export function correctZhuyin(str) {
 }
 
 /** 将拼音转换为以数字（0-4）代表声调的拼音，如 hàn -> han4 */
-export function toNumTonePinyin(pinyin) {
+export function toNumberTonePinyin(pinyin, withoutZeroTone = false) {
   const tone = getPinyinTone(pinyin);
 
-  return zeroPinyinTone(pinyin) + tone;
+  return zeroPinyinTone(pinyin) + (withoutZeroTone && tone == 0 ? '' : tone);
 }
 
 /** 去掉拼音的声调，将其变为零声（轻声） */

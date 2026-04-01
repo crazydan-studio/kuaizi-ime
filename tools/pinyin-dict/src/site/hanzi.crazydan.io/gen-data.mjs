@@ -8,7 +8,7 @@ import {
   existFile,
   readFile
 } from '#utils/file.mjs';
-import { zeroPinyinTone } from '#utils/spell.mjs';
+import { toNumberTonePinyin, zeroPinyinTone } from '#utils/spell.mjs';
 import { getZiUnicode } from '#utils/zi.mjs';
 
 import { readAllSavedZiMetas } from '#data/zi/meta.mjs';
@@ -23,7 +23,7 @@ const siteAssetsPinyinAudioDir = path.join(siteAssetsDir, 'audio/pinyin');
 
 // ---------------------------------------------------------------
 const ziStructNames = [];
-const pinyinValues = [];
+const numberAndSymbolTonePinyinMap = {};
 
 console.log();
 console.log('读取已收集的有效字信息 ...');
@@ -39,8 +39,9 @@ ziMetas.forEach((meta) => {
   const zi = meta.value;
 
   meta.pinyins.forEach((py) => {
-    if (!pinyinValues.includes(py.value)) {
-      pinyinValues.push(py.value);
+    const numberTonePinyin = toNumberTonePinyin(py.value, true);
+    if (!numberAndSymbolTonePinyinMap[numberTonePinyin]) {
+      numberAndSymbolTonePinyinMap[numberTonePinyin] = py.value;
     }
 
     const weight = (py.used_weight ||= 0);
@@ -49,11 +50,11 @@ ziMetas.forEach((meta) => {
     ziWeightMap[zi] ||= 0;
     ziWeightMap[zi] += weight;
 
-    const pyChar = zeroPinyinTone(py.value);
-    const pyZies = (pinyinZiWeightMap[pyChar] ||= {});
+    const pinyin = zeroPinyinTone(py.value);
+    const zies = (pinyinZiWeightMap[pinyin] ||= {});
     // Note: 不同声调的多音字的权重累加
-    pyZies[zi] ||= 0;
-    pyZies[zi] += weight;
+    zies[zi] ||= 0;
+    zies[zi] += weight;
   });
 
   const ziUnicode = getZiUnicode(zi);
@@ -79,21 +80,28 @@ ziMetas.forEach((meta) => {
   };
 });
 
+// 保证拼音的顺序不变
+const numberTonePinyins = Object.keys(numberAndSymbolTonePinyinMap).sort();
+const symbolTonePinyins = numberTonePinyins.map(
+  (py) => numberAndSymbolTonePinyinMap[py]
+);
+
 // ---------------------------------------------------------------
 console.log();
 console.log('获取拼音音频文件信息 ...');
 const pinyinAudios = getAllFiles(siteAssetsPinyinAudioDir);
 
-const audioPinyins = [];
+const pinyinAudioNames = [];
 pinyinAudios.forEach((file) => {
   const name = path.basename(file);
-  const py = name.replace(/\.mp3$/g, '');
-  const pyIdx = pinyinValues.indexOf(py);
 
-  if (pyIdx < 0) {
-    console.log(`- 音频 ${name} 对应的拼音 ${py} 未收录`);
+  const pinyin = name.replace(/\.mp3$/g, '');
+  const pinyinIdx = numberTonePinyins.indexOf(pinyin);
+
+  if (pinyinIdx < 0) {
+    console.log(`- 音频 ${name} 对应的拼音 ${pinyin} 未收录`);
   } else {
-    audioPinyins.push(pyIdx);
+    pinyinAudioNames[pinyinIdx] = pinyin;
   }
 });
 
@@ -105,28 +113,28 @@ const pinyinZiSchemaMapping = { value: 0, spell: 1 };
 
 console.log();
 console.log('保存拼音字列表 ...');
-Object.keys(pinyinZiWeightMap).forEach((pyChar) => {
-  const pyZiWeights = pinyinZiWeightMap[pyChar];
+Object.keys(pinyinZiWeightMap).forEach((pinyin) => {
+  const ziWeights = pinyinZiWeightMap[pinyin];
 
-  const pyZies = Object.keys(pyZiWeights)
-    .sort((z1, z2) => pyZiWeights[z2] - pyZiWeights[z1])
+  const zies = Object.keys(ziWeights)
+    .sort((z1, z2) => ziWeights[z2] - ziWeights[z1])
     .map((zi) => {
       // Note: 仅取权重最高的拼音
       const spells = ziMetaMap[zi].spells
         .map((s) => s.value)
-        .filter((s) => zeroPinyinTone(s) == pyChar);
+        .filter((s) => zeroPinyinTone(s) == pinyin);
 
       const data = [];
       data[pinyinZiSchemaMapping.value] = zi;
-      data[pinyinZiSchemaMapping.spell] = pinyinValues.indexOf(spells[0]);
+      data[pinyinZiSchemaMapping.spell] = symbolTonePinyins.indexOf(spells[0]);
 
       return data;
     });
 
-  console.log(`- ${pyChar} 包含 ${pyZies.length} 个字`);
+  console.log(`- ${pinyin} 包含 ${zies.length} 个字`);
 
-  const file = path.join(siteAssetsPinyinDir, `${pyChar}/meta.json`);
-  writeJSONToFile(file, { zies: pyZies });
+  const file = path.join(siteAssetsPinyinDir, `${pinyin}/meta.json`);
+  writeJSONToFile(file, { zies });
 });
 
 // ---------------------------------------------------------------
@@ -142,7 +150,7 @@ const commonZies = sortedZiesByWeight.slice(0, 3500).map((zi) => {
 
   const data = [];
   data[pinyinZiSchemaMapping.value] = zi;
-  data[pinyinZiSchemaMapping.spell] = pinyinValues.indexOf(spells[0]);
+  data[pinyinZiSchemaMapping.spell] = symbolTonePinyins.indexOf(spells[0]);
 
   return data;
 });
@@ -202,7 +210,7 @@ Object.keys(ziMetaMap).forEach((zi) => {
 
     let value = meta[prop];
     if (prop == 'spells') {
-      value = value.map((s) => pinyinValues.indexOf(s.value));
+      value = value.map((s) => symbolTonePinyins.indexOf(s.value));
     } else if (prop == 'struct') {
       value = ziStructNames.indexOf(value);
     } else if (prop == 'glyph_type') {
@@ -240,7 +248,7 @@ const ziGlyphData = Object.keys(ziMetaMap)
         // Note: 仅取权重最高的拼音
         const spells = meta.spells.map((s) => s.value);
 
-        value = pinyinValues.indexOf(spells[0]);
+        value = symbolTonePinyins.indexOf(spells[0]);
       }
 
       data[index] = value;
@@ -270,15 +278,11 @@ const ziGlyphSchemaMapping = ${JSON.stringify(ziGlyphSchemaMapping)};
 
 // 汉字结构名列表
 const ziStructNames = ${JSON.stringify(ziStructNames)};
-// 带声调拼音列表
-const pinyinValues = ${JSON.stringify(pinyinValues)};
-// 有音频的拼音列表，其元素为对应拼音在 pinyinValues 中的序号
-const audioPinyins = ${JSON.stringify(audioPinyins)};
 
 export function convertPinyinZiData(data) {
   const obj = convertDataByMapping(data, pinyinZiSchemaMapping);
 
-  obj.spell = pinyinValues[obj.spell];
+  obj.spell = symbolTonePinyins[obj.spell];
 
   return obj;
 }
@@ -289,7 +293,7 @@ export function convertZiMetaData(data) {
   obj.glyph_type = ziGlyphTypes[obj.glyph_type];
   obj.struct = ziStructNames[obj.struct] || '未知';
   obj.spells = obj.spells.map(s => ({
-    value: pinyinValues[s], audio: audioPinyins.includes(s)
+    value: symbolTonePinyins[s], audio_name: pinyinAudioNames[s]
   }));
 
   return obj;
@@ -299,7 +303,7 @@ export function convertZiGlyphData(data) {
   const obj = convertDataByMapping(data, ziGlyphSchemaMapping);
 
   obj.glyph_type = ziGlyphTypes[obj.glyph_type];
-  obj.spell = pinyinValues[obj.spell];
+  obj.spell = symbolTonePinyins[obj.spell];
 
   return obj;
 }
@@ -315,6 +319,11 @@ function convertDataByMapping(data, mapping) {
   }
   return obj;
 }
+
+// 拼音列表
+const symbolTonePinyins = ${JSON.stringify(symbolTonePinyins)};
+// 拼音音频文件名列表，其元素位置与 symbolTonePinyins 一一对应，若拼音音频不存在，则该位置为空
+const pinyinAudioNames = ${JSON.stringify(pinyinAudioNames).replace(/(null)/g, '')};
 `
 );
 
