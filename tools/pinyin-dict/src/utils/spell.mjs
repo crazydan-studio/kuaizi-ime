@@ -77,13 +77,6 @@ export function correctZhuyin(str) {
   return str.replaceAll('π', 'ㄫ').replaceAll('˙', '');
 }
 
-/** 将拼音转换为以数字（0-4）代表声调的拼音，如 hàn -> han4 */
-export function toNumberTonePinyin(pinyin, withoutZeroTone = false) {
-  const tone = getPinyinTone(pinyin);
-
-  return zeroPinyinTone(pinyin) + (withoutZeroTone && tone == 0 ? '' : tone);
-}
-
 /** 去掉拼音的声调，将其变为零声（轻声） */
 export function zeroPinyinTone(pinyin) {
   if ('m̀' === pinyin || 'ḿ' === pinyin || 'm̄' === pinyin) {
@@ -204,4 +197,85 @@ export function getPinyinTone(pinyin) {
 /** 去掉注音的声调，将其变为零声（轻声） */
 export function zeroZhuyinTone(zhuyin) {
   return zhuyin.replaceAll(/[ˊˇˋˉ˙]/g, '');
+}
+
+/** 将符号声调拼音转换为数字声调拼音，如 hàn -> han4 */
+export function symbolToNumberTonePinyin(pinyin, withoutZeroTone = false) {
+  const tone = getPinyinTone(pinyin);
+
+  return zeroPinyinTone(pinyin) + (withoutZeroTone && tone == 0 ? '' : tone);
+}
+
+/**
+ * 将数字声调拼音转换为符号声调拼音
+ *
+ * @param {string} pinyin - 拼音字符串，如 "ni3" 或 "lü4"
+ * @returns {string} - 带声调符号的拼音，如 "nǐ" 或 "lǜ"
+ */
+export function numberToSymbolTonePinyin(pinyin) {
+  // 声调符号映射表
+  const toneMarks = {
+    a: { 1: 'ā', 2: 'á', 3: 'ǎ', 4: 'à' },
+    e: { 1: 'ē', 2: 'é', 3: 'ě', 4: 'è' },
+    i: { 1: 'ī', 2: 'í', 3: 'ǐ', 4: 'ì' },
+    o: { 1: 'ō', 2: 'ó', 3: 'ǒ', 4: 'ò' },
+    u: { 1: 'ū', 2: 'ú', 3: 'ǔ', 4: 'ù' },
+    ü: { 1: 'ǖ', 2: 'ǘ', 3: 'ǚ', 4: 'ǜ' },
+    // n, ng, hng
+    n: { 2: 'ń', 3: 'ň', 4: 'ǹ' },
+    // m, hm
+    m: { 1: 'm̄', 2: 'ḿ', 4: 'm̀' }
+  };
+
+  // 在拼音中找出应该标声调的元音索引
+  function indexOfMainVowel(py) {
+    // 特殊处理 iu 和 ui
+    if (py.includes('iu')) {
+      return py.lastIndexOf('u');
+    } //
+    else if (py.includes('ui')) {
+      return py.lastIndexOf('i');
+    } //
+    else if (['ng', 'n', 'hng'].includes(py)) {
+      return py.lastIndexOf('n');
+    } //
+    else if (['hm', 'm'].includes(py)) {
+      return py.lastIndexOf('m');
+    }
+
+    // 优先级顺序：a > o > e > i > u > ü
+    const vowels = ['a', 'o', 'e', 'i', 'u', 'ü'];
+    for (let vowel of vowels) {
+      const idx = py.indexOf(vowel);
+
+      if (idx !== -1) return idx;
+    }
+    return -1;
+  }
+
+  // 将指定位置的元音替换为带声调符号的字符
+  function addToneMark(py, tone, vowelIndex) {
+    const vowel = py[vowelIndex];
+
+    const mark = toneMarks[vowel]?.[tone];
+    if (!mark) return py;
+
+    return py.slice(0, vowelIndex) + mark + py.slice(vowelIndex + 1);
+  }
+
+  // -------------------------------------------------------
+  const match = pinyin.match(/(\d+)$/);
+  if (!match) return pinyin;
+
+  const tone = parseInt(match[1], 10);
+  const pinyinBase = pinyin.slice(0, -match[1].length);
+
+  if (tone === 0) return pinyinBase;
+
+  const vowelIdx = indexOfMainVowel(pinyinBase);
+  if (vowelIdx === -1) {
+    return pinyinBase;
+  }
+
+  return addToneMark(pinyinBase, tone, vowelIdx);
 }

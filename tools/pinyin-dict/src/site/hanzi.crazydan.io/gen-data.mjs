@@ -8,7 +8,7 @@ import {
   existFile,
   readFile
 } from '#utils/file.mjs';
-import { toNumberTonePinyin, zeroPinyinTone } from '#utils/spell.mjs';
+import { symbolToNumberTonePinyin, zeroPinyinTone } from '#utils/spell.mjs';
 import { getZiUnicode } from '#utils/zi.mjs';
 
 import { readAllSavedZiMetas } from '#data/zi/meta.mjs';
@@ -39,7 +39,7 @@ ziMetas.forEach((meta) => {
   const zi = meta.value;
 
   meta.pinyins.forEach((py) => {
-    const numberTonePinyin = toNumberTonePinyin(py.value, true);
+    const numberTonePinyin = symbolToNumberTonePinyin(py.value, true);
     if (!numberAndSymbolTonePinyinMap[numberTonePinyin]) {
       numberAndSymbolTonePinyinMap[numberTonePinyin] = py.value;
     }
