@@ -22,8 +22,6 @@ try {
   console.log();
   console.log('对比字数据的差异 ...');
   diffZiData(oldDb, newDb);
-} catch (e) {
-  throw e;
 } finally {
   closeDB(oldDb);
   closeDB(newDb);

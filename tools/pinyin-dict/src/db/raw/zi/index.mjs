@@ -32,8 +32,6 @@ try {
 
   sqlite.saveZies(db, ziMetas);
   console.log('- 已保存字信息');
-} catch (e) {
-  throw e;
 } finally {
   sqlite.close(db);
 }

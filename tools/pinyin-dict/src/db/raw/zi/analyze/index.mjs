@@ -31,8 +31,6 @@ try {
 
   genPinyinCharTree(db, pinyinCharTreeFile);
   console.log('- 已保存拼音字母后继数据');
-} catch (e) {
-  throw e;
 } finally {
   closeDB(db);
 }
