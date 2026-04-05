@@ -215,12 +215,12 @@ def process_paths_parallel(paths_data, canvas_size=500, sample_points=200,
 
 #     return labels
 
-def cluster_paths(features, eps=0.15, min_samples=2, metric='euclidean'):
+def cluster_paths(features, cluster_eps=0.15, cluster_min_size=2, metric='euclidean'):
     clusterer = hdbscan.HDBSCAN(
-        min_cluster_size=min_samples,   # 最小簇大小，可调
+        min_cluster_size=cluster_min_size,   # 最小簇大小，可调
         min_samples=1,                  # 噪声点敏感度
         metric=metric,
-        cluster_selection_epsilon=eps,  # 可选，类似 DBSCAN 的 eps
+        cluster_selection_epsilon=cluster_eps,  # 可选，类似 DBSCAN 的 eps
         prediction_data=False           # 加速
     )
 
@@ -341,9 +341,15 @@ def parse_args():
     )
 
     parser.add_argument("--db", type=str, required=True, help="存储了汉字笔画 SVG 路径的 SQLITE 数据库文件路径")
-    parser.add_argument("--eps", type=float, default=0.1, help="DBSCAN 邻域半径。值越小，归类时的特征匹配容差越小")
+
     parser.add_argument("--recompute", type=bool, default=False, help="是否重新计算笔画路径的特征值")
     parser.add_argument("--stroke-sample-count", type=int, help="笔画样本数量。用于通过小样本对归类参数进行调试")
+
+    parser.add_argument("--cluster-eps", type=float, default=0.1,
+                        help="归类笔画的匹配精度。该值越小，则要求笔画间的差异越小")
+    parser.add_argument("--cluster-min-size", type=int, default=10,
+                        help="归类的最小笔画数。该值越大，划归的类别数越小，且越多的笔画将被划归到同一类别中")
+
     parser.add_argument('--debug-dir', help='路径形态归类过程所生成的中间图片的存放目录，方便调试。若未指定，则不输出过程图片')
 
     return parser.parse_args()
@@ -352,9 +358,10 @@ def main():
     args = parse_args()
 
     db_path = args.db
-    eps = args.eps
+    cluster_eps = args.cluster_eps
     force_recompute = args.recompute
     stroke_sample_count = args.stroke_sample_count
+    cluster_min_size = args.cluster_min_size
     debug_dir = None # args.debug_dir
 
     # --------------------------------------------------------------
@@ -389,7 +396,7 @@ def main():
 
         # features = features[:100000]
         # valid_ids = valid_ids[:100000]
-        labels  = cluster_paths(features, eps, min_samples=2)
+        labels  = cluster_paths(features, cluster_eps, cluster_min_size)
         store_clusters_to_db(db, valid_ids, labels)
 
         print(f"已存储 {len(labels)} 个聚类")
