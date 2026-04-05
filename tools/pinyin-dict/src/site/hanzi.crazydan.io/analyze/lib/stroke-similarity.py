@@ -218,123 +218,121 @@ def process_paths_parallel(paths_data, canvas_size=500, sample_points=200,
 def cluster_paths(features, eps=0.15, min_samples=2, metric='euclidean'):
     clusterer = hdbscan.HDBSCAN(
         min_cluster_size=min_samples,   # 最小簇大小，可调
-        min_samples=2,                  # 噪声点敏感度
+        min_samples=1,                  # 噪声点敏感度
         metric=metric,
         cluster_selection_epsilon=eps,  # 可选，类似 DBSCAN 的 eps
         prediction_data=False           # 加速
     )
+
     labels = clusterer.fit_predict(features)
+
     return labels
 
 # ------------------- 存储聚类结果到数据库 -------------------
-def store_clusters_to_db(db_path, ids, labels):
-    conn = sqlite3.connect(db_path)
-
-    cursor = conn.cursor()
-
-    cursor.execute('''
-        create table if not exists meta_zi_stroke_path_cluster (
-            id_ integer not null primary key,
-            label_ integer not null
-        )
-    ''')
-    for pid, label in zip(ids, labels):
+def store_clusters_to_db(db, ids, values):
+    cursor = db.cursor()
+    try:
         cursor.execute('''
-            insert or replace into
-                meta_zi_stroke_path_cluster
-                    (id_, label_)
-                values (?, ?)
-        ''', (pid, int(label)))
-    conn.commit()
+            create table if not exists meta_zi_stroke_cluster (
+                id_ integer not null primary key,
+                value_ integer not null
+            )
+        ''')
 
-    conn.close()
-
-# ------------------- 批量处理并存入数据库 -------------------
-def compute_and_store_features(db_path, canvas_size=500, sample_points=200,
-                               n_coeffs=20, n_workers=None, debug_dir=None):
-    """读取所有路径，计算特征，存入 features 表"""
-    conn = sqlite3.connect(db_path)
-
-    cursor = conn.cursor()
-
-    # 创建特征表
-    cursor.execute('''
-        create table if not exists meta_zi_stroke_path_feature (
-            id_ integer not null primary key,
-            feature_ blob not null,
-            n_coeffs_ integer,
-            canvas_size_ integer,
-            sample_points_ integer
-        )
-    ''')
-
-    # 获取所有路径
-    cursor.execute("select id_, path_ from meta_zi_stroke")
-
-    all_paths = cursor.fetchall()
-    print(f"已获取笔画路径 {len(all_paths)} 条")
-
-    if n_workers is None:
-        n_workers = cpu_count()
-
-    print(f"并行计算笔画路径特征 ...")
-    with Pool(n_workers) as pool:
-        args = [(pid, path_str, canvas_size, sample_points, n_coeffs, debug_dir)
-                for pid, path_str in all_paths]
-
-        results = pool.map(process_single_path, args)
-
-    # 存入数据库
-    inserted = 0
-    for res in results:
-        if res is not None:
-            pid, feat = res
-
-            blob = pickle.dumps(feat)
+        for pid, value in zip(ids, values):
             cursor.execute('''
                 insert or replace into
-                    meta_zi_stroke_path_feature
-                        (id_, feature_, n_coeffs_, canvas_size_, sample_points_)
-                values (?, ?, ?, ?, ?)
-            ''',
-                (pid, blob, n_coeffs, canvas_size, sample_points)
+                    meta_zi_stroke_cluster
+                        (id_, value_)
+                    values (?, ?)
+            ''', (pid, int(value)))
+
+        db.commit()
+    finally:
+        cursor.close()
+
+# ------------------- 批量处理并存入数据库 -------------------
+def compute_and_store_features(db, stroke_sample_count, canvas_size=500, sample_points=200,
+                               n_coeffs=20, n_workers=None, debug_dir=None):
+    """读取所有路径，计算特征，存入 features 表"""
+    cursor = db.cursor()
+    try:
+        # 创建特征表
+        cursor.execute('''
+            create table if not exists meta_zi_stroke_feature (
+                id_ integer not null primary key,
+                value_ blob not null
             )
-            inserted += 1
-    conn.commit()
+        ''')
 
-    conn.close()
+        limitClause = ""
+        if stroke_sample_count:
+            limitClause = f" limit {stroke_sample_count}"
 
-    print(f"已存储笔画路径特征 {inserted} 个")
+        # 获取所有路径
+        cursor.execute(f"select id_, path_ from meta_zi_stroke {limitClause}")
+        all_paths = cursor.fetchall()
+        print(f"已获取笔画路径 {len(all_paths)} 条")
 
-def load_features_from_db(db_path, n_coeffs=None, canvas_size=None, sample_points=None):
+        if n_workers is None:
+            n_workers = cpu_count()
+
+        print(f"并行计算笔画路径特征 ...")
+        with Pool(n_workers) as pool:
+            args = [(pid, path_str, canvas_size, sample_points, n_coeffs, debug_dir)
+                    for pid, path_str in all_paths]
+
+            results = pool.map(process_single_path, args)
+
+        # 存入数据库
+        inserted = 0
+        for res in results:
+            if res is not None:
+                pid, feat = res
+
+                blob = pickle.dumps(feat)
+                cursor.execute('''
+                    insert or replace into
+                        meta_zi_stroke_feature
+                            (id_, value_)
+                    values (?, ?)
+                ''',
+                    (pid, blob)
+                )
+                inserted += 1
+
+        db.commit()
+
+        print(f"已存储笔画路径特征 {inserted} 个")
+    finally:
+        cursor.close()
+
+def load_features_from_db(db):
     """从数据库加载特征，可选参数校验一致性"""
-    conn = sqlite3.connect(db_path)
+    cursor = db.cursor()
+    try:
+        # 检查表是否存在
+        cursor.execute("select name from sqlite_master where type='table' and name='meta_zi_stroke_feature'")
+        if not cursor.fetchone():
+            return None, []
 
-    cursor = conn.cursor()
+        # 读取所有特征
+        cursor.execute("select id_, value_ from meta_zi_stroke_feature")
+        rows = cursor.fetchall()
+        if not rows:
+            return None, []
 
-    # 检查表是否存在
-    cursor.execute("select name from sqlite_master where type='table' and name='meta_zi_stroke_path_feature'")
-    if not cursor.fetchone():
-        conn.close()
-        return None, []
+        ids = []
+        features = []
+        for pid, blob in rows:
+            feat = pickle.loads(blob)
 
-    # 读取所有特征
-    cursor.execute("select id_, feature_ from meta_zi_stroke_path_feature")
-    rows = cursor.fetchall()
-    if not rows:
-        conn.close()
-        return None, []
+            ids.append(pid)
+            features.append(feat)
 
-    ids = []
-    features = []
-    for pid, blob in rows:
-        feat = pickle.loads(blob)
-        ids.append(pid)
-        features.append(feat)
-
-    conn.close()
-
-    return np.array(features), ids
+        return np.array(features), ids
+    finally:
+        cursor.close()
 
 # ------------------- 主流程 -------------------
 def parse_args():
@@ -345,6 +343,7 @@ def parse_args():
     parser.add_argument("--db", type=str, required=True, help="存储了汉字笔画 SVG 路径的 SQLITE 数据库文件路径")
     parser.add_argument("--eps", type=float, default=0.1, help="DBSCAN 邻域半径。值越小，归类时的特征匹配容差越小")
     parser.add_argument("--recompute", type=bool, default=False, help="是否重新计算笔画路径的特征值")
+    parser.add_argument("--stroke-sample-count", type=int, help="笔画样本数量。用于通过小样本对归类参数进行调试")
     parser.add_argument('--debug-dir', help='路径形态归类过程所生成的中间图片的存放目录，方便调试。若未指定，则不输出过程图片')
 
     return parser.parse_args()
@@ -355,52 +354,45 @@ def main():
     db_path = args.db
     eps = args.eps
     force_recompute = args.recompute
-    debug_dir = args.debug_dir
+    stroke_sample_count = args.stroke_sample_count
+    debug_dir = None # args.debug_dir
 
     # --------------------------------------------------------------
-    # 加载或计算特征
-    features = None
-    valid_ids = None
-    if not force_recompute:
-        features, valid_ids = load_features_from_db(db_path)
-        if features is not None:
-            print(f"已加载笔画路径特征 {len(features)} 个")
+    with sqlite3.connect(db_path) as db:
+        # 加载或计算特征
+        features = None
+        valid_ids = None
 
-    if features is None:
-        # 计算并存储特征
-        compute_and_store_features(
-            db_path, canvas_size=500,
-            sample_points=1200, n_coeffs=20,
-            debug_dir=debug_dir
-        )
+        if not force_recompute:
+            features, valid_ids = load_features_from_db(db)
+            if features is not None:
+                print(f"已加载笔画路径特征 {len(features)} 个")
 
-        # 重新加载
-        features, valid_ids = load_features_from_db(db_path)
+        if features is None:
+            # 计算并存储特征
+            compute_and_store_features(
+                db, stroke_sample_count, canvas_size=500,
+                sample_points=1200, n_coeffs=20,
+                debug_dir=debug_dir
+            )
 
-    if len(features) == 0:
-        print("未提取到任何笔画特征")
-        return {}
+            # 重新加载
+            features, valid_ids = load_features_from_db(db)
 
-    # --------------------------------------------------------------
-    # 计算并保存聚类结果
-    print("归类笔画路径 ...")
+        if len(features) == 0:
+            print("未提取到任何笔画特征")
+            return {}
 
-    # features = features[:50000]
-    # valid_ids = valid_ids[:50000]
-    labels  = cluster_paths(features, eps, min_samples=2)
-    store_clusters_to_db(db_path, valid_ids, labels)
+        # --------------------------------------------------------------
+        # 计算并保存聚类结果
+        print("归类笔画路径 ...")
 
-    # # 整理结果
-    # clusters = {}
-    # for pid, label in zip(valid_ids, labels):
-    #     clusters.setdefault(label, []).append(pid)
+        # features = features[:100000]
+        # valid_ids = valid_ids[:100000]
+        labels  = cluster_paths(features, eps, min_samples=2)
+        store_clusters_to_db(db, valid_ids, labels)
 
-    # # 输出统计
-    # for label, pid_list in clusters.items():
-    #     if label == -1:
-    #         print(f"未分类笔画路径 {len(pid_list)} 条")
-    #     else:
-    #         print(f"笔画路径类别 {label} 包含 {len(pid_list)} 条路径")
+        print(f"已存储 {len(labels)} 个聚类")
 
 if __name__ == "__main__":
     main()
