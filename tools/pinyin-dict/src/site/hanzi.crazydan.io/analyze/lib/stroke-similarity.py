@@ -235,7 +235,8 @@ def store_clusters_to_db(db, ids, values):
         cursor.execute('''
             create table if not exists meta_zi_stroke_cluster (
                 id_ integer not null primary key,
-                value_ integer not null
+                value_ integer not null,
+                name_ text not null default ''
             )
         ''')
 
@@ -342,9 +343,9 @@ def parse_args():
 
     parser.add_argument("--db", type=str, required=True, help="存储了汉字笔画 SVG 路径的 SQLITE 数据库文件路径")
 
-    parser.add_argument("--recompute", type=bool, default=False, help="是否重新计算笔画路径的特征值")
     parser.add_argument("--stroke-sample-count", type=int, help="笔画样本数量。用于通过小样本对归类参数进行调试")
 
+    parser.add_argument("--feature-recompute", type=bool, default=False, help="是否重新计算笔画路径的特征值")
     parser.add_argument("--cluster-eps", type=float, default=0.1,
                         help="归类笔画的匹配精度。该值越小，则要求笔画间的差异越小")
     parser.add_argument("--cluster-min-size", type=int, default=10,
@@ -359,7 +360,7 @@ def main():
 
     db_path = args.db
     cluster_eps = args.cluster_eps
-    force_recompute = args.recompute
+    force_feature_recompute = args.feature_recompute
     stroke_sample_count = args.stroke_sample_count
     cluster_min_size = args.cluster_min_size
     debug_dir = None # args.debug_dir
@@ -370,7 +371,7 @@ def main():
         features = None
         valid_ids = None
 
-        if not force_recompute:
+        if not force_feature_recompute:
             features, valid_ids = load_features_from_db(db)
             if features is not None:
                 print(f"已加载笔画路径特征 {len(features)} 个")
