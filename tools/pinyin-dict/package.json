@@ -25,6 +25,7 @@
     "site:hanzi.crazydan.io:gen-data": "node src/site/hanzi.crazydan.io/gen-data.mjs",
     "site:hanzi.crazydan.io:analyze:prepare": "node src/site/hanzi.crazydan.io/analyze/prepare.mjs",
     "site:hanzi.crazydan.io:analyze:stroke-similarity": "bash src/site/hanzi.crazydan.io/analyze/stroke-similarity.sh",
+    "site:hanzi.crazydan.io:analyze:stroke-medial-axis": "node src/site/hanzi.crazydan.io/analyze/stroke-medial-axis.mjs",
     "generate:sqlite:ime": "node src/generate/sqlite/ime/index.mjs",
     "generate:sqlite:ime:debug": "node --inspect-brk src/generate/sqlite/ime/index.mjs",
     "generate:sqlite:phrase:hmm": "node src/generate/sqlite/phrase/hmm/index.mjs",
@@ -39,6 +40,7 @@
   },
   "dependencies": {
     "@inquirer/prompts": "^3.3.0",
+    "flo-mat": "3.0.1",
     "fontkit": "^2.0.2",
     "get-system-fonts": "^2.0.2",
     "grapheme-splitter": "^1.0.4",

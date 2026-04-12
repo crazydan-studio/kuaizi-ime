@@ -76,7 +76,7 @@ export function saveZies(db, ziMetas) {
       console.log('部首已被废弃：', value, id);
     }
   });
-  saveToDB(db, 'meta_zi_radical', ziRadicalMetaData);
+  saveToDB(db, 'meta_zi_radical', ziRadicalMetaData, false);
   removeFromDB(db, 'meta_zi_radical', missingZiRadicals);
 
   // 获取新增字部首 id
@@ -114,7 +114,7 @@ export function saveZies(db, ziMetas) {
       console.log('字已被废弃：', value, id);
     }
   });
-  saveToDB(db, 'meta_zi', ziMetaData);
+  saveToDB(db, 'meta_zi', ziMetaData, false);
   removeFromDB(db, 'meta_zi', missingZies);
 
   // 获取新增字 id
@@ -191,7 +191,7 @@ function doSaveSpells(db, ziMetas, { prop, table, tone_zero_fn, tone_get_fn }) {
     }
   });
 
-  saveToDB(db, table, spellMetaData);
+  saveToDB(db, table, spellMetaData, false);
   removeFromDB(db, table, missingSpellMetas);
 }
 
@@ -264,7 +264,7 @@ function linkZiSpells(
     }
   });
 
-  saveToDB(db, table, linkDataMap);
+  saveToDB(db, table, linkDataMap, true);
   removeFromDB(db, table, missingLinks);
 }
 

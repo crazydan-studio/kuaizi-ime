@@ -25,6 +25,9 @@ from numpy.fft import fft
 # https://pypi.org/project/svgpathtools/
 ## path_alt = parse_path('M 300 100 C 100 100 200 200 200 300 L 250 350')
 
+dir_path = os.path.dirname(os.path.realpath(__file__))
+sql_file_path = os.path.join(dir_path, 'table-stroke-similarity.create.sql')
+
 # ------------------- 采样 -------------------
 def sample_path(path_obj, num_points=200):
     """等距采样路径上的点"""
@@ -232,18 +235,10 @@ def cluster_paths(features, cluster_eps=0.15, cluster_min_size=2, metric='euclid
 def store_clusters_to_db(db, ids, values):
     cursor = db.cursor()
     try:
-        cursor.execute('''
-            create table if not exists meta_zi_stroke_cluster (
-                id_ integer not null primary key,
-                value_ integer not null,
-                name_ text not null default ''
-            )
-        ''')
-
         for pid, value in zip(ids, values):
             cursor.execute('''
                 insert or replace into
-                    meta_zi_stroke_cluster
+                    meta_zi_stroke_path_cluster
                         (id_, value_)
                     values (?, ?)
             ''', (pid, int(value)))
@@ -258,20 +253,12 @@ def compute_and_store_features(db, stroke_sample_count, canvas_size=500, sample_
     """读取所有路径，计算特征，存入 features 表"""
     cursor = db.cursor()
     try:
-        # 创建特征表
-        cursor.execute('''
-            create table if not exists meta_zi_stroke_feature (
-                id_ integer not null primary key,
-                value_ blob not null
-            )
-        ''')
-
         limitClause = ""
         if stroke_sample_count:
             limitClause = f" limit {stroke_sample_count}"
 
         # 获取所有路径
-        cursor.execute(f"select id_, path_ from meta_zi_stroke {limitClause}")
+        cursor.execute(f"select id_, value_ from meta_zi_stroke_path {limitClause}")
         all_paths = cursor.fetchall()
         print(f"已获取笔画路径 {len(all_paths)} 条")
 
@@ -294,7 +281,7 @@ def compute_and_store_features(db, stroke_sample_count, canvas_size=500, sample_
                 blob = pickle.dumps(feat)
                 cursor.execute('''
                     insert or replace into
-                        meta_zi_stroke_feature
+                        meta_zi_stroke_path_feature
                             (id_, value_)
                     values (?, ?)
                 ''',
@@ -313,12 +300,12 @@ def load_features_from_db(db):
     cursor = db.cursor()
     try:
         # 检查表是否存在
-        cursor.execute("select name from sqlite_master where type='table' and name='meta_zi_stroke_feature'")
+        cursor.execute("select name from sqlite_master where type='table' and name='meta_zi_stroke_path_feature'")
         if not cursor.fetchone():
             return None, []
 
         # 读取所有特征
-        cursor.execute("select id_, value_ from meta_zi_stroke_feature")
+        cursor.execute("select id_, value_ from meta_zi_stroke_path_feature")
         rows = cursor.fetchall()
         if not rows:
             return None, []
@@ -367,6 +354,15 @@ def main():
 
     # --------------------------------------------------------------
     with sqlite3.connect(db_path) as db:
+        with open(sql_file_path, 'r') as file:
+            sql_script = file.read()
+
+            cursor = db.cursor()
+            try:
+                cursor.executescript(sql_script)
+            finally:
+                cursor.close()
+
         # 加载或计算特征
         features = None
         valid_ids = None

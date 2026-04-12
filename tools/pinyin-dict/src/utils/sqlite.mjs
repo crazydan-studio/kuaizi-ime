@@ -60,8 +60,8 @@ export function closeDB(db, skipClean) {
 }
 
 /** 新增或更新数据 */
-export function saveToDB(db, table, dataMap, disableSorting, primaryKeys) {
-  const dataArray = mapToArray(dataMap, disableSorting);
+export function saveToDB(db, table, dataMap, disableSortingByKey, primaryKeys) {
+  const dataArray = mapToArray(dataMap, disableSortingByKey);
   if (dataArray.length === 0) {
     return;
   }
@@ -195,8 +195,8 @@ export function withTransaction(db, cb) {
   }
 }
 
-function mapToArray(obj, disableSorting) {
-  if (disableSorting === true) {
+function mapToArray(obj, disableSortingByKey) {
+  if (disableSortingByKey === true) {
     return Object.keys(obj).map((k) => obj[k]);
   }
 
