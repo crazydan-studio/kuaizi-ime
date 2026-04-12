@@ -1,5 +1,8 @@
 # Note: 以下代码核心逻辑由 DeepSeek 生成，并由 flytreeleft@crazydan.org 改进
 
+def f2s(v):
+    return '{:.2f}'.format(v).rstrip('0').rstrip('.')
+
 def contour_to_bezier_path(pts, attrs):
     """
     """
@@ -14,11 +17,11 @@ def contour_to_bezier_path(pts, attrs):
         if cmd[0] == 'M':
             xp, yp = cmd[1]
 
-            d += f"M {xp:.2f} {yp:.2f} "
+            d += f"M {f2s(xp)} {f2s(yp)} "
         elif cmd[0] == 'C':
             c1, c2, end = cmd[1], cmd[2], cmd[3]
 
-            d += f"C {c1[0]:.2f} {c1[1]:.2f} {c2[0]:.2f} {c2[1]:.2f} {end[0]:.2f} {end[1]:.2f} "
+            d += f"C {f2s(c1[0])} {f2s(c1[1])} {f2s(c2[0])} {f2s(c2[1])} {f2s(end[0])} {f2s(end[1])} "
         elif cmd[0] == 'Z':
             d += "Z"
 

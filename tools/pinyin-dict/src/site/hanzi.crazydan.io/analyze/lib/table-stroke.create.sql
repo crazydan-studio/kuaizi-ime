@@ -9,8 +9,6 @@ create table
         name_ text not null default '',
         -- 笔画 svg 路径
         path_ text not null,
-        -- 笔画书写的 svg 路径
-        write_path_ text not null default '',
         --
         unique (zi_, index_)
     );

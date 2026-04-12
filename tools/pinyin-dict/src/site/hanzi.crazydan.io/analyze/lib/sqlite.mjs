@@ -11,7 +11,10 @@ import {
 export { openDB as open, closeDB as close } from '#utils/sqlite.mjs';
 
 const sql_file_path = (name) =>
-  fromRootPath('src', 'site/hanzi.crazydan.io/analyze/lib/' + name + '.create.sql');
+  fromRootPath(
+    'src',
+    'site/hanzi.crazydan.io/analyze/lib/' + name + '.create.sql'
+  );
 
 /** 保存笔画 SVG 路径 */
 export function saveStrokeSvgPaths(db, strokeSvgFiles) {
@@ -27,7 +30,9 @@ export function saveStrokeSvgPaths(db, strokeSvgFiles) {
     let match;
     const svg = readFile(file);
     while ((match = regex.exec(svg)) !== null) {
-      const path_ = match[1];
+      const path_ = match[1]
+        .replaceAll(/\.00/g, '')
+        .replaceAll(/(\.[^0])0/g, '$1'); // 去掉路径中不必要的 0, 从而节省存储空间
       const index_ = parseInt(match[2]);
 
       const code = `${unicode}:${index_}`;
