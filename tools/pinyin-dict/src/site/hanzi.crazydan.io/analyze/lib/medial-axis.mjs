@@ -12,7 +12,7 @@ import {
 /**
  * 提取中轴线分支
  *
- * @returns `[[radius, x1, y1, x2, y2], ...]`
+ * @returns `[[radius, x1, y1, x2, y2, x3, y3, x4, y4, ...], ...]`
  */
 export function extractMedialAxisBranches(svgPath, satScale = 2) {
   const bezierLoops = getPathsFromStr(svgPath);
@@ -53,16 +53,7 @@ export function extractMedialAxisBranches(svgPath, satScale = 2) {
 
       const radius = parseFloat(node.cp.circle.radius.toFixed(2));
 
-      const points = [];
-      const get = createBezierPointGetter(bezier);
-      // Note: 采样点过多反而造成单帧动画绘制时间变长，进而使得帧率下降，效果更差
-      for (let t = 0; t <= 1; t += 1) {
-        const point = get(t);
-        // [x, y]
-        points.push(point.map((p) => parseFloat(p.toFixed(2))));
-      }
-
-      const start = points[0];
+      const start = createBezierPointGetter(bezier)(0);
       // 确定初始起点
       if (!rootStart) {
         rootStart = start;
@@ -75,7 +66,12 @@ export function extractMedialAxisBranches(svgPath, satScale = 2) {
       }
 
       // 添加线段
-      branch.push([radius, ...points.reduce((r, p) => r.concat(p), [])]);
+      branch.push([
+        radius,
+        ...bezier
+          .reduce((r, p) => r.concat(p), [])
+          .map((p) => parseFloat(p.toFixed(2)))
+      ]);
     });
   });
 

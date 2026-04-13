@@ -79,19 +79,21 @@ export function saveStrokeSvgPaths(db, strokeSvgFiles) {
   });
 
   const missingStrokes = [];
-  queryAll(db, 'select id_, zi_, index_ from meta_zi_stroke').forEach((row) => {
-    const { id_, zi_, index_ } = row;
-    const code = `${zi_}:${index_}`;
+  queryAll(db, 'select id_, zi_, index_, path_ from meta_zi_stroke').forEach(
+    (row) => {
+      const { id_, zi_, index_ } = row;
+      const code = `${zi_}:${index_}`;
 
-    if (ziStrokes[code]) {
-      ziStrokes[code].id_ = id_;
-      ziStrokes[code].__exist__ = row;
-    } else {
-      // 在库中已存在，但已不再被使用
-      missingStrokes.push(id_);
-      console.log('- 字的笔画路径已被废弃或被替换：', id_, zi_, index_);
+      if (ziStrokes[code]) {
+        ziStrokes[code].id_ = id_;
+        ziStrokes[code].__exist__ = row;
+      } else {
+        // 在库中已存在，但已不再被使用
+        missingStrokes.push(id_);
+        console.log('- 字的笔画路径已被废弃或被替换：', id_, zi_, index_);
+      }
     }
-  });
+  );
   saveToDB(db, 'meta_zi_stroke', ziStrokes, true);
   removeFromDB(db, 'meta_zi_stroke', missingStrokes);
 }
@@ -116,8 +118,18 @@ export function saveStrokeMedialAxes(db, sampleCount) {
   // ---------------------------------------------
   const medialAxisBranches = {};
   Object.keys(strokePaths).forEach((path_) => {
+    if (['3386'].includes(path_)) {
+      console.log(`- 忽略路径 ${path_}`);
+      return;
+    }
+
     const svgPath = strokePaths[path_];
     const branches = extractMedialAxisBranches(svgPath);
+
+    if (branches.length == 0) {
+      console.log(`- 未提取到路径中轴线（id=${path_}）：`, svgPath);
+      return;
+    }
 
     branches.forEach((branch, index_) => {
       const code = `${path_}:${index_}`;
@@ -133,7 +145,7 @@ export function saveStrokeMedialAxes(db, sampleCount) {
   const missingMedialAxisBranches = [];
   queryAll(
     db,
-    'select id_, path_, index_ from meta_zi_stroke_path_medial_axis_branch'
+    'select id_, path_, index_, value_ from meta_zi_stroke_path_medial_axis_branch'
   ).forEach((row) => {
     const { id_, path_, index_ } = row;
     const code = `${path_}:${index_}`;
