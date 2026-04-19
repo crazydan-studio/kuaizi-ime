@@ -69,28 +69,31 @@ export function saveToDB(db, table, dataMap, disableSortingByKey, primaryKeys) {
   primaryKeys = primaryKeys || ['id_'];
   const hasOnlyIdKey = primaryKeys.length == 1 && primaryKeys[0] == 'id_';
 
-  const columnsWithPrimaryKey = Object.keys(dataArray[0]).filter(
+  const columnsWithPK = Object.keys(dataArray[0]).filter(
     (k) => !k.startsWith('__')
   );
-  const columns = columnsWithPrimaryKey.filter((k) => !primaryKeys.includes(k));
+  const columnsWithoutPK = columnsWithPK.filter(
+    (k) => !primaryKeys.includes(k)
+  );
 
-  const insertWithIdSql = `insert into ${table} (${columnsWithPrimaryKey.join(
+  const insertWithPKSql = `insert into ${table} (${columnsWithPK.join(
     ', '
-  )}) values (${columnsWithPrimaryKey.map(() => '?').join(', ')})
+  )}) values (${columnsWithPK.map(() => '?').join(', ')})
   `;
-  const insertWithIdStatement = db.prepare(insertWithIdSql);
-  const insertStatement = hasOnlyIdKey
-    ? db.prepare(
-        `insert into ${table} (${columns.join(', ')}) values (${columns
-          .map(() => '?')
-          .join(', ')})
-          `
-      )
-    : db.prepare(insertWithIdSql);
-  const updateStatement =
-    columns.length > 0
+  const insertWithPKStatement = db.prepare(insertWithPKSql);
+  const insertStatement =
+    hasOnlyIdKey && columnsWithoutPK.length > 0
       ? db.prepare(
-          `update ${table} set ${columns
+          `insert into ${table} (${columnsWithoutPK.join(', ')}) values (${columnsWithoutPK
+            .map(() => '?')
+            .join(', ')})
+          `
+        )
+      : insertWithPKStatement;
+  const updateStatement =
+    columnsWithoutPK.length > 0
+      ? db.prepare(
+          `update ${table} set ${columnsWithoutPK
             .map((c) => c + ' = ?')
             .join(', ')} where ${primaryKeys
             .map((key) => key + ' = ?')
@@ -109,21 +112,22 @@ export function saveToDB(db, table, dataMap, disableSortingByKey, primaryKeys) {
       if (getId(data)) {
         const needToUpdate =
           data.__exist__ &&
-          columns.reduce((r, c) => r || data[c] !== data.__exist__[c], false);
+          columnsWithoutPK.reduce(
+            (r, c) => r || data[c] !== data.__exist__[c],
+            false
+          );
 
         if (needToUpdate) {
           updateStatement.run(
-            ...columns.concat(primaryKeys).map((c) => data[c])
+            ...columnsWithoutPK.concat(primaryKeys).map((c) => data[c])
           );
         }
         // 新增包含 id 的数据
         else if (!data.__exist__) {
-          insertWithIdStatement.run(
-            ...columnsWithPrimaryKey.map((c) => data[c])
-          );
+          insertWithPKStatement.run(...columnsWithPK.map((c) => data[c]));
         }
       } else {
-        const params = (hasOnlyIdKey ? columns : columnsWithPrimaryKey).map(
+        const params = (hasOnlyIdKey ? columnsWithoutPK : columnsWithPK).map(
           (c) => data[c]
         );
         insertStatement.run(...params);
@@ -196,6 +200,10 @@ export function withTransaction(db, cb) {
 }
 
 function mapToArray(obj, disableSortingByKey) {
+  if (Array.isArray(obj)) {
+    return obj;
+  }
+
   if (disableSortingByKey === true) {
     return Object.keys(obj).map((k) => obj[k]);
   }
