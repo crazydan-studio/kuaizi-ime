@@ -13,7 +13,7 @@ create table
         path_ integer not null,
         -- 路径点类型：0 - 未知，1 - M，2 - C
         type_ tinyint default 0,
-        -- 坐标点（原始数值扩大 100 倍后存储，避免存储 real 浪费不必要的存储空间，数值扩大倍数取决于 svg 的坐标精度）
+        -- 坐标点（原始数值扩大 N 倍后存储，避免存储 real 浪费不必要的存储空间，数值扩大倍数取决于路径坐标点的精度）
         x0_ integer default 0,
         y0_ integer default 0,
         x1_ integer default 0,

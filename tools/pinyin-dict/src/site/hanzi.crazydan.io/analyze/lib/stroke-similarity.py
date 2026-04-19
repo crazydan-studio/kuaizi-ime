@@ -258,7 +258,7 @@ def compute_and_store_features(db, stroke_sample_count, canvas_size=500, sample_
             limitClause = f" limit {stroke_sample_count}"
 
         # 获取所有路径
-        cursor.execute(f"select id_, value_ from meta_zi_stroke_path {limitClause}")
+        cursor.execute(f"select id_, value_ from zi_stroke_path {limitClause}")
         all_paths = cursor.fetchall()
         print(f"已获取笔画路径 {len(all_paths)} 条")
 

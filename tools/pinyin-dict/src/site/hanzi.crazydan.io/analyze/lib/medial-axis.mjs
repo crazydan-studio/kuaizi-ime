@@ -12,7 +12,7 @@ import {
 /**
  * 提取中轴线分支
  *
- * @returns `[[radius, x1, y1, x2, y2, x3, y3, x4, y4, ...], ...]`
+ * @returns `[{radius: '2.3', bezier: [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]}, ...]`
  */
 export function extractMedialAxisBranches(svgPath, satScale = 2) {
   const bezierLoops = getPathsFromStr(svgPath);
@@ -51,9 +51,9 @@ export function extractMedialAxisBranches(svgPath, satScale = 2) {
       const bezier = getCurveToNext(node);
       if (!bezier) return;
 
-      const radius = parseFloat(node.cp.circle.radius.toFixed(2));
+      const radius = node.cp.circle.radius.toFixed(2);
 
-      const start = createBezierPointGetter(bezier)(0);
+      const start = bezier[0];
       // 确定初始起点
       if (!rootStart) {
         rootStart = start;
@@ -65,54 +65,15 @@ export function extractMedialAxisBranches(svgPath, satScale = 2) {
         branches.push(branch);
       }
 
-      // 添加线段
-      branch.push([
-        radius,
-        ...bezier
-          .reduce((r, p) => r.concat(p), [])
-          .map((p) => parseFloat(p.toFixed(2)))
-      ]);
+      if (bezier.length > 1) {
+        // 添加线段
+        branch.push({
+          radius,
+          bezier: bezier.map((point) => point.map((p) => p.toFixed(2)))
+        });
+      }
     });
   });
 
-  return branches.filter((b) => b.length > 10);
-}
-
-/** 返回贝塞尔曲线点取样函数 */
-function createBezierPointGetter(bezier) {
-  if (bezier.length === 2) {
-    // 直线
-    return (t) => [
-      bezier[0][0] + (bezier[1][0] - bezier[0][0]) * t,
-      bezier[0][1] + (bezier[1][1] - bezier[0][1]) * t
-    ];
-  } else if (bezier.length === 3) {
-    // 二次贝塞尔
-    return (t) => {
-      const mt = 1 - t;
-      return [
-        mt * mt * bezier[0][0] +
-          2 * mt * t * bezier[1][0] +
-          t * t * bezier[2][0],
-        mt * mt * bezier[0][1] +
-          2 * mt * t * bezier[1][1] +
-          t * t * bezier[2][1]
-      ];
-    };
-  } else {
-    // 三次贝塞尔
-    return (t) => {
-      const mt = 1 - t;
-      return [
-        mt * mt * mt * bezier[0][0] +
-          3 * mt * mt * t * bezier[1][0] +
-          3 * mt * t * t * bezier[2][0] +
-          t * t * t * bezier[3][0],
-        mt * mt * mt * bezier[0][1] +
-          3 * mt * mt * t * bezier[1][1] +
-          3 * mt * t * t * bezier[2][1] +
-          t * t * t * bezier[3][1]
-      ];
-    };
-  }
+  return branches; //.filter((b) => b.length > 10);
 }

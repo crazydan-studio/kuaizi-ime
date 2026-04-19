@@ -27,7 +27,7 @@ console.log('保存所有汉字的笔画路径 ...');
 const db = sqlite.open(siteAssetsDBFile);
 try {
   sqlite.saveStrokeSvgPaths(db, ziStrokeSvgFiles);
-  console.log('- 已保存笔画路径');
+  console.log('- 已保存所有笔画路径');
 } finally {
   sqlite.close(db);
 }

@@ -14,8 +14,8 @@ console.log('计算并保存所有汉字笔画路径的中轴线 ...');
 
 const db = sqlite.open(siteAssetsDBFile);
 try {
-  sqlite.saveStrokeMedialAxes(db, 50000);
-  console.log('- 已保存笔画路径中轴线');
+  sqlite.saveStrokeMedialAxes(db, 200);
+  console.log('- 已保存所有笔画路径中轴线');
 } finally {
   sqlite.close(db);
 }

@@ -96,74 +96,85 @@ export function saveStrokeMedialAxes(db, sampleCount) {
   const sqlFile = sql_file_path('table-stroke-medial-axis');
   execSQLFile(db, sqlFile);
 
+  // 清空已有数据，直接全量新增
+  execSQL(db, 'delete from meta_zi_stroke_path_medial_axis_branch_segment');
+  execSQL(db, 'delete from meta_zi_stroke_path_medial_axis_branch');
+  console.log(`- 已清除现有的中轴线数据`);
+
+  let medialAxisBranches = [];
+  let medialAxisBranchSegments = [];
+  const batchSave = () => {
+    saveToDB(
+      db,
+      'meta_zi_stroke_path_medial_axis_branch',
+      medialAxisBranches,
+      true
+    );
+    medialAxisBranches = [];
+
+    // ----
+    saveToDB(
+      db,
+      'meta_zi_stroke_path_medial_axis_branch_segment',
+      medialAxisBranchSegments,
+      true
+    );
+    medialAxisBranchSegments = [];
+
+    // ----
+    console.log(`- 已保存 ${branchId} 条中轴线数据`);
+  };
+
   // ---------------------------------------------
+  let branchId = 0;
   const limitClause = sampleCount > 0 ? ` limit ${sampleCount}` : '';
 
-  const strokePaths = {};
-  queryAll(
-    db,
-    `select id_, value_ from meta_zi_stroke_path ${limitClause}`
-  ).forEach((row) => {
-    const { id_, value_ } = row;
+  queryAll(db, `select id_, value_ from zi_stroke_path ${limitClause}`).forEach(
+    (row) => {
+      const { id_, value_ } = row;
+      const pathId = id_;
+      const pathSvg = value_;
+      const branches = extractMedialAxisBranches(pathSvg);
 
-    strokePaths[id_] = value_;
-  });
+      if (branches.length == 0) {
+        console.log(`- 未提取到有效中轴线：${pathSvg}`);
+        return;
+      }
 
-  // ---------------------------------------------
-  const medialAxisBranches = {};
-  Object.keys(strokePaths).forEach((path_) => {
-    if (['3386'].includes(path_)) {
-      console.log(`- 忽略路径 ${path_}`);
-      return;
+      branches.forEach((branch) => {
+        if (branch.length == 0) {
+          return;
+        }
+
+        // 按顺序递增中轴线分支 id，以确保与中轴线分支线段直接建立关联，避免反复查询数据库
+        branchId += 1;
+        medialAxisBranches.push({ id_: branchId, path_: pathId });
+
+        //
+        branch.forEach(({ radius, bezier }) => {
+          const segment = {
+            branch_: branchId,
+            radius_: parseAndScalePoint(radius),
+            type_: bezier.length - 1
+          };
+          for (let i = 0; i < 4; i++) {
+            const point = bezier[i] || ['0', '0'];
+
+            segment[`x${i}_`] = parseAndScalePoint(point[0]);
+            segment[`y${i}_`] = parseAndScalePoint(point[1]);
+          }
+
+          medialAxisBranchSegments.push(segment);
+        });
+
+        if (branchId % batch_size == 0) {
+          batchSave();
+        }
+      });
     }
-
-    const svgPath = strokePaths[path_];
-    const branches = extractMedialAxisBranches(svgPath);
-
-    if (branches.length == 0) {
-      console.log(`- 未提取到路径中轴线（id=${path_}）：`, svgPath);
-      return;
-    }
-
-    branches.forEach((branch, index_) => {
-      const code = `${path_}:${index_}`;
-
-      medialAxisBranches[code] = {
-        path_,
-        index_,
-        value_: JSON.stringify(branch)
-      };
-    });
-  });
-
-  const missingMedialAxisBranches = [];
-  queryAll(
-    db,
-    'select id_, path_, index_, value_ from meta_zi_stroke_path_medial_axis_branch'
-  ).forEach((row) => {
-    const { id_, path_, index_ } = row;
-    const code = `${path_}:${index_}`;
-
-    if (medialAxisBranches[code]) {
-      medialAxisBranches[code].id_ = id_;
-      medialAxisBranches[code].__exist__ = row;
-    } else {
-      // 在库中已存在，但已不再被使用
-      missingMedialAxisBranches.push(id_);
-      console.log('- 笔画路径中轴线分支已被废弃或被替换：', id_, path_, index_);
-    }
-  });
-  saveToDB(
-    db,
-    'meta_zi_stroke_path_medial_axis_branch',
-    medialAxisBranches,
-    true
   );
-  removeFromDB(
-    db,
-    'meta_zi_stroke_path_medial_axis_branch',
-    missingMedialAxisBranches
-  );
+
+  batchSave();
 }
 
 /** 仅用于将数据库中的笔画 svg 路径字符串转为坐标点，从而验证最终的存储空间是否有大幅节省 */
@@ -196,13 +207,16 @@ export function transferStrokePathData(db) {
   execSQL(db, 'alter table meta_zi_stroke_path drop column value_');
 }
 
+// Note: 坐标点扩大 N 倍以便于存储整数数据
+const parseAndScalePoint = (p) =>
+  p == '0' || p == '0.00'
+    ? 0
+    : Math.round(parseFloat(p) * PATH_POINT_SCALE_FACTOR);
+
 function getSvgPathPoints(path, pathId) {
   const points = [];
 
   const segments = path.split(/\s+/);
-  // Note: 坐标点扩大 N 倍以便于存储整数数据
-  const parseAndScalePoint = (p) =>
-    Math.round(parseFloat(p) * PATH_POINT_SCALE_FACTOR);
 
   for (let i = 0; i < segments.length; i++) {
     const type = segments[i];
