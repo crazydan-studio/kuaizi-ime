@@ -12,20 +12,20 @@ import {
 /**
  * 提取中轴线分支
  *
- * @returns `[{radius: '2.3', bezier: [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]}, ...]`
+ * @returns `[{radius: '2.3', bezier: [['x1', 'y1'], ['x2', 'y2'], ['x3', 'y3'], ['x4', 'y4']]}, ...]`
  */
 export function extractMedialAxisBranches(svgPath, satScale = 2) {
   const bezierLoops = getPathsFromStr(svgPath);
 
-  const mats = findMats(
-    bezierLoops,
-    3 /*暂时未发现不同大小的值对最终效果的影响*/,
-    10 /*中轴线段的最大长度，该值越大，获得的线段越少*/
-  );
-
   // 用SAT去除毛刺分支
   let sats = null;
   try {
+    const mats = findMats(
+      bezierLoops,
+      3 /*暂时未发现不同大小的值对最终效果的影响*/,
+      10 /*中轴线段的最大长度，该值越大，获得的线段越少*/
+    );
+
     sats = mats.map((mat) =>
       toScaleAxis(
         mat,
@@ -51,7 +51,7 @@ export function extractMedialAxisBranches(svgPath, satScale = 2) {
       const bezier = getCurveToNext(node);
       if (!bezier) return;
 
-      const radius = node.cp.circle.radius.toFixed(2);
+      const radius = node.cp.circle.radius;
 
       const start = bezier[0];
       // 确定初始起点
@@ -65,15 +65,15 @@ export function extractMedialAxisBranches(svgPath, satScale = 2) {
         branches.push(branch);
       }
 
-      if (bezier.length > 1) {
+      if (bezier.length > 1 && radius >= 0.5) {
         // 添加线段
         branch.push({
-          radius,
+          radius: radius.toFixed(2),
           bezier: bezier.map((point) => point.map((p) => p.toFixed(2)))
         });
       }
     });
   });
 
-  return branches; //.filter((b) => b.length > 10);
+  return branches.filter((b) => b.length > 0);
 }

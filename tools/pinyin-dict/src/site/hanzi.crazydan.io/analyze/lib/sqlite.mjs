@@ -1,13 +1,7 @@
 import * as path from 'path';
 
 import { fromRootPath, readFile } from '#utils/file.mjs';
-import {
-  saveToDB,
-  removeFromDB,
-  execSQLFile,
-  queryAll,
-  execSQL
-} from '#utils/sqlite.mjs';
+import { saveToDB, execSQLFile, queryAll, execSQL } from '#utils/sqlite.mjs';
 import { extractMedialAxisBranches } from './medial-axis.mjs';
 
 export { openDB as open, closeDB as close } from '#utils/sqlite.mjs';
@@ -92,14 +86,16 @@ export function saveStrokeSvgPaths(db, strokeSvgFiles) {
   batchSave();
 }
 
-export function saveStrokeMedialAxes(db, sampleCount) {
+export function saveStrokeMedialAxes(db, range) {
   const sqlFile = sql_file_path('table-stroke-medial-axis');
   execSQLFile(db, sqlFile);
 
-  // 清空已有数据，直接全量新增
-  execSQL(db, 'delete from meta_zi_stroke_path_medial_axis_branch_segment');
-  execSQL(db, 'delete from meta_zi_stroke_path_medial_axis_branch');
-  console.log(`- 已清除现有的中轴线数据`);
+  const needToClean = !range || range[0] == 0;
+  if (needToClean) {
+    execSQL(db, 'delete from meta_zi_stroke_path_medial_axis_branch_segment');
+    execSQL(db, 'delete from meta_zi_stroke_path_medial_axis_branch');
+    console.log(`- 已清除现有的中轴线数据`);
+  }
 
   let medialAxisBranches = [];
   let medialAxisBranchSegments = [];
@@ -127,7 +123,16 @@ export function saveStrokeMedialAxes(db, sampleCount) {
 
   // ---------------------------------------------
   let branchId = 0;
-  const limitClause = sampleCount > 0 ? ` limit ${sampleCount}` : '';
+  const limitClause = range ? ` limit ${range.join(',')}` : '';
+
+  if (!needToClean) {
+    queryAll(
+      db,
+      `select max(id_) as id_ from meta_zi_stroke_path_medial_axis_branch`
+    ).forEach((row) => {
+      branchId = row.id_;
+    });
+  }
 
   queryAll(db, `select id_, value_ from zi_stroke_path ${limitClause}`).forEach(
     (row) => {
@@ -142,27 +147,24 @@ export function saveStrokeMedialAxes(db, sampleCount) {
       }
 
       branches.forEach((branch) => {
-        if (branch.length == 0) {
-          return;
-        }
-
         // 按顺序递增中轴线分支 id，以确保与中轴线分支线段直接建立关联，避免反复查询数据库
         branchId += 1;
         medialAxisBranches.push({ id_: branchId, path_: pathId });
 
         //
         branch.forEach(({ radius, bezier }) => {
+          // Note: 得到的中轴线线段足够短可近似为直线，故而只保存线段的起止点，以降低存储占用
+          const start = bezier[0];
+          const end = bezier[bezier.length - 1];
+
           const segment = {
             branch_: branchId,
             radius_: parseAndScalePoint(radius),
-            type_: bezier.length - 1
+            x0_: parseAndScalePoint(start[0]),
+            y0_: parseAndScalePoint(start[1]),
+            x1_: parseAndScalePoint(end[0]),
+            y1_: parseAndScalePoint(end[1])
           };
-          for (let i = 0; i < 4; i++) {
-            const point = bezier[i] || ['0', '0'];
-
-            segment[`x${i}_`] = parseAndScalePoint(point[0]);
-            segment[`y${i}_`] = parseAndScalePoint(point[1]);
-          }
 
           medialAxisBranchSegments.push(segment);
         });

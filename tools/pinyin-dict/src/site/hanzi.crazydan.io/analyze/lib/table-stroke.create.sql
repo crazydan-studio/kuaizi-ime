@@ -33,7 +33,7 @@ create table
     );
 
 -- -----------------------------------------------------------
--- NOTE: 仅用作以 cli 方式查询，其性能较差，需在应用侧分组和拼装 svg 路径
+-- NOTE: 仅用作以 cli 方式查询，其性能较差，需在应用侧分组和拼装结果
 create view
     if not exists zi_stroke_path (id_, name_, value_) as
 select
@@ -42,11 +42,11 @@ select
     group_concat (
         (
             case
-                when type_ = 1 then (
-                    'M' || ' ' || round(x0_ / 100.0, 2) || ' ' || round(y0_ / 100.0, 2)
+                when pp_.type_ = 1 then (
+                    'M' || ' ' || round(pp_.x0_ / 100.0, 2) || ' ' || round(pp_.y0_ / 100.0, 2)
                 )
-                when type_ = 2 then (
-                    'C' || ' ' || round(x0_ / 100.0, 2) || ' ' || round(y0_ / 100.0, 2) || ' ' || round(x1_ / 100.0, 2) || ' ' || round(y1_ / 100.0, 2) || ' ' || round(x2_ / 100.0, 2) || ' ' || round(y2_ / 100.0, 2)
+                when pp_.type_ = 2 then (
+                    'C' || ' ' || round(pp_.x0_ / 100.0, 2) || ' ' || round(pp_.y0_ / 100.0, 2) || ' ' || round(pp_.x1_ / 100.0, 2) || ' ' || round(pp_.y1_ / 100.0, 2) || ' ' || round(pp_.x2_ / 100.0, 2) || ' ' || round(pp_.y2_ / 100.0, 2)
                 )
                 else 'UNKNOWN'
             end
