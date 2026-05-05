@@ -4,8 +4,6 @@ import { sleep } from '#utils/native.mjs';
 import { existFile, fetchAndWriteFile } from '#utils/file.mjs';
 import { symbolToNumberTonePinyin } from '#utils/spell.mjs';
 
-import { getStrokeImage } from '#data/provider/strokeorder.com.mjs';
-
 /** 获取并保存与字相关的图片和音频 */
 export async function fetchAndSaveZiMedias(ziMedias, targetDir) {
   console.log('- 保存拼音的音频文件');
@@ -19,20 +17,6 @@ export async function fetchAndSaveZiMedias(ziMedias, targetDir) {
 
     await saveUrl(url, file);
   }
-
-  console.log('- 保存字的字形和笔顺图片');
-  for (let { media, unicode } of ziMedias.zies) {
-    for (let name in media) {
-      const url = media[name];
-      const file = path.join(
-        targetDir,
-        `zi/${unicode}`,
-        `${name.replace(/_url$/g, '').replace('_', '-')}.${getExt(url)}`
-      );
-
-      await saveUrl(url, file);
-    }
-  }
 }
 
 /**
@@ -41,34 +25,17 @@ export async function fetchAndSaveZiMedias(ziMedias, targetDir) {
  * @return ```json
  * {
  *    pinyins: {yi: 'https://xxx', ...},
- *    zies: [{
- *      value: '字',
- *      unicode: 'U+5B57',
- *      media: {
- *        glyph_url: 'https://xxx',
- *        stroke_order_url: 'https://xxx'
- *      }
- *    }, ...]
  * }
  * ```
  */
 export async function patchZiMedias(ziMetas) {
-  const ziMedias = { pinyins: {}, zies: [] };
+  const ziMedias = { pinyins: {} };
 
   ziMetas.forEach((meta) => {
     meta.pinyins.forEach(({ value }) => {
       if (!ziMedias.pinyins[value]) {
         ziMedias.pinyins[value] =
           `https://img.zdic.net/audio/zd/py/${value}.mp3`;
-      }
-    });
-
-    ziMedias.zies.push({
-      value: meta.value,
-      unicode: meta.unicode,
-      media: {
-        glyph_url: meta.glyph_svg_url,
-        ...getStrokeImage(meta.value)
       }
     });
   });

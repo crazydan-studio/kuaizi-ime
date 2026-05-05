@@ -5,7 +5,7 @@ import { fromRootPath } from '#utils/file.mjs';
 
 import { readAllSavedZiMetas } from '#data/zi/meta.mjs';
 
-import { fetchAndSaveZiMedias, patchZiMedias } from './media/index.mjs';
+import { fetchAndSaveZiMedias, patchZiMedias } from './lib/media.mjs';
 
 const siteRootDir = fromRootPath('../../site/hanzi.crazydan.io');
 const siteAssetsDir = path.join(siteRootDir, 'public/assets');
@@ -24,7 +24,6 @@ console.log('获取与字相关的媒体信息 ...');
 const ziMedias = await patchZiMedias(ziMetas);
 
 console.log('- 拼音媒体总数：' + Object.keys(ziMedias.pinyins).length);
-console.log('- 字媒体总数：' + ziMedias.zies.length);
 console.log();
 
 // ---------------------------------------------------------------

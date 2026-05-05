@@ -175,7 +175,7 @@ export function execSQL(db, sqls) {
 
 export function execSQLFile(db, file) {
   if (!existFile(file)) {
-    return;
+    throw new Error(`The SQL file '${file}' doesn't exist.`);
   }
 
   const sqls = readFile(file);
