@@ -50,6 +50,12 @@ It also helps to spread traditional Chinese culture to the world,
 deepening global friends' understanding and appreciation of Chinese culture.
 At the same time, it allows the Chinese people to have a stronger confidence in their national culture.
 
+## Related projects
+
+- [Hanzi](https://hanzi.crazydan.io/)([Source code](https://github.com/crazydan-studio/hanzi.crazydan.io)): Provides basic information on over 26,000+ Chinese characters,
+  along with manually handwritten stroke trajectory data, which is freely available for self‑study
+  and teaching purposes in Chinese character writing.
+
 ## How to clone the repository
 
 ```bash

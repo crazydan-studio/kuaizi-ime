@@ -10,3 +10,6 @@
 [submodule "thirdparty/rime_wanxiang"]
 	path = thirdparty/rime_wanxiang
 	url = git@github.com:amzxyz/rime_wanxiang.git
+[submodule "site/hanzi.crazydan.io"]
+	path = site/hanzi.crazydan.io
+	url = git@github.com:crazydan-studio/hanzi.crazydan.io.git
