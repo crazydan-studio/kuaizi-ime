@@ -1,23 +1,16 @@
-import { fromRootPath } from '#utils/file.mjs';
-
 import * as pinyinData from '#data/provider/pinyin-data.mjs';
 import * as opencc from '#data/provider/opencc.mjs';
 import * as wanxiang from '#data/provider/wanxiang.mjs';
 
 import {
-  getZiMetasSavedFile,
-  patchZiMetaAndSaveToFile,
-  saveZiMetasToFile,
+  patchAndSaveZiMetas,
+  updateValidZiMetaWeights,
   calculateZiGlyphWeight,
   patchPinyinZiUsedWeight
 } from './meta.mjs';
 
-// 采用 [汉典网](http://zdic.net/) 的单字数据、万象拼音的字词权重数据、OpenCC 的繁简转换数据
+// 采用 [汉典网](https://zdic.net/) 的单字数据、万象拼音的字词权重数据、OpenCC 的繁简转换数据
 // Note: OpenCC 中的繁简信息比万象拼音的更全面、更准确
-
-// 包含完整拼音和字信息的文本文件
-const ziDataRawFile = fromRootPath('data', 'pinyin-dict.raw.txt');
-const ziDataValidFile = getZiMetasSavedFile();
 
 // -----------------------------------------------------------------------
 console.log();
@@ -43,23 +36,30 @@ console.log();
 
 // -----------------------------------------------------------------------
 console.log();
-console.log('读取 zdic.net 数据 ...');
-const ziMetas = await patchZiMetaAndSaveToFile(zdicZies, ziDataRawFile);
+console.log('获取 zdic.net 数据 ...');
+const ziMetas = await patchAndSaveZiMetas(zdicZies);
 ziMetas.forEach((meta) => {
   const simps = tradZies[meta.value] || [];
   const trads = simpZies[meta.value] || [];
+  const traditional = trads.length == 0 && simps.length > 0;
 
-  meta.traditional = simps.length > 0;
-  meta.simples = simps;
-  meta.traditionals = trads;
+  if (traditional != meta.traditional) {
+    console.log(
+      `- ${meta.value} 的汉典繁简性：[${meta.traditional ? '繁' : '简'}] => ${(meta.traditional ? meta.simples : meta.traditionals).join(',')}，OpenCC 的繁简性：[${traditional ? '繁' : '简'}] => ${simps.join(',')} + ${trads.join(',')}`
+    );
+  }
+
+  meta.traditional = traditional;
+  meta.simples = traditional ? simps : [];
+  meta.traditionals = traditional ? [] : trads;
 });
 
 const withPinyin = (w) => w.pinyins.length > 0;
 const withoutPinyin = (w) => !withPinyin(w);
 const ziMetasWithPinyin = ziMetas.filter(withPinyin);
 const ziMetasWithoutPinyin = ziMetas.filter(withoutPinyin);
-const ziMetasWithGlyph = ziMetas.filter((w) => w.glyph_font_exists);
-const ziMetasWithoutGlyph = ziMetas.filter((w) => !w.glyph_font_exists);
+const ziMetasWithGlyph = ziMetas.filter((w) => w.glyph_exists);
+const ziMetasWithoutGlyph = ziMetas.filter((w) => !w.glyph_exists);
 const ziMetasWithStrokeOrder = ziMetas.filter((w) => !!w.stroke_order);
 const ziMetasWithoutStrokeOrder = ziMetas.filter((w) => !w.stroke_order);
 
@@ -83,21 +83,21 @@ console.log(
 console.log(
   '- 无拼音无笔顺无字形的字列表：' +
     ziMetasWithoutPinyin
-      .filter((w) => !w.stroke_order && !w.glyph_font_exists)
+      .filter((w) => !w.stroke_order && !w.glyph_exists)
       .map((meta) => meta.value)
       .join(', ')
 );
 console.log(
   '- 无拼音有笔顺无字形的字列表：' +
     ziMetasWithoutPinyin
-      .filter((w) => w.stroke_order && !w.glyph_font_exists)
+      .filter((w) => w.stroke_order && !w.glyph_exists)
       .map((meta) => meta.value)
       .join(', ')
 );
 console.log(
   '- 无拼音无笔顺有字形的字列表：' +
     ziMetasWithoutPinyin
-      .filter((w) => !w.stroke_order && w.glyph_font_exists)
+      .filter((w) => !w.stroke_order && w.glyph_exists)
       .map((meta) => meta.value)
       .join(', ')
 );
@@ -175,7 +175,7 @@ console.log();
 // -----------------------------------------------------------------------
 console.log();
 console.log('保存有字形的字数据 ...');
-saveZiMetasToFile(ziMetasWithGlyph, ziDataValidFile);
+updateValidZiMetaWeights(ziMetasWithGlyph);
 
-console.log('有字形的字数据已保存至：' + ziDataValidFile);
+console.log('处理完毕！');
 console.log();

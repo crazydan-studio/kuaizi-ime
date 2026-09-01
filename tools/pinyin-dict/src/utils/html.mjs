@@ -1,4 +1,4 @@
-export function naiveHTMLNodeInnerText(node) {
+export function nativeHTMLNodeInnerText(node) {
   // https://github.com/jsdom/jsdom/issues/1245#issuecomment-1243809196
   // We need Node(DOM's Node) for the constants,
   // but Node doesn't exist in the nodejs global space,
@@ -11,13 +11,19 @@ export function naiveHTMLNodeInnerText(node) {
         .map((node) => {
           switch (node.nodeType) {
             case Node.TEXT_NODE:
-              return node.textContent;
+              return trimHTMLText(node.textContent);
             case Node.ELEMENT_NODE:
-              return naiveHTMLNodeInnerText(node);
+              return nativeHTMLNodeInnerText(node);
             default:
               return '';
           }
         })
+        .filter((v) => !!v)
         .join(' ')
     : '';
+}
+
+export function trimHTMLText(text) {
+  // Note：消除零宽不可见字符
+  return text.replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
 }

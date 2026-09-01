@@ -9,7 +9,7 @@ const data_path = (...paths) =>
  * @return ```json
  * {'㑟': {
  *    value: '㑟', unicode: 'U+345F',
- *    pinyins: [{value: 'běng'}, {value: 'bó'}, {value: 'pěng'}]
+ *    pinyins: ['běng', 'bó', 'pěng']
  * }, ...}
  * ```
  */
@@ -33,7 +33,7 @@ export async function readZdicData() {
     }
 
     const zi = line.replaceAll(/^.+#\s*([^\s]+).*$/g, '$1');
-    const pinyins = joinedPinyin.split(/,/g).map((value) => ({ value }));
+    const pinyins = joinedPinyin.split(/,/g);
 
     data[zi] = { value: zi, unicode, pinyins };
   });

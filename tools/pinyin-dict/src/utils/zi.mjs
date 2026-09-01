@@ -3,7 +3,7 @@ import getSystemFonts from 'get-system-fonts';
 
 const systemFonts = await prepareSystemFonts();
 
-export function getZiCode(zi) {
+export function sumCharCodes(zi) {
   let code = 0;
   for (var i = 0; i < zi.length; i++) {
     code += zi.charCodeAt(i);
@@ -11,8 +11,16 @@ export function getZiCode(zi) {
   return code;
 }
 
-export function getZiUnicode(zi) {
-  return 'U+' + zi.codePointAt(0).toString(16).toUpperCase();
+export function getUnicodeStr(zi) {
+  return 'U+' + getUnicode(zi).toString(16).toUpperCase();
+}
+
+export function getUnicode(zi) {
+  return zi.codePointAt(0);
+}
+
+export function fromUnicode(code) {
+  return String.fromCodePoint(code);
 }
 
 /** 判断系统字体中是否存在指定编码的字形，若不存在，则表示该编码的字不可读 */

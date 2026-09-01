@@ -1,84 +1,113 @@
 import { sleep } from '#utils/native.mjs';
-import {
-  fromRootPath,
-  readLineFromFile,
-  appendLineToFile
-} from '#utils/file.mjs';
+import { fromRootPath } from '#utils/file.mjs';
 import { zeroPinyinTone, correctPinyin, correctZhuyin } from '#utils/spell.mjs';
+import { getUnicode } from '#utils/zi.mjs';
+
+import {
+  openDB,
+  closeDB,
+  saveToDB,
+  execSQLFile,
+  queryAll,
+  execSQL
+} from '#utils/sqlite.mjs';
 
 import { fetchZiMeta } from '#data/provider/zdic.net.mjs';
 
-/** 获取字信息的存储文件 */
-export function getZiMetasSavedFile() {
-  return fromRootPath('data', 'pinyin-dict.valid.txt');
+const sql_file_path = (name) =>
+  fromRootPath('src', 'data/zi/' + name + '.create.sql');
+
+/** 获取字信息的 SQLite 文件 */
+function getZiMetaSQLiteFile() {
+  return fromRootPath('data', 'pinyin-zi-dict.sqlite');
 }
 
-/** 读取所有已保存的字信息 */
-export async function readAllSavedZiMetas() {
+/** 读取所有有效的字信息 */
+export function readAllValidZiMetas() {
+  const dbFile = getZiMetaSQLiteFile();
+  const db = openDB(dbFile);
+
+  try {
+    return _readAllValidZiMetas(db);
+  } finally {
+    closeDB(db);
+  }
+}
+
+function _readAllValidZiMetas(db) {
   const ziMetas = [];
 
-  const file = getZiMetasSavedFile();
-  await readLineFromFile(file, (line) => {
-    if (!line || !line.trim()) {
-      return;
-    }
+  queryAll(db, 'select * from zi_meta where valid = 1').forEach((row) => {
+    const meta = fromZiMetaDBRow(row);
 
-    const metas = JSON.parse(line);
-    metas.forEach((meta) => {
-      ziMetas.push(meta);
-    });
+    ziMetas.push(meta);
   });
+
   return ziMetas;
 }
 
 /**
- * 补充字信息并按行保存为 json 数组数据，返回全部字信息
+ * 补充字信息并保存至数据库，再返回全部字信息
  *
  * @return ```json
  * [{
  *    value: '㑟', unicode: 'U+345F',
- *    pinyins: [{value: 'běng'}, {value: 'bó'}, {value: 'pěng'}],
+ *    pinyins: ['běng', 'bó', 'pěng'],
  *    ...
  * }, ...]
  * ```
  */
-export async function patchZiMetaAndSaveToFile(thinZies, file) {
+export async function patchAndSaveZiMetas(thinZies) {
+  const dbFile = getZiMetaSQLiteFile();
+  const db = openDB(dbFile);
+
+  const sqlFile = sql_file_path('table-meta');
+  execSQLFile(db, sqlFile);
+
+  try {
+    return await _patchAndSaveZiMetas(db, thinZies);
+  } finally {
+    closeDB(db);
+  }
+}
+
+async function _patchAndSaveZiMetas(db, thinZies) {
   const batchSize = 20;
 
   let savedZiMetas = [];
 
+  // -------------------------------------------------------
+  // 读取已保存数据
   const savedZies = {};
-  await readLineFromFile(file, (line) => {
-    if (!line || !line.trim()) {
+  queryAll(db, 'select * from zi_meta').forEach((row) => {
+    const meta = fromZiMetaDBRow(row);
+
+    if (shouldBeExcludedZi(meta)) {
+      savedZies[meta.value] = true;
+
+      console.log(`忽略字：${ziMetaToString(meta)}`);
       return;
     }
 
-    const metas = JSON.parse(line);
-    metas.forEach((meta) => {
-      if (shouldBeExcludedZi(meta)) {
-        savedZies[meta.value] = true;
+    const zi = thinZies[meta.value];
+    if (!zi) {
+      console.log(`多余字：${ziMetaToString(meta)}`);
+      return;
+    }
 
-        console.log(`忽略字：${ziMetaToString(meta)}`);
-        return;
-      }
+    savedZies[meta.value] = true;
 
-      const zi = thinZies[meta.value];
-      if (!zi) {
-        console.log(`多余字：${ziMetaToString(meta)}`);
-        return;
-      }
+    correctZiMeta(meta);
 
-      savedZies[meta.value] = true;
-
-      correctZiMeta(meta);
-
-      savedZiMetas.push(meta);
-    });
+    savedZiMetas.push(meta);
   });
 
+  // -------------------------------------------------------
+  // 抓取缺失数据
   const missingZiKeys = Object.keys(thinZies).filter(
     (key) => !savedZies[key] && !shouldBeExcludedZi(thinZies[key])
   );
+
   if (missingZiKeys.length > 0) {
     console.log(
       `已抓取到 ${savedZiMetas.length} 条数据，继续抓取剩余的 ${missingZiKeys.length} 条数据 ...`
@@ -88,7 +117,8 @@ export async function patchZiMetaAndSaveToFile(thinZies, file) {
       const keys = missingZiKeys.slice(i, i + batchSize);
       const metas = await getZiMetas(keys, thinZies);
 
-      appendLineToFile(file, JSON.stringify(metas));
+      saveToDB(db, 'zi_meta', metas.map(toZiMetaDBRow), true);
+
       console.log(`已抓取到第 ${i + 1} 到 ${i + keys.length} 之间的数据.`);
 
       savedZiMetas = savedZiMetas.concat(metas);
@@ -105,15 +135,19 @@ async function getZiMetas(ziKeys, thinZies) {
   // Note: 挨个获取以避免 "429 Too Many Requests"
   for (let ziKey of ziKeys) {
     const zi = thinZies[ziKey];
+    const metaStr = ziMetaToString(zi);
     const meta = await fetchZiMeta(ziKey);
 
-    if (!meta.src_url) {
-      console.log(`缺失字：${ziMetaToString(zi)}`);
+    if (meta.error) {
+      console.log(`缺失字：${metaStr} => ${meta.error}`);
       continue;
     }
 
-    if (meta.pinyins.length == 0) {
-      meta.pinyins = zi.pinyins || [];
+    // Note：以汉典网的拼音优先
+    if (meta.pinyins.length == 0 && zi.pinyins.length > 0) {
+      console.log(`汉典网无拼音的字：${metaStr}`);
+
+      meta.pinyins = zi.pinyins;
     }
 
     correctZiMeta(meta);
@@ -126,21 +160,98 @@ async function getZiMetas(ziKeys, thinZies) {
   return ziMetas;
 }
 
-/** 保存字信息到指定文件 */
-export function saveZiMetasToFile(ziMetas, file) {
-  const batchSize = 50;
+/** 更新有效字的权重数据（字型权重 + 拼音使用权重）*/
+export function updateValidZiMetaWeights(ziMetas) {
+  const dbFile = getZiMetaSQLiteFile();
+  const db = openDB(dbFile);
 
-  for (let i = 0; i < ziMetas.length; i += batchSize) {
-    const metas = ziMetas.slice(i, i + batchSize);
-
-    // Note: 首行写入前，先清空文件
-    appendLineToFile(file, JSON.stringify(metas), i === 0);
+  try {
+    return _updateValidZiMetaWeights(db, ziMetas);
+  } finally {
+    closeDB(db);
   }
 }
 
+function _updateValidZiMetaWeights(db, ziMetas) {
+  execSQL(db, 'update zi_meta set valid = 0');
+
+  const savedZiMetaMap = {};
+  queryAll(db, 'select * from zi_meta').forEach((row) => {
+    savedZiMetaMap[row.value] = row;
+  });
+
+  // -----------------------------------------------
+  const updatedZiMetaMap = [];
+  for (let i = 0; i < ziMetas.length; i++) {
+    const meta = ziMetas[i];
+    const savedMeta = savedZiMetaMap[meta.value];
+    if (!savedMeta) {
+      continue;
+    }
+
+    updatedZiMetaMap.push({
+      __exist__: savedMeta,
+      id_: savedMeta.id_,
+      valid: 1,
+      // 权重更新
+      glyph_weight: meta.glyph_weight || 0,
+      pinyin_used_weights: JSON.stringify(meta.pinyin_used_weights || {}),
+      // 繁简修正
+      traditional: meta.traditional ? 1 : 0,
+      simples: JSON.stringify(meta.simples),
+      traditionals: JSON.stringify(meta.traditionals)
+    });
+  }
+
+  saveToDB(db, 'zi_meta', updatedZiMetaMap, true);
+}
+
 function ziMetaToString(meta) {
-  const pinyins = meta.pinyins.map((py) => py.value).join(',');
-  return `${meta.value} - ${pinyins}`;
+  return `${meta.value} - ${meta.pinyins.join(',')}`;
+}
+
+/** 将字信息对象转换为数据库行 */
+function toZiMetaDBRow(meta) {
+  const row = {
+    ...meta,
+    id_: getUnicode(meta.value),
+    //
+    valid: meta.valid ? 1 : 0,
+    traditional: meta.traditional ? 1 : 0,
+    glyph_exists: meta.glyph_exists ? 1 : 0,
+    //
+    glyph_weight: meta.glyph_weight || 0,
+    //
+    pinyins: JSON.stringify(meta.pinyins),
+    pinyin_used_weights: JSON.stringify(meta.pinyin_used_weights || {}),
+    zhuyins: JSON.stringify(meta.zhuyins),
+    simples: JSON.stringify(meta.simples),
+    variants: JSON.stringify(meta.variants),
+    traditionals: JSON.stringify(meta.traditionals)
+  };
+
+  delete row.value;
+  delete row.unicode;
+
+  return row;
+}
+
+/** 将数据库行转换为字信息对象 */
+function fromZiMetaDBRow(row) {
+  return {
+    ...row,
+    //
+    valid: !!row.valid,
+    traditional: !!row.traditional,
+    glyph_exists: !!row.glyph_exists,
+    //
+    pinyins: JSON.parse(row.pinyins),
+    pinyin_used_weights: JSON.parse(row.pinyin_used_weights),
+    zhuyins: JSON.parse(row.zhuyins),
+    simples: JSON.parse(row.simples),
+    variants: JSON.parse(row.variants),
+    traditionals: JSON.parse(row.traditionals)
+  };
 }
 
 /** 补充拼音字的使用权重（值越大，优先级越高） */
@@ -148,14 +259,7 @@ export function patchPinyinZiUsedWeight(ziMetas, pinyinZiWeightData) {
   ziMetas.forEach((meta) => {
     const zi = meta.value;
 
-    const weights = pinyinZiWeightData[zi];
-    if (!weights) {
-      return;
-    }
-
-    meta.pinyins.forEach((pinyin) => {
-      pinyin.used_weight = weights[pinyin.value] || 0;
-    });
+    meta.pinyin_used_weights = pinyinZiWeightData[zi] || {};
   });
 }
 
@@ -172,7 +276,7 @@ export function calculateZiGlyphWeight(ziMetas) {
     (radicalGroups[meta.radical] ||= []).push(meta);
 
     meta.pinyins.forEach((pinyin) => {
-      const py = zeroPinyinTone(pinyin.value);
+      const py = zeroPinyinTone(pinyin);
 
       (pinyinGroups[py] ||= []).push(meta);
     });
@@ -207,21 +311,6 @@ export function calculateZiGlyphWeight(ziMetas) {
 
 /** 纠正字信息 */
 function correctZiMeta(ziMeta) {
-  // 新旧版本兼容处理
-  if (ziMeta.simple_words) {
-    ziMeta.simples = ziMeta.simple_words;
-    delete ziMeta.simple_words;
-  }
-  if (ziMeta.variant_words) {
-    ziMeta.variants = ziMeta.variant_words;
-    delete ziMeta.variant_words;
-  }
-  if (ziMeta.traditional_words) {
-    ziMeta.traditionals = ziMeta.traditional_words;
-    delete ziMeta.traditional_words;
-  }
-  // 新旧版本兼容处理
-
   if (!ziMeta.traditional) {
     ziMeta.traditional = ziMeta.simples.length > 0;
   }
@@ -259,53 +348,43 @@ function correctZiMeta(ziMeta) {
 
   correctZiMetaByValue(ziMeta);
 
-  ziMeta.pinyins.forEach((data) => {
-    data.value = correctPinyin(data.value);
-  });
-  ziMeta.zhuyins.forEach((data) => {
-    data.value = correctZhuyin(data.value);
+  ziMeta.pinyins = ziMeta.pinyins.map((py) => correctPinyin(py));
+  ziMeta.zhuyins = ziMeta.zhuyins.map((zy) => correctZhuyin(zy));
 
-    if (data.value === 'ㄏπ') {
-      console.log(ziMeta.value, data);
-    }
-  });
+  addMissingPinyin(ziMeta);
 
   // 去除重复、无用读音
   ziMeta.pinyins = removeUselessSpell(ziMeta.pinyins);
   ziMeta.zhuyins = removeUselessSpell(ziMeta.zhuyins);
-
-  addMissingPinyin(ziMeta);
 }
 
 function addMissingPinyin(ziMeta) {
   const missing = getMissingPinyin();
 
   const pinyin = missing[ziMeta.value];
-  if (pinyin) {
-    ziMeta.pinyins = ziMeta.pinyins.filter((data) => data.value !== pinyin);
-    ziMeta.pinyins.push({
-      value: pinyin
-    });
+  if (!pinyin) {
+    return;
   }
+
+  pinyin.split(',').forEach((value) => {
+    ziMeta.pinyins.push(value);
+  });
 }
 
 function removeUselessSpell(spells) {
   const map = {};
-  spells.forEach((spell) => {
-    if (shouldBeExcludedPinyin(spell)) {
-      return;
-    }
 
-    const value = spell.value;
-    const old = map[value] || {};
-    map[value] = Object.assign(old, spell);
+  spells.forEach((spell) => {
+    if (!shouldBeExcludedPinyin(spell)) {
+      map[spell] = true;
+    }
   });
 
-  return Object.values(map);
+  return Object.keys(map);
 }
 
 function shouldBeExcludedPinyin(pinyin) {
-  switch (pinyin.value) {
+  switch (pinyin) {
     // https://www.zdic.net/hans/%E5%9A%B8
     case 'dím':
     // https://www.zdic.net/hans/%E4%BB%92
@@ -320,10 +399,7 @@ function shouldBeExcludedPinyin(pinyin) {
     // 【忒】仅保留拼音 tuī
     case 'tēi':
     //
-    case 'pià':
-    case 'kēi':
     case 'ru4':
-    case 'bēr':
     case 'hen4':
     case 'dae':
     case 'hwa':
@@ -336,20 +412,49 @@ function shouldBeExcludedPinyin(pinyin) {
     case 'kam4':
     case 'uo˥':
     case 'təp˥':
-    case 'yīngmǔ':
     case 'gi1':
     case 'ki1':
     case 'ŋiɔŋ˨˩':
     case 'nig9':
-    case 'hó':
-    case 'hǒ':
-    case 'cèi':
-    case 'wòng':
-    case 'lò':
     case 'lan2':
+    case 'tae':
+    case 'seon':
+    case 'ceon':
+    case 'ceok':
+    case 'lo':
+    case 'dug':
+    case 'dìn':
+    case 'py':
       return true;
   }
-  return !pinyin.value;
+
+  switch (zeroPinyinTone(pinyin)) {
+    case 'tiaota':
+    case 'pia':
+    case 'kei':
+    case 'ber':
+    case 'yingmu':
+    case 'ho':
+    case 'cei':
+    case 'wong':
+    case 'lo':
+    case 'wenn':
+    case 'puti':
+    case 'lüan':
+    case 'yung':
+    case 'sei':
+    case 'pia':
+    case 'yingli':
+    case 'geda':
+    case 'pasi':
+    case 'haixun':
+    case 'haili':
+    case 'taojue':
+    case 'feifei':
+      return true;
+  }
+
+  return !pinyin;
 }
 
 function shouldBeExcludedZi(ziMeta) {
@@ -400,95 +505,100 @@ function getMissingPinyin() {
     禑: 'wú',
     𤭢: 'suì',
     𥌩: 'tè',
-    伯: 'bo',
     作: 'zuō',
     轉: 'zhuàn',
-    子: 'zi',
-    儿: 'er',
-    们: 'men',
-    娃: 'wa',
-    奶: 'nai',
-    哥: 'ge',
-    妈: 'ma',
-    妹: 'mei',
-    姐: 'jie',
-    姥: 'lao',
-    弟: 'di',
-    爷: 'ye',
-    丧: 'sang',
-    罗: 'luo',
-    嗦: 'suo',
-    虎: 'hu',
-    担: 'dan',
     色: 'shǎi',
-    掇: 'duo',
-    量: 'liang',
-    声: 'sheng',
-    叨: 'dao',
-    吵: 'chao',
-    嗦: 'suo',
-    伙: 'huo',
-    壳: 'ke',
-    父: 'fu',
-    和: 'huo',
-    落: 'luo',
-    星: 'xing',
-    友: 'you',
-    服: 'fu',
-    糊: 'hu',
-    息: 'xi',
-    係: 'xi',
-    思: 'si',
-    兒: 'er',
     荷: 'hè',
-    巴: 'ba',
-    候: 'hou',
-    猬: 'wei',
     叉: 'chà',
-    弹: 'tan',
-    彈: 'tan',
     拉: 'lǎ',
-    乎: 'hu',
-    承: 'cheng',
-    彩: 'cai',
     踏: 'tā',
     骑: 'jì',
-    轳: 'lu',
     靡: 'mǐ',
     處: 'chù',
-    呃: 'e',
-    嗯: 'ng',
     虎: 'hū',
-    馬: 'ma',
-    璃: 'li',
     隆: 'lōng',
-    頭: 'tou',
-    矩: 'ju',
-    荷: 'he',
     興: 'xìng',
     與: 'yù',
-    狸: 'li',
-    聲: 'sheng',
-    结: 'jie',
-    傅: 'fu',
-    羅: 'luo',
-    磨: 'mo',
-    睛: 'jing',
     衩: 'chǎ',
-    识: 'shi',
-    宜: 'yi',
     荷: 'hè',
-    迷: 'mi',
-    督: 'du',
     鑽: 'zuàn',
-    饨: 'tun',
     綠: 'lù',
     頻: 'pín',
     衝: 'chòng',
-    膊: 'bo',
     嘀: 'dī',
-    噷: 'hm',
-    夻: 'qù'
+    夻: 'qù',
+    叾: 'dū,dǔ,dù',
+    硳: 'chì',
+    縇: 'xuān',
+    襨: 'duì',
+    猠: 'diǎn',
+    𩏑: 'hán'
+    // 伯: 'bo',
+    // 子: 'zi',
+    // 儿: 'er',
+    // 们: 'men',
+    // 娃: 'wa',
+    // 奶: 'nai',
+    // 哥: 'ge',
+    // 妈: 'ma',
+    // 妹: 'mei',
+    // 姐: 'jie',
+    // 姥: 'lao',
+    // 弟: 'di',
+    // 爷: 'ye',
+    // 丧: 'sang',
+    // 罗: 'luo',
+    // 嗦: 'suo',
+    // 虎: 'hu',
+    // 担: 'dan',
+    // 掇: 'duo',
+    // 量: 'liang',
+    // 声: 'sheng',
+    // 叨: 'dao',
+    // 吵: 'chao',
+    // 伙: 'huo',
+    // 壳: 'ke',
+    // 父: 'fu',
+    // 和: 'huo',
+    // 落: 'luo',
+    // 星: 'xing',
+    // 友: 'you',
+    // 服: 'fu',
+    // 糊: 'hu',
+    // 息: 'xi',
+    // 係: 'xi',
+    // 思: 'si',
+    // 兒: 'er',
+    // 巴: 'ba',
+    // 候: 'hou',
+    // 猬: 'wei',
+    // 弹: 'tan',
+    // 彈: 'tan',
+    // 乎: 'hu',
+    // 承: 'cheng',
+    // 彩: 'cai',
+    // 轳: 'lu',
+    // 呃: 'e',
+    // 嗯: 'ng',
+    // 馬: 'ma',
+    // 璃: 'li',
+    // 頭: 'tou',
+    // 矩: 'ju',
+    // 荷: 'he',
+    // 狸: 'li',
+    // 聲: 'sheng',
+    // 结: 'jie',
+    // 傅: 'fu',
+    // 羅: 'luo',
+    // 磨: 'mo',
+    // 睛: 'jing',
+    // 识: 'shi',
+    // 宜: 'yi',
+    // 迷: 'mi',
+    // 督: 'du',
+    // 饨: 'tun',
+    // 膊: 'bo',
+    // 噷: 'hm',
   };
 }
 
@@ -679,19 +789,19 @@ function correctZiMetaByValue(ziMeta) {
       ziMeta.glyph_struct = '左右结构';
       break;
     case '𩭳':
-      ziMeta.pinyins = [{ value: 'huō' }];
+      ziMeta.pinyins = ['huō'];
       break;
     case '𧵻':
-      ziMeta.pinyins = [{ value: 'huó' }];
+      ziMeta.pinyins = ['huó'];
       break;
     case '𦨯':
-      ziMeta.pinyins = [{ value: 'huó' }];
+      ziMeta.pinyins = ['huó'];
       break;
     case '㣫': // ㄓㄨㄥˇㄉㄨㄥˋ
-      ziMeta.zhuyins = [{ value: 'ㄓㄨㄥˇ' }, { value: 'ㄉㄨㄥˋ' }];
+      ziMeta.zhuyins = ['ㄓㄨㄥˇ', 'ㄉㄨㄥˋ'];
       break;
     case '頁': // ㄧㄝˋ，ㄒ〡ㄝˊ
-      ziMeta.zhuyins = [{ value: 'ㄧㄝˋ' }, { value: 'ㄒ〡ㄝˊ' }];
+      ziMeta.zhuyins = ['ㄧㄝˋ', 'ㄒ〡ㄝˊ'];
       break;
   }
 
@@ -742,7 +852,8 @@ function calcGlyphWeight(meta) {
     '左下包围结构',
     '左上包围结构',
     '右上包围结构',
-    '品字结构'
+    '品字结构',
+    '未知'
   ];
 
   // 笔画权值 (1 - 横/提，2 - 竖，3 - 撇，4 - 捺/点，5 - 折)

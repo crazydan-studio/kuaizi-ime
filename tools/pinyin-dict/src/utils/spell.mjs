@@ -54,6 +54,12 @@ export function correctPinyin(pinyin) {
     case 'gūi':
       pinyin = 'guī';
       break;
+    case 'tíì':
+      pinyin = 'tí';
+      break;
+    case 'yái':
+      pinyin = 'yá';
+      break;
   }
 
   return pinyin

@@ -13,7 +13,14 @@ export async function readTrad2SimpChars() {
   // https://github.com/BYVoid/OpenCC/blob/master/data/dictionary/TSCharacters.txt
   const file = dict_path('TSCharacters');
 
-  return await readMappings(file);
+  const result = await readMappings(file);
+
+  // 删除自身为简体字的简体映射关系
+  ['苧', '坏', '沈', '么'].forEach((char) => {
+    delete result[char];
+  });
+
+  return result;
 }
 
 /**
@@ -37,7 +44,15 @@ export async function readSimp2TradChars() {
   // https://github.com/BYVoid/OpenCC/blob/master/data/dictionary/STCharacters.txt
   const file = dict_path('STCharacters');
 
-  return await readMappings(file);
+  const result = await readMappings(file);
+
+  //   - 苧 的汉典繁简性：[繁] => 苎，OpenCC 的繁简性：[简] => 苎 + 薴
+  // 删除自身为繁体字的繁体映射关系
+  ['緼', '輼', '藴', '麽', '醖'].forEach((char) => {
+    delete result[char];
+  });
+
+  return result;
 }
 
 /**
