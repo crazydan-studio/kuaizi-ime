@@ -19,3 +19,6 @@ console.log('保存表情符号 ...');
 appendLineToFile(emojiDataFile, JSON.stringify(emojiGroups), true);
 console.log('- 保存成功');
 console.log();
+
+console.log('处理完毕！');
+console.log();

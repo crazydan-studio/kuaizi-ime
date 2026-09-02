@@ -1,8 +1,9 @@
 import { fromRootPath } from '#utils/file.mjs';
 import {
+  calcPinyinId,
   zeroPinyinTone,
   getPinyinTone,
-  symbolToNumberTonePinyin
+  PINYIN_ID_UPPER_LIMIT
 } from '#utils/spell.mjs';
 import {
   saveToDB,
@@ -10,6 +11,7 @@ import {
   execSQLFile,
   queryAll
 } from '#utils/sqlite.mjs';
+import { getUnicode, fromUnicode } from '#utils/zi.mjs';
 
 export { openDB as open, closeDB as close } from '#utils/sqlite.mjs';
 
@@ -25,6 +27,7 @@ export function saveSpells(db, ziMetas) {
     {
       prop: 'pinyins',
       table: 'meta_pinyin',
+      id_fn: calcPinyinId,
       tone_zero_fn: zeroPinyinTone,
       tone_get_fn: getPinyinTone
     }
@@ -40,10 +43,12 @@ export function saveZies(db, ziMetas) {
   const ziMetaData = {};
   const ziRadicalMetaData = {};
   ziMetas.forEach((meta) => {
-    ziMetaData[meta.value] = {
+    const zi = meta.value;
+    const zi_id = getUnicode(zi);
+
+    ziMetaData[zi] = {
       __meta__: meta,
-      value_: meta.value,
-      unicode_: meta.unicode,
+      id_: zi_id,
       glyph_struct_: meta.glyph_struct,
       stroke_order_: meta.stroke_order,
       total_stroke_count_: meta.total_stroke_count,
@@ -53,10 +58,14 @@ export function saveZies(db, ziMetas) {
 
     const radical = meta.radical;
     if (radical) {
+      const radical_id = getUnicode(radical);
+
       ziRadicalMetaData[radical] = {
-        value_: radical,
+        id_: radical_id,
         stroke_count_: meta.radical_stroke_count || 0
       };
+
+      ziMetaData[zi].radical_id_ = radical_id;
     }
   });
 
@@ -65,63 +74,37 @@ export function saveZies(db, ziMetas) {
   const missingZiRadicals = [];
   queryAll(db, 'select * from meta_zi_radical').forEach((row) => {
     const id = row.id_;
-    const value = row.value_;
+    const value = fromUnicode(id);
 
     if (ziRadicalMetaData[value]) {
-      ziRadicalMetaData[value].id_ = id;
       ziRadicalMetaData[value].__exist__ = row;
     } else {
       // 在库中已存在，但已不再被使用
       missingZiRadicals.push(id);
+
       console.log('部首已被废弃：', value, id);
     }
   });
   saveToDB(db, 'meta_zi_radical', ziRadicalMetaData, false);
   removeFromDB(db, 'meta_zi_radical', missingZiRadicals);
 
-  // 获取新增字部首 id
-  queryAll(db, 'select id_, value_ from meta_zi_radical').forEach((row) => {
-    const value = row.value_;
-    ziRadicalMetaData[value].id_ = row.id_;
-  });
-
-  // ----------------------------------------------------------------
-  // 绑定字与其部首
-  Object.keys(ziMetaData).forEach((k) => {
-    const zi = ziMetaData[k];
-    const radical = zi.__meta__.radical;
-    const radical_id_ = (ziRadicalMetaData[radical] || {}).id_;
-
-    if (!radical_id_) {
-      console.log('字的部首未保存：', zi.value_, radical);
-    }
-
-    zi.radical_id_ = radical_id_;
-  });
-
   // 保存字信息
   const missingZies = [];
   queryAll(db, 'select * from meta_zi').forEach((row) => {
     const id = row.id_;
-    const value = row.value_;
+    const value = fromUnicode(id);
 
     if (ziMetaData[value]) {
-      ziMetaData[value].id_ = id;
       ziMetaData[value].__exist__ = row;
     } else {
       // 在库中已存在，但已不再被使用
       missingZies.push(id);
+
       console.log('字已被废弃：', value, id);
     }
   });
   saveToDB(db, 'meta_zi', ziMetaData, false);
   removeFromDB(db, 'meta_zi', missingZies);
-
-  // 获取新增字 id
-  queryAll(db, 'select id_, value_ from meta_zi').forEach((row) => {
-    const value = row.value_;
-    ziMetaData[value].id_ = row.id_;
-  });
 
   // ----------------------------------------------------------------
   // 绑定读音关联
@@ -129,9 +112,9 @@ export function saveZies(db, ziMetas) {
     {
       prop: 'pinyins',
       table: 'meta_zi_with_pinyin',
-      spell_meta_table: 'meta_pinyin',
-      has_weight: true,
-      spell_code_fn: symbolToNumberTonePinyin
+      //
+      spell_used_weights_prop: 'pinyin_used_weights',
+      spell_id_fn: calcPinyinId
     }
   ].forEach((options) => linkZiSpells(db, ziMetaData, options));
 
@@ -149,22 +132,28 @@ export function saveZies(db, ziMetas) {
   ].forEach((options) => linkZiVariants(db, ziMetaData, options));
 }
 
-function doSaveSpells(db, ziMetas, { prop, table, tone_zero_fn, tone_get_fn }) {
+function doSaveSpells(
+  db,
+  ziMetas,
+  { prop, table, id_fn, tone_zero_fn, tone_get_fn }
+) {
   const spellMetaData = {};
 
   ziMetas.forEach((ziMeta) => {
     const spells = ziMeta[prop];
 
-    spells.forEach(({ value }) => {
+    spells.forEach((value) => {
       if (!value || spellMetaData[value]) {
         return;
       }
 
+      const id_ = id_fn(value);
       const value_ = tone_zero_fn(value);
       const tone_ = tone_get_fn(value);
 
       const code = `${value_}:${tone_}`;
       spellMetaData[code] = {
+        id_,
         value_,
         tone_,
         raw_: value
@@ -182,11 +171,11 @@ function doSaveSpells(db, ziMetas, { prop, table, tone_zero_fn, tone_get_fn }) {
     const code = `${value}:${tone}`;
 
     if (spellMetaData[code]) {
-      spellMetaData[code].id_ = id;
       spellMetaData[code].__exist__ = row;
     } else {
       // 在库中已存在，但已不再被使用
       missingSpellMetas.push(id);
+
       console.log('读音已被废弃：', row.raw_, code, id);
     }
   });
@@ -198,74 +187,56 @@ function doSaveSpells(db, ziMetas, { prop, table, tone_zero_fn, tone_get_fn }) {
 function linkZiSpells(
   db,
   ziMetaData,
-  { prop, table, spell_meta_table, spell_code_fn, has_weight }
+  { prop, table, spell_id_fn, spell_used_weights_prop }
 ) {
-  const spellMetaMap = {};
-  queryAll(db, `select * from ${spell_meta_table}`).forEach((row) => {
-    const code = spell_code_fn(row.raw_);
-
-    const computedCode = `${row.value_}${row.tone_}`;
-    if (code != computedCode) {
-      console.log(
-        `已存储的拼音 ${row.raw_} 声调数值与计算结果不同：${code} vs ${computedCode}`
-      );
-    }
-
-    spellMetaMap[code] = row.id_;
-  });
-
   const ziIdMap = {};
   const spellIdMap = {};
 
-  const spellType = has_weight ? '拼音' : '注音';
+  const spellType = spell_used_weights_prop ? '拼音' : '注音';
   const linkDataMap = {};
   Object.keys(ziMetaData).forEach((k) => {
     const zi = ziMetaData[k];
     const spells = zi.__meta__[prop];
+    const spell_used_weights = zi.__meta__[spell_used_weights_prop] || {};
 
     const zi_id_ = zi.id_;
     ziIdMap[zi_id_] = k;
 
     spells.forEach((spell) => {
-      const spell_code = spell_code_fn(spell.value);
-
-      const spell_id_ = spellMetaMap[spell_code];
-      spellIdMap[spell_id_] = spell.value;
+      const spell_id_ = spell_id_fn(spell);
+      spellIdMap[spell_id_] = spell;
 
       const code = zi_id_ + ':' + spell_id_;
-      const data = (linkDataMap[code] = {
+      linkDataMap[code] = {
         zi_id_,
-        spell_id_
-      });
-
-      if (has_weight) {
-        data.used_weight_ = spell.used_weight || 0;
-      }
+        spell_id_,
+        used_weight_: spell_used_weights[spell] || 0
+      };
     });
   });
 
+  const linkPrimaryKeys = ['zi_id_', 'spell_id_'];
   const missingLinks = [];
   queryAll(db, `select * from ${table}`).forEach((row) => {
-    const id = row.id_;
     const code = row.zi_id_ + ':' + row.spell_id_;
 
     if (linkDataMap[code]) {
-      linkDataMap[code].id_ = id;
       linkDataMap[code].__exist__ = row;
     } else {
       // 在库中已存在，但已不再被使用
-      missingLinks.push(id);
+      missingLinks.push(row);
+
       console.log(
         `${spellType}字已被废弃：`,
-        id,
+        row.id_,
         ziIdMap[row.zi_id_] || '',
         spellIdMap[row.spell_id_] || ''
       );
     }
   });
 
-  saveToDB(db, table, linkDataMap, true);
-  removeFromDB(db, table, missingLinks);
+  saveToDB(db, table, linkDataMap, true, linkPrimaryKeys);
+  removeFromDB(db, table, missingLinks, linkPrimaryKeys);
 }
 
 function linkZiVariants(db, ziMetaData, { prop, table }) {
@@ -319,4 +290,9 @@ function linkZiVariants(db, ziMetaData, { prop, table }) {
 
   saveToDB(db, table, linkData, true, primaryKeys);
   removeFromDB(db, table, missingLinks, primaryKeys);
+}
+
+/** 计算拼音字 id：{字 id} * {拼音 id 上限} + {拼音 id} */
+function calcPinyinZiLinkId(ziId, pyId) {
+  return ziId * PINYIN_ID_UPPER_LIMIT + pyId;
 }

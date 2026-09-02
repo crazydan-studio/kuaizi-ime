@@ -35,4 +35,5 @@ try {
   closeDB(db);
 }
 
+console.log('处理完毕！');
 console.log();

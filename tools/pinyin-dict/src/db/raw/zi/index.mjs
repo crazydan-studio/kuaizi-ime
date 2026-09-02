@@ -1,7 +1,7 @@
 /* SQLite 字典库 */
 import { getZiDictSQLiteFile } from '#db/utils.mjs';
 
-import { readAllSavedZiMetas } from '#data/zi/meta.mjs';
+import { readAllValidZiMetas } from '#data/zi/meta.mjs';
 
 import { patchZiMeta } from './patch.mjs';
 import * as sqlite from './sqlite.mjs';
@@ -13,7 +13,7 @@ const ziDictSQLiteFile = getZiDictSQLiteFile();
 console.log();
 console.log('读取已收集的有效字信息 ...');
 
-const ziMetas = await readAllSavedZiMetas();
+const ziMetas = readAllValidZiMetas();
 ziMetas.forEach((meta) => {
   patchZiMeta(meta);
 });
@@ -36,4 +36,5 @@ try {
   sqlite.close(db);
 }
 
+console.log('处理完毕！');
 console.log();

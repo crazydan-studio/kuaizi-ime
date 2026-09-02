@@ -1,4 +1,5 @@
 import { queryAll } from '#utils/sqlite.mjs';
+import { fromUnicode } from '#utils/zi.mjs';
 
 export function diffMetaData(oldDb, newDb) {
   [
@@ -45,13 +46,15 @@ export function diffMetaData(oldDb, newDb) {
       old_table: { name: 'meta_pinyin', prop: 'value_' }
     },
     {
-      new_table: { name: 'meta_zi', prop: 'value_' },
+      new_table: { name: 'meta_zi', prop: 'id_' },
       old_table: { name: 'meta_word', prop: 'value_' }
     }
   ].forEach(({ new_table, old_table }) => {
     const oldData = {};
     const newData = {};
 
+    // -----------------------------------------------------
+    // 汇总数据
     queryAll(
       oldDb,
       `select id_, ${old_table.prop} from ${old_table.name}`
@@ -66,11 +69,13 @@ export function diffMetaData(oldDb, newDb) {
       `select id_, ${new_table.prop} from ${new_table.name}`
     ).forEach((row) => {
       const id = row.id_;
-      const value = row[new_table.prop];
+      const value = new_table.prop == 'id_' ? fromUnicode(id) : row[new_table.prop];
 
       newData[value] = { id };
     });
 
+    // --------------------------------------------------
+    // 数据比较
     Object.keys(newData).forEach((value) => {
       const newId = newData[value].id;
       const oldId = (oldData[value] || {}).id;
@@ -78,11 +83,11 @@ export function diffMetaData(oldDb, newDb) {
       if (!oldId) {
         console.log(`- ${new_table.name} => 元数据 ${value}:${newId} 为新增`);
       } //
-      else if (oldId != newId) {
-        console.log(
-          `- ${new_table.name} => 元数据 ${value} 的 id 不同: ${oldId} -> ${newId}`
-        );
-      }
+      // else if (oldId != newId) {
+      //   console.log(
+      //     `- ${new_table.name} => 元数据 ${value} 的 id 不同: ${oldId} -> ${newId}`
+      //   );
+      // }
     });
 
     Object.keys(oldData).forEach((value) => {
@@ -102,6 +107,8 @@ export function diffZiData(oldDb, newDb) {
       const oldData = { __mapping__: {} };
       const newData = { __mapping__: {} };
 
+      // -----------------------------------------------------
+      // 汇总数据
       queryAll(oldDb, `select * from ${old_table} group by id_`).forEach(
         (row) => {
           const id = row.id_;
@@ -123,6 +130,8 @@ export function diffZiData(oldDb, newDb) {
         }
       );
 
+      // --------------------------------------------------
+      // 数据比较
       Object.keys(newData).forEach((id) => {
         const oldRow = oldData[id];
         const newRow = newData[id];

@@ -1,20 +1,23 @@
 -- 字部首
 create table
   if not exists meta_zi_radical (
+    -- unicode 数值
     id_ integer not null primary key,
-    value_ text not null,
+    -- 部首
+    value_ text as (char(id_)) virtual,
     -- 笔画数
-    stroke_count_ integer default 0,
-    --
-    unique (value_)
+    stroke_count_ integer default 0
   );
 
 -- 单字
 create table
   if not exists meta_zi (
+    -- unicode 数值
     id_ integer not null primary key,
-    value_ text not null,
-    unicode_ text not null,
+    -- 字
+    value_ text as (char(id_)) virtual,
+    -- unicode 字符
+    unicode_ text as (printf ('U+%04X', id_)) virtual,
     -- 部首 id
     radical_id_ integer default null,
     -- 字形结构
@@ -26,16 +29,15 @@ create table
     -- 是否为繁体字
     traditional_ integer default 0,
     -- 字形权重
-    glyph_weight_ integer default 0,
-    --
-    unique (value_),
-    foreign key (radical_id_) references meta_zi_radical (id_)
+    glyph_weight_ integer default 0
   );
 
 -- --------------------------------------------------------------
 create table
   if not exists meta_zi_with_pinyin (
-    id_ integer not null primary key,
+    -- 由字 id 和拼音 id 组合计算出的恒定且唯一的值：{字 id} * {拼音 id 上限} + {拼音 id}
+    -- 可反推字 id 和拼音 id：字 id = id_ / power(2, 13)，拼音 id = id % power(2, 13)
+    id_ integer as (zi_id_ * power(2, 13) + spell_id_) virtual,
     -- 字 id
     zi_id_ integer not null,
     -- 拼音 id
@@ -43,9 +45,7 @@ create table
     -- 拼音字权重
     used_weight_ integer default 0,
     --
-    unique (zi_id_, spell_id_),
-    foreign key (zi_id_) references meta_zi (id_),
-    foreign key (spell_id_) references meta_pinyin (id_)
+    primary key (zi_id_, spell_id_)
   );
 
 -- --------------------------------------------------------------

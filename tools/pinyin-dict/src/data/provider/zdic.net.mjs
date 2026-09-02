@@ -148,7 +148,7 @@ export async function fetchZiMeta(zi) {
       if (
         char.endsWith(zi) &&
         !!py &&
-        /^[a-zü]+$/.test(zeroPinyinTone(correctPinyin(py)))
+        /^[0-9a-z ü]+$/.test(zeroPinyinTone(correctPinyin(py)))
       ) {
         pyMap[py] ||= true;
 

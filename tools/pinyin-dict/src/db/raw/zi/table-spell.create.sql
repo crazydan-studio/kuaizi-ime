@@ -1,13 +1,12 @@
 -- 拼音
 create table
   if not exists meta_pinyin (
+    -- 根据拼音字符组合计算得到的唯一值。计算逻辑祥见函数 calcPinyinId (src/utils/spell.mjs)
     id_ integer not null primary key,
     -- 拼音的纯英文字母组合
     value_ text not null,
     -- 声调：0 - 零声（轻声），1 - 一声，2 - 二声，3 - 三声，4 - 四声
     tone_ integer not null,
     -- 拼音原始内容（含声调）
-    raw_ text not null,
-    --
-    unique (value_, tone_)
+    raw_ text not null
   );

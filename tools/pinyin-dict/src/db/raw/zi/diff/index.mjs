@@ -26,3 +26,6 @@ try {
   closeDB(oldDb);
   closeDB(newDb);
 }
+
+console.log('处理完毕！');
+console.log();

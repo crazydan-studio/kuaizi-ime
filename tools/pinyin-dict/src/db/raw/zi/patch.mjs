@@ -1,19 +1,20 @@
 /** 修正输入数据 */
 export function patchZiMeta(meta) {
-  // 先增改，
-  const addedPinyin = getAddedPinyin()[meta.value];
-  if (
-    addedPinyin &&
-    meta.pinyins.filter(({ value }) => value == addedPinyin).length == 0
-  ) {
-    meta.pinyins.push({ value: addedPinyin });
-  }
+  const zi = meta.value;
 
-  // 再删除，以避免自增 id 发生较大变动
-  const deletedPinyin = getDeletedPinyin()[meta.value];
-  if (deletedPinyin) {
-    meta.pinyins = meta.pinyins.filter(({ value }) => value !== deletedPinyin);
-  }
+  // -----------------------------------------------
+  const addedList = getAddedPinyin()[zi] || [];
+  addedList.forEach((added) => {
+    if (!meta.pinyins.includes(added)) {
+      meta.pinyins.push(added);
+    }
+  });
+
+  // ------------------------------------------------
+  const deletedList = getDeletedPinyin()[zi] || [];
+  deletedList.forEach((deleted) => {
+    meta.pinyins = meta.pinyins.filter((v) => v != deleted);
+  });
 }
 
 function getDeletedPinyin() {
@@ -30,27 +31,7 @@ function getAddedPinyin() {
     '不:bú',
     '一:yì',
     '一:yí',
-    '子:zi',
-    // 便宜：pián yi
-    '宜:yi',
-    '噷:hm',
-    '吒:zhà',
-    '虎:hu',
-    '枸:gōu',
-    '焘:tāo',
-    '喇:lā',
-    '喇:lá',
-    '蕃:bō',
-    '蕃:fān',
-    '脯:pú',
-    '蕻:hóng',
-    '朵:duo',
-    '鏜:táng',
-    '咔:kā',
-    '蹬:dèng',
-    '爸:ba',
-    '叔:shu',
-    '喝:he',
+    //
     // 《定风波·自春来》 - 无那。恨薄情一去，音书无个
     // https://www.cngwzj.com/pygushi/SongDai/48900/
     '那:nuó',
@@ -130,7 +111,7 @@ function pinyinZiToMap(zies) {
       const zi = s[0];
       const py = s[1];
 
-      map[zi] = py;
+      (map[zi] ||= []).push(py);
     });
 
   return map;
