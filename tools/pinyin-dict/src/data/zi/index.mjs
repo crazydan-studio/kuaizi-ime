@@ -56,6 +56,7 @@ ziMetas.forEach((meta) => {
 
 const withPinyin = (w) => w.pinyins.length > 0;
 const withoutPinyin = (w) => !withPinyin(w);
+
 const ziMetasWithPinyin = ziMetas.filter(withPinyin);
 const ziMetasWithoutPinyin = ziMetas.filter(withoutPinyin);
 const ziMetasWithGlyph = ziMetas.filter((w) => w.glyph_exists);
@@ -177,5 +178,6 @@ console.log();
 console.log('保存有字形的字数据 ...');
 updateValidZiMetaWeights(ziMetasWithGlyph);
 
+console.log();
 console.log('处理完毕！');
 console.log();

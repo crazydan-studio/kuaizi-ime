@@ -19,7 +19,7 @@ const sql_file_path = (name) =>
 
 /** 获取字信息的 SQLite 文件 */
 function getZiMetaSQLiteFile() {
-  return fromRootPath('data', 'pinyin-zi-dict.sqlite');
+  return fromRootPath('data', 'dict-raw-zi-meta.sqlite');
 }
 
 /** 读取所有有效的字信息 */
@@ -107,6 +107,7 @@ async function _patchAndSaveZiMetas(db, thinZies) {
   const missingZiKeys = Object.keys(thinZies).filter(
     (key) => !savedZies[key] && !shouldBeExcludedZi(thinZies[key])
   );
+  // const missingZiKeys = ['縗'];
 
   if (missingZiKeys.length > 0) {
     console.log(
@@ -142,6 +143,8 @@ async function getZiMetas(ziKeys, thinZies) {
       console.log(`缺失字：${metaStr} => ${meta.error}`);
       continue;
     }
+
+    // console.log(JSON.stringify(meta));
 
     // Note：以汉典网的拼音优先
     if (meta.pinyins.length == 0 && zi.pinyins.length > 0) {

@@ -16,6 +16,9 @@ export function correctPinyin(pinyin) {
     case 'yòu ㄧ':
       pinyin = 'yòu';
       break;
+    case 'wān ㄨㄢ':
+      pinyin = 'wān';
+      break;
     case 'ka1':
       pinyin = 'kā';
       break;
@@ -60,6 +63,15 @@ export function correctPinyin(pinyin) {
     case 'yái':
       pinyin = 'yá';
       break;
+    case 'ńg，ń':
+      pinyin = 'ńg';
+      break;
+    case 'ňg，ň':
+      pinyin = 'ňg';
+      break;
+    case 'ǹg，ǹ':
+      pinyin = 'ǹg';
+      break;
   }
 
   return pinyin
@@ -72,9 +84,11 @@ export function correctPinyin(pinyin) {
     .replaceAll('ī', 'ī')
     .replaceAll('ĭ', 'ǐ')
     .replaceAll('ŭ', 'ǔ')
-    .replaceAll('ɡ', 'g')
     .replaceAll('ē', 'ē')
     .replaceAll('ê', 'ē')
+    .replaceAll('ａ', 'a')
+    .replaceAll('ɡ', 'g')
+    .replaceAll('ｑ', 'q')
     .replaceAll(/[·]/g, '');
 }
 

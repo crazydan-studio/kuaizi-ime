@@ -137,9 +137,13 @@ export async function fetchZiMeta(zi) {
       const char = nativeHTMLNodeInnerText(
         $head.querySelector(`.${code}-reading__char`)
       );
+
       const py = nativeHTMLNodeInnerText(
         $head.querySelector(`.${code}-reading__py`)
-      ).replace(/^.+\)/g, '');
+      )
+        .replace(/^.+\)/g, '')
+        .toLowerCase();
+
       const zy = nativeHTMLNodeInnerText(
         $head.querySelector(`.${code}-reading__zy`)
       ).replace(/^.+\)/g, '');
@@ -153,6 +157,8 @@ export async function fetchZiMeta(zi) {
         pyMap[py] ||= true;
 
         zy && (zyMap[zy] ||= true);
+      } else {
+        py && console.log(`无效的汉典拼音：${zi} - ${py}`);
       }
     });
   });

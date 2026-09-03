@@ -27,5 +27,6 @@ try {
   closeDB(newDb);
 }
 
+console.log();
 console.log('处理完毕！');
 console.log();

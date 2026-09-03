@@ -20,8 +20,8 @@ create table
     unicode_ text as (printf ('U+%04X', id_)) virtual,
     -- 部首 id
     radical_id_ integer default null,
-    -- 字形结构
-    glyph_struct_ text default '',
+    -- 字形结构：0 - 未知，1 - 独体结构，2 - 左右结构，3 - 左中右结构，4 - 上下结构，5 - 上中下结构，6 - 全包围结构，7 - 半包围结构，8 - 品字结构，9 - 镶嵌结构，10 - 左上包围结构，11 - 右上包围结构，12 - 左下包围结构，13 - 上包围结构，14 - 下包围结构，15 - 左包围结构，16 - 右包围结构
+    glyph_struct_ integer default 0,
     -- 笔画顺序：1 - 横/提，2 - 竖，3 - 撇，4 - 捺/点，5 - 折
     stroke_order_ text default '',
     -- 总笔画数

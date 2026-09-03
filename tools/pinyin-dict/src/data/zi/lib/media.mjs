@@ -32,7 +32,7 @@ export async function patchZiMedias(ziMetas) {
   const ziMedias = { pinyins: {} };
 
   ziMetas.forEach((meta) => {
-    meta.pinyins.forEach(({ value }) => {
+    meta.pinyins.forEach((value) => {
       if (!ziMedias.pinyins[value]) {
         ziMedias.pinyins[value] =
           `https://img.zdic.net/audio/zd/py/${value}.mp3`;

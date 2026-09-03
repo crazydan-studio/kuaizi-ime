@@ -11,7 +11,7 @@ import {
   execSQLFile,
   queryAll
 } from '#utils/sqlite.mjs';
-import { getUnicode, fromUnicode } from '#utils/zi.mjs';
+import { getUnicode, fromUnicode, getStructureCode } from '#utils/zi.mjs';
 
 export { openDB as open, closeDB as close } from '#utils/sqlite.mjs';
 
@@ -49,7 +49,7 @@ export function saveZies(db, ziMetas) {
     ziMetaData[zi] = {
       __meta__: meta,
       id_: zi_id,
-      glyph_struct_: meta.glyph_struct,
+      glyph_struct_: getStructureCode(meta.glyph_struct),
       stroke_order_: meta.stroke_order,
       total_stroke_count_: meta.total_stroke_count,
       traditional_: meta.traditional ? 1 : 0,
