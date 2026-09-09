@@ -107,7 +107,7 @@ async function _patchAndSaveZiMetas(db, thinZies) {
   const missingZiKeys = Object.keys(thinZies).filter(
     (key) => !savedZies[key] && !shouldBeExcludedZi(thinZies[key])
   );
-  // const missingZiKeys = ['縗'];
+  // const missingZiKeys = ['㔿','韭','严'];
 
   if (missingZiKeys.length > 0) {
     console.log(
@@ -143,7 +143,6 @@ async function getZiMetas(ziKeys, thinZies) {
       console.log(`缺失字：${metaStr} => ${meta.error}`);
       continue;
     }
-
     // console.log(JSON.stringify(meta));
 
     // Note：以汉典网的拼音优先
@@ -154,6 +153,7 @@ async function getZiMetas(ziKeys, thinZies) {
     }
 
     correctZiMeta(meta);
+    // console.log(JSON.stringify(meta));
 
     ziMetas.push(meta);
 
@@ -185,11 +185,10 @@ function _updateValidZiMetaWeights(db, ziMetas) {
 
   // -----------------------------------------------
   const updatedZiMetaMap = [];
-  for (let i = 0; i < ziMetas.length; i++) {
-    const meta = ziMetas[i];
+  ziMetas.forEach((meta) => {
     const savedMeta = savedZiMetaMap[meta.value];
     if (!savedMeta) {
-      continue;
+      return;
     }
 
     updatedZiMetaMap.push({
@@ -204,7 +203,7 @@ function _updateValidZiMetaWeights(db, ziMetas) {
       simples: JSON.stringify(meta.simples),
       traditionals: JSON.stringify(meta.traditionals)
     });
-  }
+  });
 
   saveToDB(db, 'zi_meta', updatedZiMetaMap, true);
 }
@@ -336,8 +335,10 @@ function correctZiMeta(ziMeta) {
     case '单体结构':
     case '独体字':
     case '独体':
-    case '嵌套结构':
       ziMeta.glyph_struct = '独体结构';
+      break;
+    case '嵌套结构':
+      ziMeta.glyph_struct = '镶嵌结构';
       break;
     case '形声；从车、古声':
     case '形声；左右结构':
@@ -608,189 +609,6 @@ function getMissingPinyin() {
 function correctZiMetaByValue(ziMeta) {
   // 笔画顺序：1 - 横/提，2 - 竖，3 - 撇，4 - 捺/点，5 - 折
   switch (ziMeta.value) {
-    case '贋':
-    case '尨':
-    case '戍':
-    case '成':
-    case '龙':
-    case '戌':
-    case '烕':
-    case '辰':
-      ziMeta.glyph_struct = '左上包围结构';
-      break;
-    case '匚':
-    case '匸':
-    case '巨':
-    case '臣':
-      ziMeta.glyph_struct = '左包围结构';
-      break;
-    case '用':
-    case '甩':
-    case '冂':
-    case '円':
-    case '几':
-    case '凡':
-      ziMeta.glyph_struct = '上包围结构';
-      break;
-    case '龵':
-      ziMeta.stroke_order = '3113';
-      break;
-    case '龷':
-      ziMeta.stroke_order = '1221';
-      break;
-    case '龹':
-      ziMeta.stroke_order = '431134';
-      break;
-    case '龻':
-      ziMeta.stroke_order = '4111251554444554444';
-      break;
-    case '﨩':
-      ziMeta.stroke_order = '523251115252';
-      break;
-    case '龧':
-      ziMeta.stroke_order = '2511251112132511';
-      break;
-    case '龦':
-      ziMeta.stroke_order = '433424345251252';
-      break;
-    case '龨':
-      ziMeta.stroke_order = '1324111215';
-      break;
-    case '龪':
-      ziMeta.stroke_order = '121213434';
-      break;
-    case '龫':
-      ziMeta.stroke_order = '125111234112';
-      break;
-    case '龮':
-      ziMeta.stroke_order = '121125444453353325121122134';
-      break;
-    case '龯':
-      ziMeta.stroke_order = '3411243113534';
-      break;
-    case '龰':
-      ziMeta.stroke_order = '2134';
-      break;
-    case '龱':
-      ziMeta.stroke_order = '25134';
-      break;
-    case '𢅫':
-      ziMeta.stroke_order = '252111211125114544';
-      break;
-    case '龲':
-      ziMeta.stroke_order = '341124314131251112';
-      break;
-    case '龺':
-      ziMeta.stroke_order = '12251112';
-      break;
-    case '鿃':
-      ziMeta.stroke_order = '251111343434';
-      break;
-    case '鿄':
-      ziMeta.stroke_order = '4415341234';
-      break;
-    case '鿌':
-      ziMeta.stroke_order = '441412511234';
-      break;
-    case '卝':
-      ziMeta.radical = '卝';
-      ziMeta.radical_stroke_count = 4;
-      break;
-    case '㴝':
-      ziMeta.radical = '水';
-      ziMeta.radical_stroke_count = 4;
-      break;
-    case '凱':
-      ziMeta.radical = '几';
-      ziMeta.radical_stroke_count = 2;
-      break;
-    case '彛':
-    case '彞':
-      ziMeta.radical = '廾';
-      ziMeta.radical_stroke_count = 3;
-      break;
-    case '瑴':
-      ziMeta.radical = '殳';
-      ziMeta.radical_stroke_count = 4;
-      break;
-    case '羋':
-      ziMeta.radical = '干';
-      ziMeta.radical_stroke_count = 3;
-      break;
-    case '羐':
-      ziMeta.radical = '艹';
-      ziMeta.radical_stroke_count = 3;
-      break;
-    case '龜':
-    case '龞':
-      ziMeta.radical = '龟';
-      ziMeta.radical_stroke_count = 21;
-      break;
-    case '〇':
-      // 取 囗 的笔顺
-      ziMeta.stroke_order = '251';
-      ziMeta.total_stroke_count = 3;
-      ziMeta.radical_stroke_count = 3;
-    case '囗':
-    case '曰':
-    case '田':
-      ziMeta.glyph_struct = '全包围结构';
-      break;
-    case '弐':
-    case '彧':
-    case '丸':
-    case '为':
-    case '习':
-    case '刁':
-    case '刀':
-    case '刃':
-    case '刄':
-    case '勹':
-    case '勺':
-    case '匁':
-    case '匆':
-      ziMeta.glyph_struct = '右上包围结构';
-      break;
-    case '彐':
-      ziMeta.glyph_struct = '右包围结构';
-      break;
-    case '圡':
-    case '玊':
-      ziMeta.glyph_struct = '独体结构';
-      break;
-    case '娈':
-    case '蒧':
-    case '斎':
-    case '齋':
-    case '齌':
-    case '齎':
-    case '齏':
-    case '䂖':
-    case '羗':
-    case '矛':
-    case '耉':
-    case '穴':
-    case '欠':
-    case '业':
-    case '亟':
-    case '止':
-    case '畢':
-    case '革':
-    case '韭':
-      ziMeta.glyph_struct = '上下结构';
-      break;
-    case '䙪':
-    case '豆':
-    case '亚':
-    case '亘':
-      ziMeta.glyph_struct = '上中下结构';
-      break;
-    case '承':
-      ziMeta.glyph_struct = '左中右结构';
-      break;
-    case '竹':
-      ziMeta.glyph_struct = '左右结构';
-      break;
     case '𩭳':
       ziMeta.pinyins = ['huō'];
       break;
@@ -806,30 +624,6 @@ function correctZiMetaByValue(ziMeta) {
     case '頁': // ㄧㄝˋ，ㄒ〡ㄝˊ
       ziMeta.zhuyins = ['ㄧㄝˋ', 'ㄒ〡ㄝˊ'];
       break;
-  }
-
-  const strokeCountMap = {
-    様: 15,
-    敻: 15,
-    瀧: 19,
-    坰: 8,
-    惸: 12,
-    獡: 15,
-    樮: 14,
-    燛: 16,
-    臩: 17,
-    臦: 12,
-    輤: 15,
-    齋: 17,
-    鬭: 24,
-    巔: 22
-  };
-  const strokeCount = strokeCountMap[ziMeta.value];
-  if (strokeCount > 0) {
-    ziMeta.total_stroke_count = strokeCount;
-  } //
-  else if (ziMeta.stroke_order) {
-    ziMeta.total_stroke_count = ziMeta.stroke_order.length;
   }
 }
 
@@ -856,6 +650,7 @@ function calcGlyphWeight(meta) {
     '左上包围结构',
     '右上包围结构',
     '品字结构',
+    '镶嵌结构',
     '未知'
   ];
 

@@ -11,9 +11,11 @@ import {
   execSQLFile,
   queryAll
 } from '#utils/sqlite.mjs';
-import { getUnicode, fromUnicode, getStructureCode } from '#utils/zi.mjs';
+import { getUnicode, fromUnicode } from '#utils/zi.mjs';
 
 export { openDB as open, closeDB as close } from '#utils/sqlite.mjs';
+
+import { getGlyphStructCode } from './structs.mjs';
 
 const sql_file_path = (name) =>
   fromRootPath('src', 'db/raw/zi/' + name + '.create.sql');
@@ -46,27 +48,27 @@ export function saveZies(db, ziMetas) {
     const zi = meta.value;
     const zi_id = getUnicode(zi);
 
-    ziMetaData[zi] = {
-      __meta__: meta,
-      id_: zi_id,
-      glyph_struct_: getStructureCode(meta.glyph_struct),
-      stroke_order_: meta.stroke_order,
-      total_stroke_count_: meta.total_stroke_count,
-      traditional_: meta.traditional ? 1 : 0,
-      glyph_weight_: meta.glyph_weight || 0
-    };
-
+    let radical_id = null;
     const radical = meta.radical;
     if (radical) {
-      const radical_id = getUnicode(radical);
+      radical_id = getUnicode(radical);
 
       ziRadicalMetaData[radical] = {
         id_: radical_id,
         stroke_count_: meta.radical_stroke_count || 0
       };
-
-      ziMetaData[zi].radical_id_ = radical_id;
     }
+
+    ziMetaData[zi] = {
+      __meta__: meta,
+      id_: zi_id,
+      glyph_struct_: getGlyphStructCode(meta),
+      stroke_order_: meta.stroke_order,
+      total_stroke_count_: meta.total_stroke_count,
+      traditional_: meta.traditional ? 1 : 0,
+      glyph_weight_: meta.glyph_weight || 0,
+      radical_id_: radical_id
+    };
   });
 
   // ----------------------------------------------------------------

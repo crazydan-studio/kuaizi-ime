@@ -119,7 +119,7 @@ async function prepareSystemFonts() {
 }
 
 // ---------------------------------------------------------------------
-const ZI_STRUCTURES = [
+const ZI_GLYPH_STRUCTS = [
   { code: 0, name: '未知', examples: [] },
   //
   { code: 1, name: '独体结构', examples: ['人', '日', '水'] },
@@ -142,8 +142,8 @@ const ZI_STRUCTURES = [
   { code: 16, name: '右包围结构', examples: [] }
 ];
 
-export function getStructureCode(name) {
-  const structure = ZI_STRUCTURES.filter((s) => s.name == name)[0] || {};
+export function getCodeByGlyphStruct(structName) {
+  const structure = ZI_GLYPH_STRUCTS.filter((s) => s.name == structName)[0] || {};
 
   return structure.code || 0;
 }

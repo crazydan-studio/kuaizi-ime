@@ -1,6 +1,7 @@
 import * as pinyinData from '#data/provider/pinyin-data.mjs';
 import * as opencc from '#data/provider/opencc.mjs';
 import * as wanxiang from '#data/provider/wanxiang.mjs';
+import { getUnicode } from '#utils/zi.mjs';
 
 import {
   patchAndSaveZiMetas,
@@ -8,6 +9,7 @@ import {
   calculateZiGlyphWeight,
   patchPinyinZiUsedWeight
 } from './meta.mjs';
+import { COMMON_ZI_SET } from './commons.mjs';
 
 // 采用 [汉典网](https://zdic.net/) 的单字数据、万象拼音的字词权重数据、OpenCC 的繁简转换数据
 // Note: OpenCC 中的繁简信息比万象拼音的更全面、更准确
@@ -38,17 +40,23 @@ console.log();
 console.log();
 console.log('获取 zdic.net 数据 ...');
 const ziMetas = await patchAndSaveZiMetas(zdicZies);
+
+const ziMetasByStruct = {};
 ziMetas.forEach((meta) => {
-  const simps = tradZies[meta.value] || [];
-  const trads = simpZies[meta.value] || [];
+  const zi = meta.value;
+  const simps = tradZies[zi] || [];
+  const trads = simpZies[zi] || [];
   const traditional = trads.length == 0 && simps.length > 0;
 
   if (traditional != meta.traditional) {
     console.log(
-      `- ${meta.value} 的汉典繁简性：[${meta.traditional ? '繁' : '简'}] => ${(meta.traditional ? meta.simples : meta.traditionals).join(',')}，OpenCC 的繁简性：[${traditional ? '繁' : '简'}] => ${simps.join(',')} + ${trads.join(',')}`
+      `- ${zi} 的汉典繁简性：[${meta.traditional ? '繁' : '简'}] => ${(meta.traditional ? meta.simples : meta.traditionals).join(',')}，OpenCC 的繁简性：[${traditional ? '繁' : '简'}] => ${simps.join(',')} + ${trads.join(',')}`
     );
   }
 
+  (ziMetasByStruct[meta.glyph_struct] ||= []).push(meta);
+
+  meta.common_used = COMMON_ZI_SET.has(zi);
   meta.traditional = traditional;
   meta.simples = traditional ? simps : [];
   meta.traditionals = traditional ? [] : trads;
@@ -162,6 +170,22 @@ console.log(
 
 // -----------------------------------------------------------------------
 console.log();
+console.log('按字形结构对常用字进行归类 ...');
+Object.keys(ziMetasByStruct).forEach((struct) => {
+  const metas = ziMetasByStruct[struct];
+
+  console.log(
+    `- ${struct || '未知结构'}的字列表：` +
+      metas
+        .filter((meta) => meta.common_used)
+        .map((meta) => meta.value)
+        .sort((a, b) => getUnicode(a) - getUnicode(b))
+        .join(', ')
+  );
+});
+
+// -----------------------------------------------------------------------
+console.log();
 console.log('按字形计算字的权重 ...');
 calculateZiGlyphWeight(ziMetasWithGlyph);
 console.log();
@@ -178,6 +202,7 @@ console.log();
 console.log('保存有字形的字数据 ...');
 updateValidZiMetaWeights(ziMetasWithGlyph);
 
+// -----------------------------------------------------------------------
 console.log();
 console.log('处理完毕！');
 console.log();
