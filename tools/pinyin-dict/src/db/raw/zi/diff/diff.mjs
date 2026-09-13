@@ -46,7 +46,7 @@ export function diffMetaData(oldDb, newDb) {
       old_table: { name: 'meta_pinyin', prop: 'value_' }
     },
     {
-      new_table: { name: 'meta_zi', prop: 'id_' },
+      new_table: { name: 'meta_zi', prop: 'value_' },
       old_table: { name: 'meta_word', prop: 'value_' }
     }
   ].forEach(({ new_table, old_table }) => {
@@ -69,7 +69,7 @@ export function diffMetaData(oldDb, newDb) {
       `select id_, ${new_table.prop} from ${new_table.name}`
     ).forEach((row) => {
       const id = row.id_;
-      const value = new_table.prop == 'id_' ? fromUnicode(id) : row[new_table.prop];
+      const value = row[new_table.prop];
 
       newData[value] = { id };
     });
